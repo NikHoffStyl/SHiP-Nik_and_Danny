@@ -22,7 +22,10 @@ fiducialCut = True
 measCutFK = 25
 measCutPR = 22
 docaCut = 2.
+#checking files
+###########################################################
 try:
+        #getopt is GNU function returns the option character for the next command line option
         opts, args = getopt.getopt(sys.argv[1:], "n:f:g:A:Y:i", ["nEvents=","geoFile="])
 except getopt.GetoptError:
         # print help information and exit:
@@ -51,7 +54,7 @@ elif inputFile[0:4] == "/eos":
 else:
   f = ROOT.TFile(inputFile)
   sTree = f.cbmsim
-
+################################################
 # try to figure out which ecal geo to load
 if not geoFile:
  geoFile = inputFile.replace('ship.','geofile_full.').replace('_rec.','.')
@@ -61,7 +64,7 @@ if geoFile[0:4] == "/eos":
 else:  
   fgeo = ROOT.TFile(geoFile)
 sGeo = fgeo.FAIRGeom
-
+################################################
 if not fgeo.FindKey('ShipGeo'):
  # old geofile, missing Shipgeo dictionary
  if sGeo.GetVolume('EcalModule3') :  ecalGeoFile = "ecal_ellipse6x12m2.geo"
@@ -106,52 +109,54 @@ import shipVeto
 veto = shipVeto.Task(sTree)
 vetoDets={}
 
-# fiducial cuts
+# fiducial- inpathobject cuts
 vetoStation = ROOT.gGeoManager.GetTopVolume().GetNode('Veto_5')
 vetoStation_zDown = vetoStation.GetMatrix().GetTranslation()[2]+vetoStation.GetVolume().GetShape().GetDZ()
 T1Station = ROOT.gGeoManager.GetTopVolume().GetNode('Tr1_1')
 T1Station_zUp = T1Station.GetMatrix().GetTranslation()[2]-T1Station.GetVolume().GetShape().GetDZ()
 
 #DECLARING HISTOGRAMS
+#############################################################################################
 h = {}
-ut.bookHist(h,'delPOverP','delP / P',400,0.,200.,100,-0.5,0.5)
-ut.bookHist(h,'pullPOverPx','delPx / sigma',400,0.,200.,100,-3.,3.)
-ut.bookHist(h,'pullPOverPy','delPy / sigma',400,0.,200.,100,-3.,3.)
-ut.bookHist(h,'pullPOverPz','delPz / sigma',400,0.,200.,100,-3.,3.)
-ut.bookHist(h,'delPOverP2','delP / P chi2/nmeas<'+str(chi2CutOff),400,0.,200.,100,-0.5,0.5)
-ut.bookHist(h,'delPOverPz','delPz / Pz',400,0.,200.,100,-0.5,0.5)
-ut.bookHist(h,'delPOverP2z','delPz / Pz chi2/nmeas<'+str(chi2CutOff),400,0.,200.,100,-0.5,0.5)
-ut.bookHist(h,'chi2','chi2/nmeas after trackfit',100,0.,10.)
-ut.bookHist(h,'prob','prob(chi2)',100,0.,1.)
-ut.bookHist(h,'IP','Impact Parameter',100,0.,10.)
-ut.bookHist(h,'Vzresol','Vz reco - true [cm]',100,-50.,50.)
-ut.bookHist(h,'Vxresol','Vx reco - true [cm]',100,-10.,10.)
-ut.bookHist(h,'Vyresol','Vy reco - true [cm]',100,-10.,10.)
-ut.bookHist(h,'Vzpull','Vz pull',100,-5.,5.)
-ut.bookHist(h,'Vxpull','Vx pull',100,-5.,5.)
-ut.bookHist(h,'Vypull','Vy pull',100,-5.,5.)
-ut.bookHist(h,'Doca','Doca between two tracks',100,0.,10.)
-ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
-ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
+#ut.bookHist(h,'delPOverP','delP / P',400,0.,200.,100,-0.5,0.5)
+#ut.bookHist(h,'pullPOverPx','delPx / sigma',400,0.,200.,100,-3.,3.)
+#ut.bookHist(h,'pullPOverPy','delPy / sigma',400,0.,200.,100,-3.,3.)
+#ut.bookHist(h,'pullPOverPz','delPz / sigma',400,0.,200.,100,-3.,3.)
+#ut.bookHist(h,'delPOverP2','delP / P chi2/nmeas<'+str(chi2CutOff),400,0.,200.,100,-0.5,0.5)
+#ut.bookHist(h,'delPOverPz','delPz / Pz',400,0.,200.,100,-0.5,0.5)
+#ut.bookHist(h,'delPOverP2z','delPz / Pz chi2/nmeas<'+str(chi2CutOff),400,0.,200.,100,-0.5,0.5)
+#ut.bookHist(h,'chi2','chi2/nmeas after trackfit',100,0.,10.)
+#ut.bookHist(h,'prob','prob(chi2)',100,0.,1.)
+#ut.bookHist(h,'IP','Impact Parameter',100,0.,10.)
+#ut.bookHist(h,'Vzresol','Vz reco - true [cm]',100,-50.,50.)
+#ut.bookHist(h,'Vxresol','Vx reco - true [cm]',100,-10.,10.)
+#ut.bookHist(h,'Vyresol','Vy reco - true [cm]',100,-10.,10.)
+#ut.bookHist(h,'Vzpull','Vz pull',100,-5.,5.)
+#ut.bookHist(h,'Vxpull','Vx pull',100,-5.,5.)
+#ut.bookHist(h,'Vypull','Vy pull',100,-5.,5.)
+#ut.bookHist(h,'Doca','Doca between two tracks',100,0.,10.)
+#ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
+#ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 ut.bookHist(h,'HNL','reconstructed Mass',500,0.,2.) #need this
 ut.bookHist(h,'HNLw','reconstructed Mass with weights',500,0.,2.)#need this
-ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
-ut.bookHist(h,'meas2','number of measurements, fitted track',40,-0.5,39.5)
-ut.bookHist(h,'measVSchi2','number of measurements vs chi2/meas',40,-0.5,39.5,100,0.,10.)
-ut.bookHist(h,'distu','distance to wire',100,0.,1.)
-ut.bookHist(h,'distv','distance to wire',100,0.,1.)
-ut.bookHist(h,'disty','distance to wire',100,0.,1.)
-ut.bookHist(h,'meanhits','mean number of hits / track',50,-0.5,49.5)
-ut.bookHist(h,'ecalClusters','x/y and energy',50,-3.,3.,50,-6.,6.)
+#ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
+#ut.bookHist(h,'meas2','number of measurements, fitted track',40,-0.5,39.5)
+#ut.bookHist(h,'measVSchi2','number of measurements vs chi2/meas',40,-0.5,39.5,100,0.,10.)
+#ut.bookHist(h,'distu','distance to wire',100,0.,1.)
+#ut.bookHist(h,'distv','distance to wire',100,0.,1.)
+#ut.bookHist(h,'disty','distance to wire',100,0.,1.)
+#ut.bookHist(h,'meanhits','mean number of hits / track',50,-0.5,49.5)
+#ut.bookHist(h,'ecalClusters','x/y and energy',50,-3.,3.,50,-6.,6.)
 
-ut.bookHist(h,'oa','cos opening angle',100,0.999,1.)
-# potential Veto detectors
-ut.bookHist(h,'nrtracks','nr of tracks in signal selected',10,-0.5,9.5)
-ut.bookHist(h,'nrSVT','nr of hits in SVT',10,-0.5,9.5)
-ut.bookHist(h,'nrUVT','nr of hits in UVT',100,-0.5,99.5)
-ut.bookHist(h,'nrSBT','nr of hits in SBT',100,-0.5,99.5)
-ut.bookHist(h,'nrRPC','nr of hits in RPC',100,-0.5,99.5)
+#ut.bookHist(h,'oa','cos opening angle',100,0.999,1.)
 
+## potential Veto detectors
+#ut.bookHist(h,'nrtracks','nr of tracks in signal selected',10,-0.5,9.5)
+#ut.bookHist(h,'nrSVT','nr of hits in SVT',10,-0.5,9.5)
+#ut.bookHist(h,'nrUVT','nr of hits in UVT',100,-0.5,99.5)
+#ut.bookHist(h,'nrSBT','nr of hits in SBT',100,-0.5,99.5)
+#ut.bookHist(h,'nrRPC','nr of hits in RPC',100,-0.5,99.5)
+##########################################################################################
 import TrackExtrapolateTool
 
 def VertexError(t1,t2,PosDir,CovMat,scalFac):
