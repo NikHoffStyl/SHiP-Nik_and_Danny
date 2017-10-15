@@ -138,7 +138,7 @@ h = {}
 #ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
 #ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 ut.bookHist(h,'HNL','reconstructed Mass',500,0.,2.) #need this
-ut.bookHist(h,'HNL_sim','reconstructed Mass',500,0.,2.) #added this
+ut.bookHist(h,'HNL_sim','simulated Mass',500,0.,2.) #added this
 #ut.bookHist(h,'HNLw','reconstructed Mass with weights',500,0.,2.)
 #ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
 #ut.bookHist(h,'meas2','number of measurements, fitted track',40,-0.5,39.5)
