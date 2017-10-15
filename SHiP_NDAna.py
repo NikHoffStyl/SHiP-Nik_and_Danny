@@ -118,45 +118,45 @@ T1Station_zUp = T1Station.GetMatrix().GetTranslation()[2]-T1Station.GetVolume().
 #DECLARING HISTOGRAMS
 #############################################################################################
 h = {}
-#ut.bookHist(h,'delPOverP','delP / P',400,0.,200.,100,-0.5,0.5)
-#ut.bookHist(h,'pullPOverPx','delPx / sigma',400,0.,200.,100,-3.,3.)
-#ut.bookHist(h,'pullPOverPy','delPy / sigma',400,0.,200.,100,-3.,3.)
-#ut.bookHist(h,'pullPOverPz','delPz / sigma',400,0.,200.,100,-3.,3.)
-#ut.bookHist(h,'delPOverP2','delP / P chi2/nmeas<'+str(chi2CutOff),400,0.,200.,100,-0.5,0.5)
-#ut.bookHist(h,'delPOverPz','delPz / Pz',400,0.,200.,100,-0.5,0.5)
-#ut.bookHist(h,'delPOverP2z','delPz / Pz chi2/nmeas<'+str(chi2CutOff),400,0.,200.,100,-0.5,0.5)
-#ut.bookHist(h,'chi2','chi2/nmeas after trackfit',100,0.,10.)
-#ut.bookHist(h,'prob','prob(chi2)',100,0.,1.)
-#ut.bookHist(h,'IP','Impact Parameter',100,0.,10.)
-#ut.bookHist(h,'Vzresol','Vz reco - true [cm]',100,-50.,50.)
-#ut.bookHist(h,'Vxresol','Vx reco - true [cm]',100,-10.,10.)
-#ut.bookHist(h,'Vyresol','Vy reco - true [cm]',100,-10.,10.)
-#ut.bookHist(h,'Vzpull','Vz pull',100,-5.,5.)
-#ut.bookHist(h,'Vxpull','Vx pull',100,-5.,5.)
-#ut.bookHist(h,'Vypull','Vy pull',100,-5.,5.)
-#ut.bookHist(h,'Doca','Doca between two tracks',100,0.,10.)
-#ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
-#ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
+ut.bookHist(h,'delPOverP','delP / P',400,0.,200.,100,-0.5,0.5)
+ut.bookHist(h,'pullPOverPx','delPx / sigma',400,0.,200.,100,-3.,3.)
+ut.bookHist(h,'pullPOverPy','delPy / sigma',400,0.,200.,100,-3.,3.)
+ut.bookHist(h,'pullPOverPz','delPz / sigma',400,0.,200.,100,-3.,3.)
+ut.bookHist(h,'delPOverP2','delP / P chi2/nmeas<'+str(chi2CutOff),400,0.,200.,100,-0.5,0.5)
+ut.bookHist(h,'delPOverPz','delPz / Pz',400,0.,200.,100,-0.5,0.5)
+ut.bookHist(h,'delPOverP2z','delPz / Pz chi2/nmeas<'+str(chi2CutOff),400,0.,200.,100,-0.5,0.5)
+ut.bookHist(h,'chi2','chi2/nmeas after trackfit',100,0.,10.)
+ut.bookHist(h,'prob','prob(chi2)',100,0.,1.)
+ut.bookHist(h,'IP','Impact Parameter',100,0.,10.)
+ut.bookHist(h,'Vzresol','Vz reco - true [cm]',100,-50.,50.)
+ut.bookHist(h,'Vxresol','Vx reco - true [cm]',100,-10.,10.)
+ut.bookHist(h,'Vyresol','Vy reco - true [cm]',100,-10.,10.)
+ut.bookHist(h,'Vzpull','Vz pull',100,-5.,5.)
+ut.bookHist(h,'Vxpull','Vx pull',100,-5.,5.)
+ut.bookHist(h,'Vypull','Vy pull',100,-5.,5.)
+ut.bookHist(h,'Doca','Doca between two tracks',100,0.,10.)
+ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
+ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 ut.bookHist(h,'HNL','reconstructed Mass',500,0.,2.) #need this
 ut.bookHist(h,'HNL_sim','simulated Mass',500,0.,2.) #added this
-#ut.bookHist(h,'HNLw','reconstructed Mass with weights',500,0.,2.)
-#ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
-#ut.bookHist(h,'meas2','number of measurements, fitted track',40,-0.5,39.5)
-#ut.bookHist(h,'measVSchi2','number of measurements vs chi2/meas',40,-0.5,39.5,100,0.,10.)
-#ut.bookHist(h,'distu','distance to wire',100,0.,1.)
-#ut.bookHist(h,'distv','distance to wire',100,0.,1.)
-#ut.bookHist(h,'disty','distance to wire',100,0.,1.)
-#ut.bookHist(h,'meanhits','mean number of hits / track',50,-0.5,49.5)
-#ut.bookHist(h,'ecalClusters','x/y and energy',50,-3.,3.,50,-6.,6.)
+ut.bookHist(h,'HNLw','reconstructed Mass with weights',500,0.,2.)
+ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
+ut.bookHist(h,'meas2','number of measurements, fitted track',40,-0.5,39.5)
+ut.bookHist(h,'measVSchi2','number of measurements vs chi2/meas',40,-0.5,39.5,100,0.,10.)
+ut.bookHist(h,'distu','distance to wire',100,0.,1.)
+ut.bookHist(h,'distv','distance to wire',100,0.,1.)
+ut.bookHist(h,'disty','distance to wire',100,0.,1.)
+ut.bookHist(h,'meanhits','mean number of hits / track',50,-0.5,49.5)
+ut.bookHist(h,'ecalClusters','x/y and energy',50,-3.,3.,50,-6.,6.)
 
-#ut.bookHist(h,'oa','cos opening angle',100,0.999,1.)
+ut.bookHist(h,'oa','cos opening angle',100,0.999,1.)
 
 ## potential Veto detectors
-#ut.bookHist(h,'nrtracks','nr of tracks in signal selected',10,-0.5,9.5)
-#ut.bookHist(h,'nrSVT','nr of hits in SVT',10,-0.5,9.5)
-#ut.bookHist(h,'nrUVT','nr of hits in UVT',100,-0.5,99.5)
-#ut.bookHist(h,'nrSBT','nr of hits in SBT',100,-0.5,99.5)
-#ut.bookHist(h,'nrRPC','nr of hits in RPC',100,-0.5,99.5)
+ut.bookHist(h,'nrtracks','nr of tracks in signal selected',10,-0.5,9.5)
+ut.bookHist(h,'nrSVT','nr of hits in SVT',10,-0.5,9.5)
+ut.bookHist(h,'nrUVT','nr of hits in UVT',100,-0.5,99.5)
+ut.bookHist(h,'nrSBT','nr of hits in SBT',100,-0.5,99.5)
+ut.bookHist(h,'nrRPC','nr of hits in RPC',100,-0.5,99.5)
 ##########################################################################################
 import TrackExtrapolateTool
 
@@ -468,7 +468,7 @@ def makePlots():
    #h['meanhits'].Draw()
    #cv = h['strawanalysis'].cd(3)
    #h['meas2'].Draw()
-   ut.bookCanvas(h,key='fitresults',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
+   ut.bookCanvas(h,key='fitresults',title='Fit Results',nx=1600,ny=1200,cx=2,cy=1)# changed cy=2 to =1
    #cv = h['fitresults'].cd(1)
    #h['delPOverPz'].Draw('box')
    #cv = h['fitresults'].cd(2)
@@ -501,11 +501,11 @@ def makePlots():
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
    #ADDED THIS--------------------------
-   cv = h['fitresults2'].cd(2)
-   h['HNL_sim'].SetXTitle('inv. mass  [GeV/c2]')
-   h['HNL_sim'].SetYTitle('N/4MeV/c2')
-   h['HNL_sim'].Draw()
-   fitSingleGauss('HNL_sim',0.9,1.1)
+   #cv = h['fitresults2'].cd(2)
+   #h['HNL_sim'].SetXTitle('inv. mass  [GeV/c2]')
+   #h['HNL_sim'].SetYTitle('N/4MeV/c2')
+   #h['HNL_sim'].Draw()
+   #fitSingleGauss('HNL_sim',0.9,1.1)
    #----------------------------------------
    #cv = h['fitresults2'].cd(4)
    #h['IP0/mass'].SetXTitle('inv. mass  [GeV/c2]')
@@ -732,7 +732,7 @@ def myEventLoop(n):
      if HNLMom == -1: continue
  # check if decay inside decay volume
     if not isInFiducial(HNLPos.X(),HNLPos.Y(),HNLPos.Z()): continue  
-    h['Doca'].Fill(doca) 
+    #h['Doca'].Fill(doca) 
     if  doca > docaCut : continue
     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
     dist = ImpactParameter(tr,HNLPos,HNLMom)
@@ -743,10 +743,10 @@ def myEventLoop(n):
     h['HNL'].Fill(mass) #WHAT WE WANT
     h['HNLw'].Fill(mass,wg)
  #--------------------------------------------------------
-    if sTree.FindBranch("MCTrack"):
-        if sTree.GetBranch("MCTrack"):
-                inv_mass = sTree.MCTrack.GetMass()
-                h['HNL_sim'].Fill(inv_mass)
+    #if sTree.FindBranch("MCTrack"):
+    #    if sTree.GetBranch("MCTrack"):
+    #            inv_mass = sTree.MCTrack.GetMass()
+    #            h['HNL_sim'].Fill(inv_mass)
 #---------------------------------------------------------
     vetoDets['SBT'] = veto.SBT_decision()
     vetoDets['SVT'] = veto.SVT_decision()
