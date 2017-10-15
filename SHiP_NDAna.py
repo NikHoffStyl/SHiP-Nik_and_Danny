@@ -288,7 +288,7 @@ def checkFiducialVolume(sTree,tkey,dy):
 def getPtruthFirst(sTree,mcPartKey):
    Ptruth,Ptruthx,Ptruthy,Ptruthz = -1.,-1.,-1.,-1.
    for ahit in sTree.strawtubesPoint:
-     if ahit.GetTrackID() == mcPartKey:
+     if ahit.GetTrackID() == mcPartKey:   #only occurs once then exits loop
         Ptruthx,Ptruthy,Ptruthz = ahit.GetPx(),ahit.GetPy(),ahit.GetPz()
         Ptruth  = ROOT.TMath.Sqrt(Ptruthx**2+Ptruthy**2+Ptruthz**2)
         break
