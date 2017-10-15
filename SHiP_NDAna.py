@@ -31,7 +31,7 @@ except getopt.GetoptError:
         # print help information and exit:
         print ' enter file name'
         sys.exit()
-for o, a in opts:
+for o, a in opts:  #loops through characters of opts
         if o in ("-f",): # if option is -f set inputFile to its argument ie ship.conical...root
             inputFile = a
         if o in ("-g", "--geoFile",): # if option is -g or --geofile set geoFile to its argument ie geofile_full...root
@@ -42,7 +42,7 @@ for o, a in opts:
             nEvents = int(a)
 
 if not inputFile.find(',')<0 :  
-  sTree = ROOT.TChain("cbmsim")
+  sTree = ROOT.TChain("cbmsim")     #set sTree to cbmsim
   for x in inputFile.split(','):
    if x[0:4] == "/eos":
     sTree.AddFile("root://eoslhcb.cern.ch/"+x)
@@ -52,8 +52,8 @@ elif inputFile[0:4] == "/eos":
   f = ROOT.TFile.Open(eospath)
   sTree = f.cbmsim
 else:
-  f = ROOT.TFile(inputFile)
-  sTree = f.cbmsim
+  f = ROOT.TFile(inputFile)     #I thnk this is for us
+  sTree = f.cbmsim              #sTree= inputFile-->tree called cbmsim
 ################################################
 # try to figure out which ecal geo to load
 if not geoFile:
@@ -62,8 +62,8 @@ if geoFile[0:4] == "/eos":
   eospath = "root://eoslhcb.cern.ch/"+geoFile
   fgeo = ROOT.TFile.Open(eospath)
 else:  
-  fgeo = ROOT.TFile(geoFile)
-sGeo = fgeo.FAIRGeom
+  fgeo = ROOT.TFile(geoFile)    #same here this must be in our case
+sGeo = fgeo.FAIRGeom            #sets sGeo to object inside fgeo
 ################################################
 if not fgeo.FindKey('ShipGeo'):
  # old geofile, missing Shipgeo dictionary
@@ -368,7 +368,7 @@ def  RedoVertexing(t1,t2):
       mom = reps[tr].getMom(states[tr])
       pid = abs(states[tr].getPDG()) 
       if pid == 2212: pid = 211
-      mass = PDG.GetParticle(pid).Mass()
+      mass = PDG.GetParticle(pid).Mass()  ##look here
       E = ROOT.TMath.Sqrt( mass*mass + mom.Mag2() )
       LV[tr] = ROOT.TLorentzVector()
       LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
@@ -433,66 +433,66 @@ def ecalCluster2MC(aClus):
   return mMax,eMax/aClus.Energy()
 #we can remove most of it
 def makePlots():
-   ut.bookCanvas(h,key='ecalanalysis',title='cluster map',nx=800,ny=600,cx=1,cy=1)
-   cv = h['ecalanalysis'].cd(1)
-   h['ecalClusters'].Draw('colz')
-   ut.bookCanvas(h,key='ecalCluster2Track',title='Ecal cluster distances to track impact',nx=1600,ny=800,cx=4,cy=2)
-   if h.has_key("ecalReconstructed_dist_mu+"):
-    cv = h['ecalCluster2Track'].cd(1)
-    h['ecalReconstructed_distx_mu+'].Draw()
-    cv = h['ecalCluster2Track'].cd(2)
-    h['ecalReconstructed_disty_mu+'].Draw()
-   if h.has_key("ecalReconstructed_dist_pi+"):
-    cv = h['ecalCluster2Track'].cd(3)
-    h['ecalReconstructed_distx_pi+'].Draw()
-    cv = h['ecalCluster2Track'].cd(4)
-    h['ecalReconstructed_disty_pi+'].Draw()
-   if h.has_key("ecalReconstructed_dist_mu-"):
-    cv = h['ecalCluster2Track'].cd(5)
-    h['ecalReconstructed_distx_mu-'].Draw()
-    cv = h['ecalCluster2Track'].cd(6)
-    h['ecalReconstructed_disty_mu-'].Draw()
-   if h.has_key("ecalReconstructed_dist_pi-"):
-    cv = h['ecalCluster2Track'].cd(7)
-    h['ecalReconstructed_distx_pi-'].Draw()
-    cv = h['ecalCluster2Track'].cd(8)
-    h['ecalReconstructed_disty_pi-'].Draw()
+   #ut.bookCanvas(h,key='ecalanalysis',title='cluster map',nx=800,ny=600,cx=1,cy=1)
+   #cv = h['ecalanalysis'].cd(1)
+   #h['ecalClusters'].Draw('colz')
+   #ut.bookCanvas(h,key='ecalCluster2Track',title='Ecal cluster distances to track impact',nx=1600,ny=800,cx=4,cy=2)
+   #if h.has_key("ecalReconstructed_dist_mu+"):
+   # cv = h['ecalCluster2Track'].cd(1)
+   # h['ecalReconstructed_distx_mu+'].Draw()
+   # cv = h['ecalCluster2Track'].cd(2)
+   # h['ecalReconstructed_disty_mu+'].Draw()
+   #if h.has_key("ecalReconstructed_dist_pi+"):
+   # cv = h['ecalCluster2Track'].cd(3)
+   # h['ecalReconstructed_distx_pi+'].Draw()
+   # cv = h['ecalCluster2Track'].cd(4)
+   # h['ecalReconstructed_disty_pi+'].Draw()
+   #if h.has_key("ecalReconstructed_dist_mu-"):
+   # cv = h['ecalCluster2Track'].cd(5)
+   # h['ecalReconstructed_distx_mu-'].Draw()
+   # cv = h['ecalCluster2Track'].cd(6)
+   # h['ecalReconstructed_disty_mu-'].Draw()
+   #if h.has_key("ecalReconstructed_dist_pi-"):
+   # cv = h['ecalCluster2Track'].cd(7)
+   # h['ecalReconstructed_distx_pi-'].Draw()
+   # cv = h['ecalCluster2Track'].cd(8)
+   # h['ecalReconstructed_disty_pi-'].Draw()
 
-   ut.bookCanvas(h,key='strawanalysis',title='Distance to wire and mean nr of hits',nx=1200,ny=600,cx=3,cy=1)
-   cv = h['strawanalysis'].cd(1)
-   h['disty'].Draw()
-   h['distu'].Draw('same')
-   h['distv'].Draw('same')
-   cv = h['strawanalysis'].cd(2)
-   h['meanhits'].Draw()
-   cv = h['strawanalysis'].cd(3)
-   h['meas2'].Draw()
-   ut.bookCanvas(h,key='fitresults',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
-   cv = h['fitresults'].cd(1)
-   h['delPOverPz'].Draw('box')
-   cv = h['fitresults'].cd(2)
-   cv.SetLogy(1)
-   h['prob'].Draw()
-   cv = h['fitresults'].cd(3)
-   h['delPOverPz_proj'] = h['delPOverPz'].ProjectionY()
-   ROOT.gStyle.SetOptFit(11111)
-   h['delPOverPz_proj'].Draw()
-   h['delPOverPz_proj'].Fit('gaus')
-   cv = h['fitresults'].cd(4)
-   h['delPOverP2z_proj'] = h['delPOverP2z'].ProjectionY()
-   h['delPOverP2z_proj'].Draw()
-   fitSingleGauss('delPOverP2z_proj')
-   h['fitresults'].Print('fitresults.gif')
-   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
-   print 'finished with first canvas'
-   cv = h['fitresults2'].cd(1)
-   h['Doca'].SetXTitle('closest distance between 2 tracks   [cm]')
-   h['Doca'].SetYTitle('N/1mm')
-   h['Doca'].Draw()
-   cv = h['fitresults2'].cd(2)
-   h['IP0'].SetXTitle('impact parameter to p-target   [cm]')
-   h['IP0'].SetYTitle('N/1cm')
-   h['IP0'].Draw()
+   #ut.bookCanvas(h,key='strawanalysis',title='Distance to wire and mean nr of hits',nx=1200,ny=600,cx=3,cy=1)
+   #cv = h['strawanalysis'].cd(1)
+   #h['disty'].Draw()
+   #h['distu'].Draw('same')
+   #h['distv'].Draw('same')
+   #cv = h['strawanalysis'].cd(2)
+   #h['meanhits'].Draw()
+   #cv = h['strawanalysis'].cd(3)
+   #h['meas2'].Draw()
+   #ut.bookCanvas(h,key='fitresults',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
+   #cv = h['fitresults'].cd(1)
+   #h['delPOverPz'].Draw('box')
+   #cv = h['fitresults'].cd(2)
+   #cv.SetLogy(1)
+   #h['prob'].Draw()
+   #cv = h['fitresults'].cd(3)
+   #h['delPOverPz_proj'] = h['delPOverPz'].ProjectionY()
+   #ROOT.gStyle.SetOptFit(11111)
+   #h['delPOverPz_proj'].Draw()
+   #h['delPOverPz_proj'].Fit('gaus')
+   #cv = h['fitresults'].cd(4)
+   #h['delPOverP2z_proj'] = h['delPOverP2z'].ProjectionY()
+   #h['delPOverP2z_proj'].Draw()
+   #fitSingleGauss('delPOverP2z_proj')
+   #h['fitresults'].Print('fitresults.gif')
+   #ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
+   #print 'finished with first canvas'
+   #cv = h['fitresults2'].cd(1)
+   #h['Doca'].SetXTitle('closest distance between 2 tracks   [cm]')
+   #h['Doca'].SetYTitle('N/1mm')
+   #h['Doca'].Draw()
+   #cv = h['fitresults2'].cd(2)
+   #h['IP0'].SetXTitle('impact parameter to p-target   [cm]')
+   #h['IP0'].SetYTitle('N/1cm')
+   #h['IP0'].Draw()
    #reconstructed invariant mass hist axes
    cv = h['fitresults2'].cd(3)
    h['HNL'].SetXTitle('inv. mass  [GeV/c2]')
@@ -500,50 +500,50 @@ def makePlots():
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
 
-   cv = h['fitresults2'].cd(4)
-   h['IP0/mass'].SetXTitle('inv. mass  [GeV/c2]')
-   h['IP0/mass'].SetYTitle('IP [cm]')
-   h['IP0/mass'].Draw('colz')
-   h['fitresults2'].Print('fitresults2.gif')
-   ut.bookCanvas(h,key='vxpulls',title='Vertex resol and pulls',nx=1600,ny=1200,cx=3,cy=2)
-   cv = h['vxpulls'].cd(4)
-   h['Vxpull'].Draw()
-   cv = h['vxpulls'].cd(5)
-   h['Vypull'].Draw()
-   cv = h['vxpulls'].cd(6)
-   h['Vzpull'].Draw()
-   cv = h['vxpulls'].cd(1)
-   h['Vxresol'].Draw()
-   cv = h['vxpulls'].cd(2)
-   h['Vyresol'].Draw()
-   cv = h['vxpulls'].cd(3)
-   h['Vzresol'].Draw()
-   ut.bookCanvas(h,key='trpulls',title='momentum pulls',nx=1600,ny=600,cx=3,cy=1)
-   cv = h['trpulls'].cd(1)
-   h['pullPOverPx_proj']=h['pullPOverPx'].ProjectionY()
-   h['pullPOverPx_proj'].Draw()
-   cv = h['trpulls'].cd(2)
-   h['pullPOverPy_proj']=h['pullPOverPy'].ProjectionY()
-   h['pullPOverPy_proj'].Draw()
-   cv = h['trpulls'].cd(3)
-   h['pullPOverPz_proj']=h['pullPOverPz'].ProjectionY()
-   h['pullPOverPz_proj'].Draw()
-   ut.bookCanvas(h,key='vetodecisions',title='Veto Detectors',nx=1600,ny=600,cx=5,cy=1)
-   cv = h['vetodecisions'].cd(1)
-   cv.SetLogy(1)
-   h['nrtracks'].Draw()
-   cv = h['vetodecisions'].cd(2)
-   cv.SetLogy(1)
-   h['nrSVT'].Draw()
-   cv = h['vetodecisions'].cd(3)
-   cv.SetLogy(1)
-   h['nrUVT'].Draw()
-   cv = h['vetodecisions'].cd(4)
-   cv.SetLogy(1)
-   h['nrSBT'].Draw()
-   cv = h['vetodecisions'].cd(5)
-   cv.SetLogy(1)
-   h['nrRPC'].Draw()
+   #cv = h['fitresults2'].cd(4)
+   #h['IP0/mass'].SetXTitle('inv. mass  [GeV/c2]')
+   #h['IP0/mass'].SetYTitle('IP [cm]')
+   #h['IP0/mass'].Draw('colz')
+   #h['fitresults2'].Print('fitresults2.gif')
+   #ut.bookCanvas(h,key='vxpulls',title='Vertex resol and pulls',nx=1600,ny=1200,cx=3,cy=2)
+   #cv = h['vxpulls'].cd(4)
+   #h['Vxpull'].Draw()
+   #cv = h['vxpulls'].cd(5)
+   #h['Vypull'].Draw()
+   #cv = h['vxpulls'].cd(6)
+   #h['Vzpull'].Draw()
+   #cv = h['vxpulls'].cd(1)
+   #h['Vxresol'].Draw()
+   #cv = h['vxpulls'].cd(2)
+   #h['Vyresol'].Draw()
+   #cv = h['vxpulls'].cd(3)
+   #h['Vzresol'].Draw()
+   #ut.bookCanvas(h,key='trpulls',title='momentum pulls',nx=1600,ny=600,cx=3,cy=1)
+   #cv = h['trpulls'].cd(1)
+   #h['pullPOverPx_proj']=h['pullPOverPx'].ProjectionY()
+   #h['pullPOverPx_proj'].Draw()
+   #cv = h['trpulls'].cd(2)
+   #h['pullPOverPy_proj']=h['pullPOverPy'].ProjectionY()
+   #h['pullPOverPy_proj'].Draw()
+   #cv = h['trpulls'].cd(3)
+   #h['pullPOverPz_proj']=h['pullPOverPz'].ProjectionY()
+   #h['pullPOverPz_proj'].Draw()
+   #ut.bookCanvas(h,key='vetodecisions',title='Veto Detectors',nx=1600,ny=600,cx=5,cy=1)
+   #cv = h['vetodecisions'].cd(1)
+   #cv.SetLogy(1)
+   #h['nrtracks'].Draw()
+   #cv = h['vetodecisions'].cd(2)
+   #cv.SetLogy(1)
+   #h['nrSVT'].Draw()
+   #cv = h['vetodecisions'].cd(3)
+   #cv.SetLogy(1)
+   #h['nrUVT'].Draw()
+   #cv = h['vetodecisions'].cd(4)
+   #cv.SetLogy(1)
+   #h['nrSBT'].Draw()
+   #cv = h['vetodecisions'].cd(5)
+   #cv.SetLogy(1)
+   #h['nrRPC'].Draw()
 #
    print 'finished making plots'
 # calculate z front face of ecal, needed later
@@ -733,7 +733,7 @@ def myEventLoop(n):
     #FILL HISTS
     h['IP0'].Fill(dist)  
     h['IP0/mass'].Fill(mass,dist)
-    h['HNL'].Fill(mass)
+    h['HNL'].Fill(mass) #WHAT WE WANT
     h['HNLw'].Fill(mass,wg)
 #
     vetoDets['SBT'] = veto.SBT_decision()
