@@ -32,13 +32,13 @@ except getopt.GetoptError:
         print ' enter file name'
         sys.exit()
 for o, a in opts:
-        if o in ("-f",):
+        if o in ("-f",): # if option is -f set inputFile to its argument ie ship.conical...root
             inputFile = a
-        if o in ("-g", "--geoFile",):
+        if o in ("-g", "--geoFile",): # if option is -g or --geofile set geoFile to its argument ie geofile_full...root
             geoFile = a
-        if o in ("-Y",):
+        if o in ("-Y",):    #samilarly here
             dy = float(a)
-        if o in ("-n", "--nEvents=",):
+        if o in ("-n", "--nEvents=",):  #and here
             nEvents = int(a)
 
 if not inputFile.find(',')<0 :  
