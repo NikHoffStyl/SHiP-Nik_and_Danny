@@ -86,6 +86,13 @@ else:
   ecalGeoFile = ShipGeo.ecal.File
   dy = ShipGeo.Yheight/u.m
 
+# D tried placing this in myEventLoop(n)
+
+if sTree.FindBranch("MCTrack")
+    if sTree.GetBranch("MCTrack")
+        inv_mass = sTree.MCTrack.GetMass()
+h['HNL_sim'].Fill(inv_mass)
+
 # -----Create geometry----------------------------------------------
 import shipDet_conf
 run = ROOT.FairRunSim()
