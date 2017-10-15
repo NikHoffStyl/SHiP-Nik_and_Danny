@@ -86,13 +86,6 @@ else:
   ecalGeoFile = ShipGeo.ecal.File
   dy = ShipGeo.Yheight/u.m
 
-# D tried placing this in myEventLoop(n)
-
-if sTree.FindBranch("MCTrack")
-    if sTree.GetBranch("MCTrack")
-        inv_mass = sTree.MCTrack.GetMass()
-h['HNL_sim'].Fill(inv_mass)
-
 # -----Create geometry----------------------------------------------
 import shipDet_conf
 run = ROOT.FairRunSim()
@@ -742,7 +735,12 @@ def myEventLoop(n):
     h['IP0/mass'].Fill(mass,dist)
     h['HNL'].Fill(mass) #WHAT WE WANT
     h['HNLw'].Fill(mass,wg)
-#
+ #--------------------------------------------------------
+    if sTree.FindBranch("MCTrack") 
+        if sTree.GetBranch("MCTrack")
+                inv_mass = sTree.MCTrack.GetMass()
+                h['HNL_sim'].Fill(inv_mass)
+#---------------------------------------------------------
     vetoDets['SBT'] = veto.SBT_decision()
     vetoDets['SVT'] = veto.SVT_decision()
     vetoDets['UVT'] = veto.UVT_decision()
