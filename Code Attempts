@@ -1,0 +1,7 @@
+# tried placing this in myEventLoop(n)
+
+if sTree.FindBranch("MCTrack")
+    if sTree.GetBranch("MCTrack")
+        inv_mass = sTree.MCTrack.GetMass()
+        h['HNL_sim'].Fill(inv_mass)
+        
