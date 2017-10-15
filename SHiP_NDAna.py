@@ -468,7 +468,7 @@ def makePlots():
    #h['meanhits'].Draw()
    #cv = h['strawanalysis'].cd(3)
    #h['meas2'].Draw()
-   ut.bookCanvas(h,key='fitresults',title='Fit Results',nx=1600,ny=1200,cx=2,cy=1)# changed cy=2 to =1
+   #ut.bookCanvas(h,key='fitresults',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
    #cv = h['fitresults'].cd(1)
    #h['delPOverPz'].Draw('box')
    #cv = h['fitresults'].cd(2)
@@ -484,7 +484,7 @@ def makePlots():
    #h['delPOverP2z_proj'].Draw()
    #fitSingleGauss('delPOverP2z_proj')
    #h['fitresults'].Print('fitresults.gif')
-   #ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
+   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=2,cy=1)# changed cy=2 to =1
    #print 'finished with first canvas'
    #cv = h['fitresults2'].cd(1)
    #h['Doca'].SetXTitle('closest distance between 2 tracks   [cm]')
