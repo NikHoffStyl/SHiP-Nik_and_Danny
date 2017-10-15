@@ -1,4 +1,4 @@
-# tried placing this in myEventLoop(n)
+# tried placing this in myEventLoop(n) (~ line 739)
 
 if sTree.FindBranch("MCTrack")
     if sTree.GetBranch("MCTrack")
