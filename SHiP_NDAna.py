@@ -484,7 +484,7 @@ def makePlots():
    #h['delPOverP2z_proj'].Draw()
    #fitSingleGauss('delPOverP2z_proj')
    #h['fitresults'].Print('fitresults.gif')
-   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=1,cy=1)# changed cy=2 to =1
+   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=1,cy=2)# changed cy=1 to =2
    #print 'finished with first canvas'
    #cv = h['fitresults2'].cd(1)
    #h['Doca'].SetXTitle('closest distance between 2 tracks   [cm]')
@@ -501,11 +501,11 @@ def makePlots():
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
    #ADDED THIS--------------------------
-   #cv = h['fitresults2'].cd(2)
-   #h['HNL_sim'].SetXTitle('inv. mass  [GeV/c2]')
-   #h['HNL_sim'].SetYTitle('N/4MeV/c2')
-   #h['HNL_sim'].Draw()
-   #fitSingleGauss('HNL_sim',0.9,1.1)
+   cv = h['fitresults2'].cd(2)
+   h['HNL_sim'].SetXTitle('inv. mass  [GeV/c2]')
+   h['HNL_sim'].SetYTitle('N/4MeV/c2')
+   h['HNL_sim'].Draw()
+   fitSingleGauss('HNL_sim',0.9,1.1)
    #----------------------------------------
    #cv = h['fitresults2'].cd(4)
    #h['IP0/mass'].SetXTitle('inv. mass  [GeV/c2]')
