@@ -138,7 +138,8 @@ h = {}
 #ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
 #ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 ut.bookHist(h,'HNL','reconstructed Mass',500,0.,2.) #need this
-ut.bookHist(h,'HNLw','reconstructed Mass with weights',500,0.,2.)#need this
+ut.bookHist(h,'HNL_sim','reconstructed Mass',500,0.,2.) #added this
+#ut.bookHist(h,'HNLw','reconstructed Mass with weights',500,0.,2.)
 #ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
 #ut.bookHist(h,'meas2','number of measurements, fitted track',40,-0.5,39.5)
 #ut.bookHist(h,'measVSchi2','number of measurements vs chi2/meas',40,-0.5,39.5,100,0.,10.)
@@ -467,7 +468,7 @@ def makePlots():
    #h['meanhits'].Draw()
    #cv = h['strawanalysis'].cd(3)
    #h['meas2'].Draw()
-   #ut.bookCanvas(h,key='fitresults',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
+   ut.bookCanvas(h,key='fitresults',title='Fit Results',nx=1600,ny=1200,cx=2,cy=2)
    #cv = h['fitresults'].cd(1)
    #h['delPOverPz'].Draw('box')
    #cv = h['fitresults'].cd(2)
@@ -494,12 +495,18 @@ def makePlots():
    #h['IP0'].SetYTitle('N/1cm')
    #h['IP0'].Draw()
    #reconstructed invariant mass hist axes
-   cv = h['fitresults2'].cd(3)
+   cv = h['fitresults2'].cd(1)#changed from 3 to 1
    h['HNL'].SetXTitle('inv. mass  [GeV/c2]')
    h['HNL'].SetYTitle('N/4MeV/c2')
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
-
+   #ADDED THIS--------------------------
+   cv = h['fitresults2'].cd(2)
+   h['HNL_sim'].SetXTitle('inv. mass  [GeV/c2]')
+   h['HNL_sim'].SetYTitle('N/4MeV/c2')
+   h['HNL_sim'].Draw()
+   fitSingleGauss('HNL_sim',0.9,1.1)
+   #----------------------------------------
    #cv = h['fitresults2'].cd(4)
    #h['IP0/mass'].SetXTitle('inv. mass  [GeV/c2]')
    #h['IP0/mass'].SetYTitle('IP [cm]')
