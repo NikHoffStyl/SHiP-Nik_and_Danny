@@ -484,7 +484,7 @@ def makePlots():
    #h['delPOverP2z_proj'].Draw()
    #fitSingleGauss('delPOverP2z_proj')
    #h['fitresults'].Print('fitresults.gif')
-   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=2,cy=1)# changed cy=2 to =1
+   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=1,cy=1)# changed cy=2 to =1
    #print 'finished with first canvas'
    #cv = h['fitresults2'].cd(1)
    #h['Doca'].SetXTitle('closest distance between 2 tracks   [cm]')
@@ -511,7 +511,7 @@ def makePlots():
    #h['IP0/mass'].SetXTitle('inv. mass  [GeV/c2]')
    #h['IP0/mass'].SetYTitle('IP [cm]')
    #h['IP0/mass'].Draw('colz')
-   #h['fitresults2'].Print('fitresults2.gif')
+   h['fitresults2'].Print('fitresults2.gif')
    #ut.bookCanvas(h,key='vxpulls',title='Vertex resol and pulls',nx=1600,ny=1200,cx=3,cy=2)
    #cv = h['vxpulls'].cd(4)
    #h['Vxpull'].Draw()
