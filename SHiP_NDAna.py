@@ -744,10 +744,10 @@ def myEventLoop(n):
     h['HNL'].Fill(mass) #WHAT WE WANT
     h['HNLw'].Fill(mass,wg)
  #--------------------------------------------------------
-    if sTree.FindBranch("MCTrack") 
-        if sTree.GetBranch("MCTrack")
-                inv_mass = sTree.MCTrack.GetMass()
-                h['HNL_sim'].Fill(inv_mass)
+    #if sTree.FindBranch("MCTrack") 
+    #    if sTree.GetBranch("MCTrack")
+    #            inv_mass = sTree.MCTrack.GetMass()
+    #            h['HNL_sim'].Fill(inv_mass)
 #---------------------------------------------------------
     vetoDets['SBT'] = veto.SBT_decision()
     vetoDets['SVT'] = veto.SVT_decision()
