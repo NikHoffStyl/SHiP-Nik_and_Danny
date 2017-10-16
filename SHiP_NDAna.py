@@ -884,6 +884,18 @@ nEvents = min(sTree.GetEntries(),nEvents)
 for n in range(nEvents): 
  myEventLoop(n)
  sTree.FitTracks.Delete()
+
+if sTree.GetBranch("MCTrack"):
+    print('found branch MCTrack')
+    print('n = ' + str(n))
+    for n in range(nEvents):
+        for HNL in sTree.MCTrack:
+            #inv_mass = sTree.MCTrack.MCTrack.fM
+        #HNLMom = ROOT.TLorentzVector()
+        inv_mass = HNL.GetMass()
+        #inv_mass = HNLMom.M()
+        h['HNL_sim'].Fill(inv_mass)
+
 makePlots()
 # output histograms
 hfile = inputFile.split(',')[0].replace('_rec','_ana')
