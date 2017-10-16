@@ -485,7 +485,7 @@ def makePlots():
    #h['delPOverP2z_proj'].Draw()
    #fitSingleGauss('delPOverP2z_proj')
    #h['fitresults'].Print('fitresults.gif')
-   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1600,ny=1200,cx=1,cy=2)# changed cy=1 to =2
+   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=600,ny=600,cx=1,cy=2)# changed cy=1 to =2
    #print 'finished with first canvas'
    #cv = h['fitresults2'].cd(1)
    #h['Doca'].SetXTitle('closest distance between 2 tracks   [cm]')
@@ -891,11 +891,11 @@ if sTree.GetBranch("MCTrack"):
     print('n = ' + str(n))
     for n in range(nEvents):
         for HNL in sTree.MCTrack:
-            #inv_mass = sTree.MCTrack.MCTrack.fM
-        #HNLMom = ROOT.TLorentzVector()
-        inv_mass = HNL.GetMass()
-        #inv_mass = HNLMom.M()
-        h['HNL_sim'].Fill(inv_mass)
+             #inv_mass = sTree.MCTrack.MCTrack.fM
+            #HNLMom = ROOT.TLorentzVector()
+            inv_mass = HNL.GetMass()
+            #inv_mass = HNLMom.M()
+            h['HNL_sim'].Fill(inv_mass)
 
 makePlots()
 # output histograms
@@ -906,3 +906,5 @@ if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
   hfile = tmp[len(tmp)-1] 
 ROOT.gROOT.cd()
 ut.writeHists(h,hfile)
+print ('Histograms writen to files')
+#input('Input string')
