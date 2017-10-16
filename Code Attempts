@@ -5,3 +5,34 @@ if sTree.FindBranch("MCTrack")
         inv_mass = sTree.MCTrack.GetMass()
         h['HNL_sim'].Fill(inv_mass)
         
+#--------------------------------------------------------
+        
+# edited from line 876
+
+for n in range(nEvents): 
+ myEventLoop(n)
+ sTree.FitTracks.Delete()
+
+if sTree.GetBranch("MCTrack"):
+      print('found branch MCTrack')
+      print('n = ' + str(n))
+      for n in range(nEvents):
+          for HNL in sTree.MCTrack:
+              #inv_mass = sTree.MCTrack.MCTrack.fM
+            #HNLMom = ROOT.TLorentzVector()
+            inv_mass = HNL.GetMass()
+            #inv_mass = HNLMom.M()
+            h['HNL_sim'].Fill(inv_mass)
+
+makePlots()
+# output histograms=
+hfile = inputFile.split(',')[0].replace('_rec','_ana')
+if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
+# do not write to eos, write to local directory 
+  tmp = hfile.split('/')
+  hfile = tmp[len(tmp)-1] 
+ROOT.gROOT.cd()
+ut.writeHists(h,hfile)
+
+#---------------------------------------------------------
+        
