@@ -15,7 +15,7 @@ theDPepsilon = 0.00000008
 
 mcEngine     = "TGeant4"
 simEngine    = "Pythia8"  # "Genie" # Ntuple
-nEvents      = 100
+nEvents      = 1000
 firstEvent   = 0
 inclusive    = "c"    # True = all processes if "c" only ccbar -> HNL, if "b" only bbar -> HNL, and for darkphotons: if meson = production through meson decays, pbrem = proton bremstrahlung, to do: QCD prod.
 deepCopy     = False  # False = copy only stable particles to stack, except for HNL events
@@ -30,7 +30,7 @@ RPVSUSY      = False
 RPVSUSYbench = 2
 
 eventDisplay = False
-inputFile    = "/opt/Cascade-parp16-MSTP82-1-MSEL4-76Mpot_1.root"
+inputFile    = "$SHIPSOFT/Cascade-parp16-MSTP82-1-MSEL4-76Mpot_1.root"
 
 defaultInputFile = True
 outputDir    = "."
