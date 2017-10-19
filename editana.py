@@ -435,7 +435,7 @@ def ecalCluster2MC(aClus):
   return mMax,eMax/aClus.Energy()
 #we can remove most of it
 def makePlots():
-   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=600,ny=600,cx=1,cy=2)# changed cy=1 to =2
+   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)# changed cy=1 to =2
    #reconstructed invariant mass hist axes
    cv = h['fitresults2'].cd(1)#changed from 3 to 1
    h['HNL'].SetXTitle('inv. mass  [GeV/c2]')
@@ -795,5 +795,5 @@ if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
   hfile = tmp[len(tmp)-1] 
 ROOT.gROOT.cd()
 ut.writeHists(h,hfile)
-print ('Histograms writen to files')
+print ('Histograms written to files')
 #input('Input string')
