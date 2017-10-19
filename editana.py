@@ -435,7 +435,7 @@ def ecalCluster2MC(aClus):
   return mMax,eMax/aClus.Energy()
 
 def makePlots():
-   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1600,ny=600,cx=2,cy=1)
+   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)
    print 'finished with first canvas'
    #--------------------------------------------------------------------------------------------------------------
    cv = h['Mass_Comparison'].cd(1)
