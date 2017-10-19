@@ -1,7 +1,8 @@
 # ####################################### #
-#   Niko's and Danny's Anlysis Code       #
+#   Niko's and Danny's Ana Code           #
 #          Make changes                   #
 ###########################################
+
 # example for accessing smeared hits and fitted tracks
 import ROOT,os,sys,getopt
 import rootUtils as ut
@@ -449,7 +450,7 @@ def makePlots():
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
    #--------------------------------------------------------------------------------------------------------------
-   h['Mass_Comparison'].Print('Mass_Comparison.gif')
+   h['Mass_Comparison'].Print('Mass_Comparison.png')
    #
    print 'finished making plots'
 # calculate z front face of ecal, needed later
@@ -820,6 +821,5 @@ ut.writeHists(h,hfile)
 
 #for hnlkey in [1,2]: 
 #if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:
-
 
 #idMother = abs(sTree.MCTrack[hnlkey-1].GetPdgCode())
