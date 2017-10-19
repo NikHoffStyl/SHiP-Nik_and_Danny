@@ -440,13 +440,13 @@ def makePlots():
    #--------------------------------------------------------------------------------------------------------------
    cv = h['Mass_Comparison'].cd(1)
    h['HNL_sim'].SetXTitle('inv. mass [GeV/c2]')
-   h['HNL_sim'].SetYTitle('N/4MeV/c2')
+   h['HNL_sim'].SetYTitle('No. of Particles')
    h['HNL_sim'].Draw()
    #fitSingleGauss('HNL_sim',0.9,1.1)
    #--------------------------------------------------------------------------------------------------------------
    cv = h['Mass_Comparison'].cd(2)
    h['HNL'].SetXTitle('inv. mass  [GeV/c2]')
-   h['HNL'].SetYTitle('N/4MeV/c2')
+   h['HNL'].SetYTitle('No. of Particles')
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
    #--------------------------------------------------------------------------------------------------------------
