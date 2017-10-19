@@ -2,6 +2,7 @@
 #   Niko's and Danny's Anlysis Code       #
 #          Make changes                   #
 ###########################################
+# example for accessing smeared hits and fitted tracks
 import ROOT,os,sys,getopt
 import rootUtils as ut
 import shipunit as u
@@ -10,6 +11,11 @@ from rootpyPickler import Unpickler
 from decorators import *
 import shipRoot_conf
 shipRoot_conf.configure()
+
+#import THStack as ...
+#stack = THStack("stack","stack")
+#stack.Add(first)
+#stack.Add(second)
 
 debug = False
 chi2CutOff  = 4.
@@ -22,27 +28,24 @@ fiducialCut = True
 measCutFK = 25
 measCutPR = 22
 docaCut = 2.
-#checking files
-###########################################################
 try:
-        #getopt is GNU function returns the option character for the next command line option
         opts, args = getopt.getopt(sys.argv[1:], "n:f:g:A:Y:i", ["nEvents=","geoFile="])
 except getopt.GetoptError:
         # print help information and exit:
         print ' enter file name'
         sys.exit()
-for o, a in opts:  #loops through characters of opts
-        if o in ("-f",): # if option is -f set inputFile to its argument ie ship.conical...root
+for o, a in opts:
+        if o in ("-f",):
             inputFile = a
-        if o in ("-g", "--geoFile",): # if option is -g or --geofile set geoFile to its argument ie geofile_full...root
+        if o in ("-g", "--geoFile",):
             geoFile = a
-        if o in ("-Y",):    #samilarly here
+        if o in ("-Y",):
             dy = float(a)
-        if o in ("-n", "--nEvents=",):  #and here
+        if o in ("-n", "--nEvents=",):
             nEvents = int(a)
 
 if not inputFile.find(',')<0 :  
-  sTree = ROOT.TChain("cbmsim")     #set sTree to cbmsim
+  sTree = ROOT.TChain("cbmsim")
   for x in inputFile.split(','):
    if x[0:4] == "/eos":
     sTree.AddFile("root://eoslhcb.cern.ch/"+x)
@@ -52,9 +55,9 @@ elif inputFile[0:4] == "/eos":
   f = ROOT.TFile.Open(eospath)
   sTree = f.cbmsim
 else:
-  f = ROOT.TFile(inputFile)     #I thnk this is for us
-  sTree = f.cbmsim              #sTree= inputFile-->tree called cbmsim
-################################################
+  f = ROOT.TFile(inputFile)
+  sTree = f.cbmsim
+
 # try to figure out which ecal geo to load
 if not geoFile:
  geoFile = inputFile.replace('ship.','geofile_full.').replace('_rec.','.')
@@ -62,9 +65,9 @@ if geoFile[0:4] == "/eos":
   eospath = "root://eoslhcb.cern.ch/"+geoFile
   fgeo = ROOT.TFile.Open(eospath)
 else:  
-  fgeo = ROOT.TFile(geoFile)    #same here this must be in our case
-sGeo = fgeo.FAIRGeom            #sets sGeo to object inside fgeo
-################################################
+  fgeo = ROOT.TFile(geoFile)
+sGeo = fgeo.FAIRGeom
+
 if not fgeo.FindKey('ShipGeo'):
  # old geofile, missing Shipgeo dictionary
  if sGeo.GetVolume('EcalModule3') :  ecalGeoFile = "ecal_ellipse6x12m2.geo"
@@ -85,7 +88,6 @@ else:
   ShipGeo = upkl.load('ShipGeo')
   ecalGeoFile = ShipGeo.ecal.File
   dy = ShipGeo.Yheight/u.m
-
 
 # -----Create geometry----------------------------------------------
 import shipDet_conf
@@ -110,14 +112,14 @@ import shipVeto
 veto = shipVeto.Task(sTree)
 vetoDets={}
 
-# fiducial- inpathobject cuts
+# fiducial cuts
 vetoStation = ROOT.gGeoManager.GetTopVolume().GetNode('Veto_5')
 vetoStation_zDown = vetoStation.GetMatrix().GetTranslation()[2]+vetoStation.GetVolume().GetShape().GetDZ()
 T1Station = ROOT.gGeoManager.GetTopVolume().GetNode('Tr1_1')
 T1Station_zUp = T1Station.GetMatrix().GetTranslation()[2]-T1Station.GetVolume().GetShape().GetDZ()
 
-#DECLARING HISTOGRAMS
-#############################################################################################
+#--------------------------------------------------------------------------------------------------------------------------
+
 h = {}
 ut.bookHist(h,'delPOverP','delP / P',400,0.,200.,100,-0.5,0.5)
 ut.bookHist(h,'pullPOverPx','delPx / sigma',400,0.,200.,100,-3.,3.)
@@ -138,9 +140,11 @@ ut.bookHist(h,'Vypull','Vy pull',100,-5.,5.)
 ut.bookHist(h,'Doca','Doca between two tracks',100,0.,10.)
 ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
 ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
-ut.bookHist(h,'HNL','reconstructed Mass',500,0.,2.) #need this
-ut.bookHist(h,'HNL_sim','simulated Mass',500,0.,2.) #added this
-ut.bookHist(h,'HNLw','reconstructed Mass with weights',500,0.,2.)
+#
+ut.bookHist(h,'HNL','Reconstructed Mass',500,0.,2.) # original one for the reconstructed mass
+ut.bookHist(h,'HNL_sim','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
+#
+ut.bookHist(h,'HNLw','Reconstructed Mass with weights',500,0.,2.)
 ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
 ut.bookHist(h,'meas2','number of measurements, fitted track',40,-0.5,39.5)
 ut.bookHist(h,'measVSchi2','number of measurements vs chi2/meas',40,-0.5,39.5,100,0.,10.)
@@ -149,16 +153,15 @@ ut.bookHist(h,'distv','distance to wire',100,0.,1.)
 ut.bookHist(h,'disty','distance to wire',100,0.,1.)
 ut.bookHist(h,'meanhits','mean number of hits / track',50,-0.5,49.5)
 ut.bookHist(h,'ecalClusters','x/y and energy',50,-3.,3.,50,-6.,6.)
-
 ut.bookHist(h,'oa','cos opening angle',100,0.999,1.)
-
-## potential Veto detectors
 ut.bookHist(h,'nrtracks','nr of tracks in signal selected',10,-0.5,9.5)
 ut.bookHist(h,'nrSVT','nr of hits in SVT',10,-0.5,9.5)
 ut.bookHist(h,'nrUVT','nr of hits in UVT',100,-0.5,99.5)
 ut.bookHist(h,'nrSBT','nr of hits in SBT',100,-0.5,99.5)
 ut.bookHist(h,'nrRPC','nr of hits in RPC',100,-0.5,99.5)
-##########################################################################################
+
+# ------------------------------------------------------------------------------------------------------------------------
+
 import TrackExtrapolateTool
 
 def VertexError(t1,t2,PosDir,CovMat,scalFac):
@@ -220,9 +223,8 @@ def VertexError(t1,t2,PosDir,CovMat,scalFac):
    covX  = ROOT.TMatrixD(3,3)
    covX.Mult(tmp,transT)
    return X,covX,dist
-#
+
 from array import array
-#
 def dist2InnerWall(X,Y,Z):
   dist = 0
  # return distance to inner wall perpendicular to z-axis, if outside decayVolume return 0.
@@ -245,7 +247,7 @@ def dist2InnerWall(X,Y,Z):
     distance = sGeo.GetStep()
     if distance < minDistance  : minDistance = distance
   return minDistance
-#
+
 def isInFiducial(X,Y,Z):
    if Z > ShipGeo.TrackStation1.z : return False
    if Z < ShipGeo.vetoStation.z+100.*u.cm : return False
@@ -276,7 +278,6 @@ def checkHNLorigin(sTree):
    X,Y,Z =  theHNLVx.GetStartX(),theHNLVx.GetStartY(),theHNLVx.GetStartZ()
    if not isInFiducial(X,Y,Z): flag = False
  return flag 
-#
 def checkFiducialVolume(sTree,tkey,dy):
 # extrapolate track to middle of magnet and check if in decay volume
    inside = True
@@ -286,16 +287,15 @@ def checkFiducialVolume(sTree,tkey,dy):
    if not rc: return False
    if not dist2InnerWall(pos.X(),pos.Y(),pos.Z())>0: return False
    return inside
-#
 def getPtruthFirst(sTree,mcPartKey):
    Ptruth,Ptruthx,Ptruthy,Ptruthz = -1.,-1.,-1.,-1.
    for ahit in sTree.strawtubesPoint:
-     if ahit.GetTrackID() == mcPartKey:   #only occurs once then exits loop
+     if ahit.GetTrackID() == mcPartKey:
         Ptruthx,Ptruthy,Ptruthz = ahit.GetPx(),ahit.GetPy(),ahit.GetPz()
         Ptruth  = ROOT.TMath.Sqrt(Ptruthx**2+Ptruthy**2+Ptruthz**2)
         break
    return Ptruth,Ptruthx,Ptruthy,Ptruthz
-#
+
 def access2SmearedHits():
  key = 0
  for ahit in ev.SmearedHits.GetObject():
@@ -305,7 +305,7 @@ def access2SmearedHits():
    mctrack =  MCTracks[mchit.GetTrackID()]
    print mchit.GetZ(),mctrack.GetP(),mctrack.GetPdgCode()
    key+=1
-#
+
 def myVertex(t1,t2,PosDir):
  # closest distance between two tracks
     # d = |pq . u x v|/|u x v|
@@ -327,7 +327,7 @@ def myVertex(t1,t2,PosDir):
    Y = c.y()+v.y()*t
    Z = c.z()+v.z()*t
    return X,Y,Z,abs(dist)
-#
+
 def  RedoVertexing(t1,t2):    
      PosDir = {} 
      for tr in [t1,t2]:
@@ -352,7 +352,7 @@ def  RedoVertexing(t1,t2):
        try:
         reps[tr].extrapolateToPoint(states[tr], newPos, False)
        except:
-        print 'SHiPAna: extrapolation did not worked'
+        print 'SHiPAna: extrapolation did not work'
         rc = False  
         break
        newPosDir[tr] = [reps[tr].getPos(states[tr]),reps[tr].getDir(states[tr])]
@@ -370,13 +370,13 @@ def  RedoVertexing(t1,t2):
       mom = reps[tr].getMom(states[tr])
       pid = abs(states[tr].getPDG()) 
       if pid == 2212: pid = 211
-      mass = PDG.GetParticle(pid).Mass()  ##look here
+      mass = PDG.GetParticle(pid).Mass()
       E = ROOT.TMath.Sqrt( mass*mass + mom.Mag2() )
       LV[tr] = ROOT.TLorentzVector()
       LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
      HNLMom = LV[t1]+LV[t2]
      return xv,yv,zv,doca,HNLMom
-#
+
 def fitSingleGauss(x,ba=None,be=None):
     name    = 'myGauss_'+x 
     myGauss = h[x].GetListOfFunctions().FindObject(name)
@@ -397,7 +397,7 @@ def fitSingleGauss(x,ba=None,be=None):
        myGauss.SetParName(2,'Sigma')
        myGauss.SetParName(3,'bckgr')
     h[x].Fit(myGauss,'','',ba,be) 
-#
+
 def match2HNL(p):
     matched = False
     hnlKey  = []
@@ -412,7 +412,6 @@ def match2HNL(p):
     if len(hnlKey) == 2: 
        if hnlKey[0]==hnlKey[1]: matched = True
     return matched
-#
 def ecalCluster2MC(aClus):
  # return MC track most contributing, and its fraction of energy
   trackid    = ROOT.Long()
@@ -433,30 +432,31 @@ def ecalCluster2MC(aClus):
         eMax = mcLink[m]
         mMax = m
   return mMax,eMax/aClus.Energy()
-#we can remove most of it
+
 def makePlots():
-   ut.bookCanvas(h,key='Inv_Mass',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)# changed cy=1 to =2
-   #reconstructed invariant mass hist axes
-   cv = h['Inv_Mass'].cd(1)#changed from 3 to 1
+   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1600,ny=600,cx=2,cy=1)
+   print 'finished with first canvas'
+   #--------------------------------------------------------------------------------------------------------------
+   cv = h['Mass_Comparison'].cd(1)
+   h['HNL_sim'].SetXTitle('inv. mass [GeV/c2]')
+   h['HNL_sim'].SetYTitle('N/4MeV/c2')
+   h['HNL_sim'].Draw()
+   #fitSingleGauss('HNL_sim',0.9,1.1)
+   #--------------------------------------------------------------------------------------------------------------
+   cv = h['Mass_Comparison'].cd(2)
    h['HNL'].SetXTitle('inv. mass  [GeV/c2]')
    h['HNL'].SetYTitle('N/4MeV/c2')
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
-   #ADDED THIS--------------------------
-   cv = h['Inv_Mass'].cd(2)
-   h['HNL_sim'].SetXTitle('inv. mass  [GeV/c2]')
-   h['HNL_sim'].SetYTitle('N/4MeV/c2')
-   h['HNL_sim'].Draw()
-   fitSingleGauss('HNL_sim',0.9,1.1)
-   #----------------------------------------
-   h['Inv_Mass'].Print('Inv_Mass.png')
+   #--------------------------------------------------------------------------------------------------------------
+   h['Mass_Comparison'].Print('Mass_Comparison.gif')
+   #
    print 'finished making plots'
 # calculate z front face of ecal, needed later
 top = ROOT.gGeoManager.GetTopVolume()
 z_ecal      = top.GetNode('Ecal_1').GetMatrix().GetTranslation()[2]
 z_ecalFront = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 z_ecalBack  = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
-
 
 # start event loop
 def myEventLoop(n):
@@ -472,7 +472,7 @@ def myEventLoop(n):
   if not checkHNLorigin(sTree): return
   wg = sTree.MCTrack[1].GetWeight()
   if not wg>0.: wg=1.
-# 
+
 # make some ecal cluster analysis if exist
   if sTree.FindBranch("EcalClusters"):
    if calReco:  ecalReconstructed.Delete()
@@ -570,9 +570,7 @@ def myEventLoop(n):
    Px,Py,Pz = fittedState.getMom().x(),fittedState.getMom().y(),fittedState.getMom().z()
    cov = fittedState.get6DCov()
    if len(sTree.fitTrack2MC)-1<key: continue
-   # EXAMPLE HOW TO ACCESS THE TRUE CHARGED PARTICLE RESPONSIBLE FOR CREATING THE SAID TRACK
    mcPartKey = sTree.fitTrack2MC[key]
-   # EXAMPLE OF TRUE PARTICLE AT THE POINT OF CREATION (ie DECAY POSITION OF HNL)
    mcPart    = sTree.MCTrack[mcPartKey]
    if not mcPart : continue
    Ptruth_start     = mcPart.GetP()
@@ -630,16 +628,17 @@ def myEventLoop(n):
      if HNLMom == -1: continue
  # check if decay inside decay volume
     if not isInFiducial(HNLPos.X(),HNLPos.Y(),HNLPos.Z()): continue  
-    #h['Doca'].Fill(doca) 
+    h['Doca'].Fill(doca) 
     if  doca > docaCut : continue
     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
     dist = ImpactParameter(tr,HNLPos,HNLMom)
     mass = HNLMom.M()
-    #FILL HISTS
+
     h['IP0'].Fill(dist)  
     h['IP0/mass'].Fill(mass,dist)
-    h['HNL'].Fill(mass) #WHAT WE WANT
+    h['HNL'].Fill(mass)
     h['HNLw'].Fill(mass,wg)
+#
     vetoDets['SBT'] = veto.SBT_decision()
     vetoDets['SVT'] = veto.SVT_decision()
     vetoDets['UVT'] = veto.UVT_decision()
@@ -692,7 +691,10 @@ def HNLKinematics():
  ut.bookHist(h,'HNLPt','Pt',100,0.,10.)
  ut.bookHist(h,'HNLmom_recTracks','momentum',100,0.,300.)
  ut.bookHist(h,'HNLmomNoW_recTracks','momentum unweighted',100,0.,300.)
+ ut.bookHist(h,'HNL_sim','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
+
  for n in range(sTree.GetEntries()): 
+
   rc = sTree.GetEntry(n)
   for hnlkey in [1,2]: 
    if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015: 
@@ -773,21 +775,21 @@ else:
 
 nEvents = min(sTree.GetEntries(),nEvents)
 
-for n in range(nEvents): 
- myEventLoop(n)
- sTree.FitTracks.Delete()
+for n in range(nEvents):
+    myEventLoop(n)
+    sTree.FitTracks.Delete()
+
 
 if sTree.GetBranch("MCTrack"):
     print('found branch MCTrack')
-    print('n = ' + str(n))
     for n in range(nEvents):
         for HNL in sTree.MCTrack:
-            if HNL.GetPdgCode()==9900015:
+            if HNL.GetPdgCode() == 9900015:
                 inv_mass = HNL.GetMass()
                 h['HNL_sim'].Fill(inv_mass)
-               
+
 makePlots()
-# output histograms
+# output histograms=
 hfile = inputFile.split(',')[0].replace('_rec','_MCMTEST')
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
 # do not write to eos, write to local directory 
@@ -795,5 +797,29 @@ if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
   hfile = tmp[len(tmp)-1] 
 ROOT.gROOT.cd()
 ut.writeHists(h,hfile)
-print ('Histograms written to files')
-#input('Input string')
+
+#for HNL in sTree.Particles:
+    #t1 = HNL.GetDaughter(0) 
+
+#MC_id = sTree.MCTrack.PdgCode()
+
+#if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:
+
+#mom = reps[tr].getMom(states[tr])
+#pid = abs(states[tr].getPDG()) 
+#if pid == 2212: pid = 211
+#mass = PDG.GetParticle(pid).Mass()
+
+#mo = sTree.MCTrack[mcp]
+#if abs(mo.GetPdgCode()) == 9900015:
+
+#pdgcode = fT.getFittedState().getPDG()
+#tmp = PDG.GetParticle(pdgcode)
+
+#tmp = PDG.GetParticle(aP.GetPdgCode())
+
+#for hnlkey in [1,2]: 
+#if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:
+
+
+#idMother = abs(sTree.MCTrack[hnlkey-1].GetPdgCode())
