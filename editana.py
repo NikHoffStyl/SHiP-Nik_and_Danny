@@ -435,18 +435,18 @@ def ecalCluster2MC(aClus):
   return mMax,eMax/aClus.Energy()
 
 def makePlots():
-   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1600,ny=600,cx=2,cy=1)
+   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)
    print 'finished with first canvas'
    #--------------------------------------------------------------------------------------------------------------
    cv = h['Mass_Comparison'].cd(1)
    h['HNL_sim'].SetXTitle('Invariant Mass [GeV/c2]')
-   h['HNL_sim'].SetYTitle('No. Particles')
+   h['HNL_sim'].SetYTitle('No. of Particles')
    h['HNL_sim'].Draw()
    #fitSingleGauss('HNL_sim',0.9,1.1)
    #--------------------------------------------------------------------------------------------------------------
    cv = h['Mass_Comparison'].cd(2)
    h['HNL'].SetXTitle('Invariant Mass  [GeV/c2]')
-   h['HNL'].SetYTitle('No. Particles')
+   h['HNL'].SetYTitle('No. of Particles')
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
    #--------------------------------------------------------------------------------------------------------------
