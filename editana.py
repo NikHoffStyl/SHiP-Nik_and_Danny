@@ -788,7 +788,7 @@ if sTree.GetBranch("MCTrack"):
                
 makePlots()
 # output histograms
-hfile = inputFile.split(',')[0].replace('_rec','_ana')
+hfile = inputFile.split(',')[0].replace('_rec','_MCMTEST')
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
 # do not write to eos, write to local directory 
   tmp = hfile.split('/')
