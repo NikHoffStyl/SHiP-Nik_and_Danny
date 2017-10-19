@@ -435,21 +435,21 @@ def ecalCluster2MC(aClus):
   return mMax,eMax/aClus.Energy()
 #we can remove most of it
 def makePlots():
-   ut.bookCanvas(h,key='fitresults2',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)# changed cy=1 to =2
+   ut.bookCanvas(h,key='Inv_Mass',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)# changed cy=1 to =2
    #reconstructed invariant mass hist axes
-   cv = h['fitresults2'].cd(1)#changed from 3 to 1
+   cv = h['Inv_Mass'].cd(1)#changed from 3 to 1
    h['HNL'].SetXTitle('inv. mass  [GeV/c2]')
    h['HNL'].SetYTitle('N/4MeV/c2')
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
    #ADDED THIS--------------------------
-   cv = h['fitresults2'].cd(2)
+   cv = h['Inv_Mass'].cd(2)
    h['HNL_sim'].SetXTitle('inv. mass  [GeV/c2]')
    h['HNL_sim'].SetYTitle('N/4MeV/c2')
    h['HNL_sim'].Draw()
    fitSingleGauss('HNL_sim',0.9,1.1)
    #----------------------------------------
-   h['fitresults2'].Print('fitresults2.png')
+   h['Inv_Mass'].Print('Inv_Mass.png')
    print 'finished making plots'
 # calculate z front face of ecal, needed later
 top = ROOT.gGeoManager.GetTopVolume()
