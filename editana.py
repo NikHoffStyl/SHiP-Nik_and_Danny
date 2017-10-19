@@ -782,6 +782,7 @@ if sTree.GetBranch("MCTrack"):
     print('n = ' + str(n))
     for n in range(nEvents):
         for HNL in sTree.MCTrack:
+            if HNL.GetPdgCode()==9900015:
                 inv_mass = HNL.GetMass()
                 h['HNL_sim'].Fill(inv_mass)
                
