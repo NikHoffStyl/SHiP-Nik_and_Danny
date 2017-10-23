@@ -640,6 +640,8 @@ def myEventLoop(n):
     if  doca > docaCut : continue
     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
     dist = ImpactParameter(tr,HNLPos,HNLMom)
+    ###maybe add if statement here?
+    if (HNL.GetPdgCode() == 9900015) or ((HNL.GetPdgCode() == 13) and (HNL.GetMotherId() == 9900015)) or ((HNL.GetPdgCode() == 211) and (HNL.GetMotherId() == 9900015)):
     mass = HNLMom.M()
 
     h['IP0'].Fill(dist)  
@@ -790,10 +792,9 @@ for n in range(nEvents):
 if sTree.GetBranch("MCTrack"):
     print('found branch MCTrack')
     for n in range(nEvents):
-        for HNL in sTree.MCTrack:
-            #if HNL.GetPdgCode() == 9900015:
-            if (HNL.GetPdgCode() == 9900015) or ((HNL.GetPdgCode() == 13) and (HNL.GetMotherId() == 9900015)) or ((HNL.GetPdgCode() == 211) and (HNL.GetMotherId() == 9900015)):
-                inv_mass = HNL.GetMass()
+        for mc_particle in sTree.MCTrack:
+            if mc_particle.GetPdgCode() == 9900015:
+                inv_mass = mc_particle.GetMass()
                 h['HNL_sim'].Fill(inv_mass)
 
 makePlots()
@@ -830,3 +831,12 @@ ut.writeHists(h,hfile)
 #if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:
 
 #idMother = abs(sTree.MCTrack[hnlkey-1].GetPdgCode())
+
+#for k, rec_particle in enumerate(sTree.FitTracks):
+#    if rec_particle.GetPdgCode()== 13 || 211: # if its a muon or a pion
+#        part_key=sTree.fitTrack2MC[k]
+#        rec_particle=sTree.MCTrack[part_key] #gives particle of track
+#        rec_part_motherkey=rec_particle.GetMotherId()
+#        rec_part_mother=sTree.MCTrack(rec_part_motherkey)
+#        if rec_part_mother.GetPdgCode()== 9900015:
+            #print ("Do something")
