@@ -404,6 +404,7 @@ def fitSingleGauss(x,ba=None,be=None):
        myGauss.SetParName(3,'bckgr')
     h[x].Fit(myGauss,'','',ba,be) 
 
+#need to use something like this?
 def match2HNL(p):
     matched = False
     hnlKey  = []
@@ -790,7 +791,8 @@ if sTree.GetBranch("MCTrack"):
     print('found branch MCTrack')
     for n in range(nEvents):
         for HNL in sTree.MCTrack:
-            if HNL.GetPdgCode() == 9900015:
+            #if HNL.GetPdgCode() == 9900015:
+            if (HNL.GetPdgCode() == 9900015) or ((HNL.GetPdgCode() == 13) and (HNL.GetMotherId() == 9900015)) or ((HNL.GetPdgCode() == 211) and (HNL.GetMotherId() == 9900015)):
                 inv_mass = HNL.GetMass()
                 h['HNL_sim'].Fill(inv_mass)
 
