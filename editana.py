@@ -29,6 +29,7 @@ fiducialCut = True
 measCutFK = 25
 measCutPR = 22
 docaCut = 2.
+#CHECKS OPTIONS GIVEN TO INPUT FILES
 try:
         opts, args = getopt.getopt(sys.argv[1:], "n:f:g:A:Y:i", ["nEvents=","geoFile="])
 except getopt.GetoptError:
@@ -44,7 +45,7 @@ for o, a in opts:
             dy = float(a)
         if o in ("-n", "--nEvents=",):
             nEvents = int(a)
-
+#SETS TREE FROM INPUT FILE
 if not inputFile.find(',')<0 :  
   sTree = ROOT.TChain("cbmsim")
   for x in inputFile.split(','):
@@ -59,7 +60,7 @@ else:
   f = ROOT.TFile(inputFile)
   sTree = f.cbmsim
 
-# try to figure out which ecal geo to load
+# TRIES TO FIGURE OUT WHICH ECAL GEOMETRY TO LOAD
 if not geoFile:
  geoFile = inputFile.replace('ship.','geofile_full.').replace('_rec.','.')
 if geoFile[0:4] == "/eos":
@@ -90,7 +91,7 @@ else:
   ecalGeoFile = ShipGeo.ecal.File
   dy = ShipGeo.Yheight/u.m
 
-# -----Create geometry----------------------------------------------
+# CREATE GEOMETRY
 import shipDet_conf
 run = ROOT.FairRunSim()
 modules = shipDet_conf.configure(run,ShipGeo)
@@ -118,9 +119,9 @@ vetoStation = ROOT.gGeoManager.GetTopVolume().GetNode('Veto_5')
 vetoStation_zDown = vetoStation.GetMatrix().GetTranslation()[2]+vetoStation.GetVolume().GetShape().GetDZ()
 T1Station = ROOT.gGeoManager.GetTopVolume().GetNode('Tr1_1')
 T1Station_zUp = T1Station.GetMatrix().GetTranslation()[2]-T1Station.GetVolume().GetShape().GetDZ()
-
 #--------------------------------------------------------------------------------------------------------------------------
 
+#DEFINE HISTOGRAMS
 h = {}
 ut.bookHist(h,'delPOverP','delP / P',400,0.,200.,100,-0.5,0.5)
 ut.bookHist(h,'pullPOverPx','delPx / sigma',400,0.,200.,100,-3.,3.)
@@ -165,6 +166,7 @@ ut.bookHist(h,'nrRPC','nr of hits in RPC',100,-0.5,99.5)
 
 import TrackExtrapolateTool
 
+#FUNCTIONS
 def VertexError(t1,t2,PosDir,CovMat,scalFac):
 # with improved Vx x,y resolution
    a,u = PosDir[t1]['position'],PosDir[t1]['direction']
@@ -255,7 +257,7 @@ def isInFiducial(X,Y,Z):
    # typical x,y Vx resolution for exclusive HNL decays 0.3cm,0.15cm (gaussian width)
    if dist2InnerWall(X,Y,Z)<5*u.cm: return False
    return True 
-#
+
 def ImpactParameter(point,tPos,tMom):
   t = 0
   if hasattr(tMom,'P'): P = tMom.P()
@@ -265,7 +267,8 @@ def ImpactParameter(point,tPos,tMom):
   for i in range(3):   dist += (point(i)-tPos(i)-t*tMom(i)/P)**2
   dist = ROOT.TMath.Sqrt(dist)
   return dist
-#
+
+#HNL ORIGIN USING PDG CODE
 def checkHNLorigin(sTree):
  flag = True
  if not fiducialCut: return flag
@@ -279,6 +282,7 @@ def checkHNLorigin(sTree):
    X,Y,Z =  theHNLVx.GetStartX(),theHNLVx.GetStartY(),theHNLVx.GetStartZ()
    if not isInFiducial(X,Y,Z): flag = False
  return flag 
+
 def checkFiducialVolume(sTree,tkey,dy):
 # extrapolate track to middle of magnet and check if in decay volume
    inside = True
@@ -288,6 +292,7 @@ def checkFiducialVolume(sTree,tkey,dy):
    if not rc: return False
    if not dist2InnerWall(pos.X(),pos.Y(),pos.Z())>0: return False
    return inside
+
 def getPtruthFirst(sTree,mcPartKey):
    Ptruth,Ptruthx,Ptruthy,Ptruthz = -1.,-1.,-1.,-1.
    for ahit in sTree.strawtubesPoint:
@@ -399,6 +404,7 @@ def fitSingleGauss(x,ba=None,be=None):
        myGauss.SetParName(3,'bckgr')
     h[x].Fit(myGauss,'','',ba,be) 
 
+#need to use something like this?
 def match2HNL(p):
     matched = False
     hnlKey  = []
@@ -413,6 +419,7 @@ def match2HNL(p):
     if len(hnlKey) == 2: 
        if hnlKey[0]==hnlKey[1]: matched = True
     return matched
+
 def ecalCluster2MC(aClus):
  # return MC track most contributing, and its fraction of energy
   trackid    = ROOT.Long()
@@ -456,7 +463,7 @@ z_ecal      = top.GetNode('Ecal_1').GetMatrix().GetTranslation()[2]
 z_ecalFront = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 z_ecalBack  = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 
-# start event loop
+# START EVENT LOOP
 def myEventLoop(n):
   global ecalReconstructed
   rc = sTree.GetEntry(n)
@@ -630,6 +637,8 @@ def myEventLoop(n):
     if  doca > docaCut : continue
     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
     dist = ImpactParameter(tr,HNLPos,HNLMom)
+    ###maybe add if statement here?
+    if (HNL.GetPdgCode() == 9900015) or ((HNL.GetPdgCode() == 13) and (HNL.GetMotherId() == 9900015)) or ((HNL.GetPdgCode() == 211) and (HNL.GetMotherId() == 9900015)):
     mass = HNLMom.M()
 
     h['IP0'].Fill(dist)  
@@ -680,7 +689,7 @@ def myEventLoop(n):
     h['Vzpull'].Fill( (mctrack.GetStartZ()-HNLPos.Z())/ROOT.TMath.Sqrt(covX[2][2]) )
     h['Vxpull'].Fill( (mctrack.GetStartX()-HNLPos.X())/ROOT.TMath.Sqrt(covX[0][0]) )
     h['Vypull'].Fill( (mctrack.GetStartY()-HNLPos.Y())/ROOT.TMath.Sqrt(covX[1][1]) )
-#
+
 def HNLKinematics():
  HNLorigin={}
  ut.bookHist(h,'HNLmomNoW','momentum unweighted',100,0.,300.)
@@ -718,7 +727,6 @@ def HNLKinematics():
  theSum = 0
  for x in HNLorigin: theSum+=HNLorigin[x]   
  for x in HNLorigin: print "%4i : %5.4F relative fraction: %5.4F "%(x,HNLorigin[x],HNLorigin[x]/theSum)
-#
 # initialize ecalStructure
 caloTasks = []
 sTree.GetEvent(0)
@@ -781,9 +789,9 @@ for n in range(nEvents):
 if sTree.GetBranch("MCTrack"):
     print('found branch MCTrack')
     for n in range(nEvents):
-        for HNL in sTree.MCTrack:
-            if HNL.GetPdgCode() == 9900015:
-                inv_mass = HNL.GetMass()
+        for mc_particle in sTree.MCTrack:
+            if mc_particle.GetPdgCode() == 9900015:
+                inv_mass = mc_particle.GetMass()
                 h['HNL_sim'].Fill(inv_mass)
 
 makePlots()
@@ -820,3 +828,12 @@ ut.writeHists(h,hfile)
 #if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:
 
 #idMother = abs(sTree.MCTrack[hnlkey-1].GetPdgCode())
+
+#for k, rec_particle in enumerate(sTree.FitTracks):
+#    if rec_particle.GetPdgCode()== 13 || 211: # if its a muon or a pion
+#        part_key=sTree.fitTrack2MC[k]
+#        rec_particle=sTree.MCTrack[part_key] #gives particle of track
+#        rec_part_motherkey=rec_particle.GetMotherId()
+#        rec_part_mother=sTree.MCTrack(rec_part_motherkey)
+#        if rec_part_mother.GetPdgCode()== 9900015:
+            #print ("Do something")
