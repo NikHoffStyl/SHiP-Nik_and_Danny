@@ -143,8 +143,9 @@ ut.bookHist(h,'Doca','Doca between two tracks',100,0.,10.)
 ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
 ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 #
-ut.bookHist(h,'HNL','Reconstructed Mass',500,0.,2.) # original one for the reconstructed mass
+ut.bookHist(h,'HNL','Original Reconstructed Mass',500,0.,2.) # original one for the reconstructed mass
 ut.bookHist(h,'HNL_sim','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
+ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # new one for the reconstructed mass
 #
 ut.bookHist(h,'HNLw','Reconstructed Mass with weights',500,0.,2.)
 ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
@@ -463,7 +464,7 @@ z_ecal      = top.GetNode('Ecal_1').GetMatrix().GetTranslation()[2]
 z_ecalFront = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 z_ecalBack  = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 
-# START EVENT LOOP
+# EVENT LOOP
 def myEventLoop(n):
   global ecalReconstructed
   rc = sTree.GetEntry(n)
@@ -637,8 +638,8 @@ def myEventLoop(n):
     if  doca > docaCut : continue
     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
     dist = ImpactParameter(tr,HNLPos,HNLMom)
-    ###maybe add if statement here?
-    if (HNL.GetPdgCode() == 9900015) or ((HNL.GetPdgCode() == 13) and (HNL.GetMotherId() == 9900015)) or ((HNL.GetPdgCode() == 211) and (HNL.GetMotherId() == 9900015)):
+    #maybe add if statement here?
+    #if (HNL.GetPdgCode() == 9900015) or ((HNL.GetPdgCode() == 13) and (HNL.GetMotherId() == 9900015)) or ((HNL.GetPdgCode() == 211) and (HNL.GetMotherId() == 9900015)):
     mass = HNLMom.M()
 
     h['IP0'].Fill(dist)  
@@ -781,6 +782,7 @@ else:
 
 nEvents = min(sTree.GetEntries(),nEvents)
 
+# START EVENT LOOP
 for n in range(nEvents):
     myEventLoop(n)
     sTree.FitTracks.Delete()
@@ -789,7 +791,9 @@ for n in range(nEvents):
 if sTree.GetBranch("MCTrack"):
     print('found branch MCTrack')
     for n in range(nEvents):
+        print(n)
         for mc_particle in sTree.MCTrack:
+            print(mc_particle)
             if mc_particle.GetPdgCode() == 9900015:
                 inv_mass = mc_particle.GetMass()
                 h['HNL_sim'].Fill(inv_mass)
@@ -837,3 +841,16 @@ ut.writeHists(h,hfile)
 #        rec_part_mother=sTree.MCTrack(rec_part_motherkey)
 #        if rec_part_mother.GetPdgCode()== 9900015:
             #print ("Do something")
+
+#if sTree.GetBranch("FitTracks"):
+#    print('found branch FitTracks')
+#    for n in range(nEvents):
+#        for k, reco_part in enumerate(sTree.FitTracks):
+#            if reco_part.GetPdgCode() == 13:# or reco_part.GetPdgCode() == 211:
+#                print('found particle')
+#                partkey = sTree.fitTrack2MC[k]
+#                reco_part = sTree.MCTrack[partkey] # gives particle of track
+#                motherkey = reco_part.GetMotherId() # stores the id of the mother
+#                reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
+#                if reco_mother.GetPdgCode() == 9900015:
+#                    print('found mother of particle')
