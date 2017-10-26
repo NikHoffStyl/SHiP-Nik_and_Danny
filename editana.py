@@ -443,14 +443,11 @@ def ecalCluster2MC(aClus):
 
 def makePlots():
    ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)
-   print 'finished with first canvas'
-   #--------------------------------------------------------------------------------------------------------------
    cv = h['Mass_Comparison'].cd(1)
    h['HNL_sim'].SetXTitle('Invariant Mass [GeV/c2]')
    h['HNL_sim'].SetYTitle('No. of Particles')
    h['HNL_sim'].Draw()
    #fitSingleGauss('HNL_sim',0.9,1.1)
-   #--------------------------------------------------------------------------------------------------------------
    cv = h['Mass_Comparison'].cd(2)
    h['HNL'].SetXTitle('Invariant Mass  [GeV/c2]')
    h['HNL'].SetYTitle('No. of Particles')
@@ -458,8 +455,8 @@ def makePlots():
    fitSingleGauss('HNL',0.9,1.1)
    #--------------------------------------------------------------------------------------------------------------
    h['Mass_Comparison'].Print('Mass_Comparison.png')
-   #
    print 'finished making plots'
+
 # calculate z front face of ecal, needed later
 top = ROOT.gGeoManager.GetTopVolume()
 z_ecal      = top.GetNode('Ecal_1').GetMatrix().GetTranslation()[2]
