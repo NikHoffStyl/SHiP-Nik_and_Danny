@@ -277,9 +277,9 @@ def checkHNLorigin(sTree):
  # hnlkey = 2 # pythia8 cascade events
  # hnlkey = 1 # pythia8 primary events
  for hnlkey in [1,2]: 
-  if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:
-   theHNLVx = sTree.MCTrack[hnlkey+1]
-   X,Y,Z =  theHNLVx.GetStartX(),theHNLVx.GetStartY(),theHNLVx.GetStartZ()
+  if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:  #Qstn for Kostas would we need to use abs(), also can test this first by outputting to say  print if -9900015
+   theHNLVx = sTree.MCTrack[hnlkey+1]  #this must be giving a particle class again, but don't understand name
+   X,Y,Z =  theHNLVx.GetStartX(),theHNLVx.GetStartY(),theHNLVx.GetStartZ()  #gives x,y,z of paricle with index hnlkey+1 in MCTrack
    if not isInFiducial(X,Y,Z): flag = False
  return flag 
 
