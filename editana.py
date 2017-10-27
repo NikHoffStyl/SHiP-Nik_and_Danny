@@ -470,9 +470,10 @@ def myEventLoop(n):
   rc = sTree.GetEntry(n)
 # check if tracks are made from real pattern recognition
   measCut = measCutFK
-  if sTree.GetBranch("FitTracks_PR"):    
-    sTree.FitTracks = sTree.FitTracks_PR
-    measCut = measCutPR
+  if sTree.GetBranch("FitTracks_PR"):
+      print("found FitTracks_PR")
+      sTree.FitTracks = sTree.FitTracks_PR
+      measCut = measCutPR
   if sTree.GetBranch("fitTrack2MC_PR"):  sTree.fitTrack2MC = sTree.fitTrack2MC_PR
   if sTree.GetBranch("Particles_PR"):    sTree.Particles   = sTree.Particles_PR
   if not checkHNLorigin(sTree): return
@@ -780,21 +781,23 @@ else:
  ecalReconstructed = ecalReco.InitPython(sTree.EcalClusters, ecalStructure, ecalCalib)
  ecalMatch.InitPython(ecalStructure, ecalReconstructed, sTree.MCTrack)
 
-if sTree.GetBranch("FitTracks"):
-    print('found branch FitTracks')
-    for n in range(nEvents):
-        for k, reco_part in enumerate(sTree.FitTracks):
-            print(k, reco_part)
-            if reco_part.GetPdgCode() == 13:# or reco_part.GetPdgCode() == 211:
-                #print(k)
-                partkey = sTree.fitTrack2MC[k]
-                reco_part = sTree.MCTrack[partkey] # gives particle of track
-                motherkey = reco_part.GetMotherId() # stores the id of the mother
-                reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
-                if reco_mother.GetPdgCode() == 9900015:
-                    print('found mother of particle')
+
 
 nEvents = min(sTree.GetEntries(),nEvents)
+#if sTree.GetBranch("FitTracks"):
+#    print('found branch FitTracks')
+#    for n in range(nEvents):
+#        for k, reco_part in enumerate(sTree.FitTracks):
+#            print(k, reco_part)
+#            if reco_part.GetPdgCode() == 13 or reco_part.GetPdgCode() == 211:
+#                #print(k)
+#                partkey = sTree.fitTrack2MC[k]
+#                reco_part = sTree.MCTrack[partkey] # gives particle of track
+#                motherkey = reco_part.GetMotherId() # stores the id of the mother
+#                reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
+#                if reco_mother.GetPdgCode() == 9900015:
+#                    print('found mother of particle')
+
 # START EVENT LOOP
 for n in range(nEvents):
     myEventLoop(n)
