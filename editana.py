@@ -278,9 +278,9 @@ def checkHNLorigin(sTree):
  # hnlkey = 2 # pythia8 cascade events
  # hnlkey = 1 # pythia8 primary events
  for hnlkey in [1,2]: 
-  if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:
-   theHNLVx = sTree.MCTrack[hnlkey+1]
-   X,Y,Z =  theHNLVx.GetStartX(),theHNLVx.GetStartY(),theHNLVx.GetStartZ()
+  if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:  #Qstn for Kostas would we need to use abs(), also can test this first by outputting to say  print if -9900015
+   theHNLVx = sTree.MCTrack[hnlkey+1]  #this must be giving a particle class again, but don't understand name
+   X,Y,Z =  theHNLVx.GetStartX(),theHNLVx.GetStartY(),theHNLVx.GetStartZ()  #gives x,y,z of paricle with index hnlkey+1 in MCTrack
    if not isInFiducial(X,Y,Z): flag = False
  return flag 
 
@@ -508,9 +508,10 @@ def myEventLoop(n):
   rc = sTree.GetEntry(n)
 # check if tracks are made from real pattern recognition
   measCut = measCutFK
-  if sTree.GetBranch("FitTracks_PR"):    
-    sTree.FitTracks = sTree.FitTracks_PR
-    measCut = measCutPR
+  if sTree.GetBranch("FitTracks_PR"):
+      print("found FitTracks_PR")
+      sTree.FitTracks = sTree.FitTracks_PR
+      measCut = measCutPR
   if sTree.GetBranch("fitTrack2MC_PR"):  sTree.fitTrack2MC = sTree.fitTrack2MC_PR
   if sTree.GetBranch("Particles_PR"):    sTree.Particles   = sTree.Particles_PR
   if not checkHNLorigin(sTree): return
@@ -782,7 +783,22 @@ else:
  ecalReconstructed = ecalReco.InitPython(sTree.EcalClusters, ecalStructure, ecalCalib)
  ecalMatch.InitPython(ecalStructure, ecalReconstructed, sTree.MCTrack)
 
+
+
 nEvents = min(sTree.GetEntries(),nEvents)
+#if sTree.GetBranch("FitTracks"):
+#    print('found branch FitTracks')
+#    for n in range(nEvents):
+#        for k, reco_part in enumerate(sTree.FitTracks):
+#            print(k, reco_part)
+#            if reco_part.GetPdgCode() == 13 or reco_part.GetPdgCode() == 211:
+#                #print(k)
+#                partkey = sTree.fitTrack2MC[k]
+#                reco_part = sTree.MCTrack[partkey] # gives particle of track
+#                motherkey = reco_part.GetMotherId() # stores the id of the mother
+#                reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
+#                if reco_mother.GetPdgCode() == 9900015:
+#                    print('found mother of particle')
 
 # START EVENT LOOP
 for n in range(nEvents):
@@ -793,14 +809,19 @@ for n in range(nEvents):
 if sTree.GetBranch("MCTrack"):
     print('found branch MCTrack')
     for n in range(nEvents):
-        print(n)
+        #print(n)
         for mc_particle in sTree.MCTrack:
-            print(mc_particle)
+            #print(mc_particle)
             if mc_particle.GetPdgCode() == 9900015:
                 inv_mass = mc_particle.GetMass()
                 h['HNL_true'].Fill(inv_mass)
 
+<<<<<<< HEAD
 HNLKinematics()
+=======
+
+
+>>>>>>> 07d449b34274d65985d6f29e4ad46aa1b89dfcb2
 makePlots()
 # output histograms=
 hfile = inputFile.split(',')[0].replace('_rec','_MCMTEST')
