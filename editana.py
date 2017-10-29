@@ -500,6 +500,7 @@ def makePlots():
    fitSingleGauss('HNL',0.9,1.1)
    #--------------------------------------------------------------------------------------------------------------
    h['Mass_Comparison'].Print('Mass_Comparison.png')
+   print('finished making plots')
 
 def myEventLoop(n):
   global ecalReconstructed
@@ -798,6 +799,45 @@ else:
 for n in range(nEvents):
     myEventLoop(n)
     sTree.FitTracks.Delete() # Start event loop
+
+def HNL_Mass2():
+    if sTree.GetBranch("MCTrack"):
+        print('found branch MCTrack')
+    if sTree.GetBranch("Particles"):
+        print('found branch Particles')
+    for n in range(sTree.GetEntries()): 
+        print(n)
+        for HNL in sTree.Particles:
+            key  = []
+            for k in [HNL.GetDaughter(0),HNL.GetDaughter(1)]: 
+                partkey = sTree.fitTrack2MC[k]
+                mother = sTree.MCTrack[partkey]
+                if mother.GetPdgCode() == 9900015:
+                    print('mother is HNL')
+                    key.append(partkey)
+            if len(key) == 2:
+                if key[0] == key[1]:
+                    print('both daughters matched to HNL mother')
+                    HNL_mass = mother.GetMass()
+                    h['HNL_true'].Fill(HNL_mass)
+
+def time_res():
+    if sTree.GetBranch("EcalPoint"):
+        print('found branch EcalPoint')
+        if sTree.GetBranch("strawtubesPoint"):
+            print('found branch strawtubespoint')
+            ut.bookHist(h,'time_res','Time Resolution Test',500,0.,2.)
+            for n in range(nEvents):
+                print(n)
+                for ahit in sTree.EcalPoint:
+                    t1 = ahit.GetTime()
+                    ecalID = ahit.GetTrackId()
+                    for ahit in sTree.strawtubesPoint:
+                        t2 = ahit.GetTime()
+                        strawID = ahit.GetTrackId()
+                        if strawID == ecalID:
+                            time = abs(t2-t1)
+                            h['time_res'].Fill(time)
 
 HNL_Mass()
 HNLKinematics()
