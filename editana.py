@@ -144,7 +144,7 @@ ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
 ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 #
 ut.bookHist(h,'HNL','Original Reconstructed Mass',500,0.,2.) # original one for the reconstructed mass
-ut.bookHist(h,'HNL_sim','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
+ut.bookHist(h,'HNL_true','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
 ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # new one for the reconstructed mass
 #
 ut.bookHist(h,'HNLw','Reconstructed Mass with weights',500,0.,2.)
@@ -445,10 +445,10 @@ def ecalCluster2MC(aClus):
 def makePlots():
    ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)
    cv = h['Mass_Comparison'].cd(1)
-   h['HNL_sim'].SetXTitle('Invariant Mass [GeV/c2]')
-   h['HNL_sim'].SetYTitle('No. of Particles')
-   h['HNL_sim'].Draw()
-   #fitSingleGauss('HNL_sim',0.9,1.1)
+   h['HNL_true'].SetXTitle('Invariant Mass [GeV/c2]')
+   h['HNL_true'].SetYTitle('No. of Particles')
+   h['HNL_true'].Draw()
+   #fitSingleGauss('HNL_true',0.9,1.1)
    cv = h['Mass_Comparison'].cd(2)
    h['HNL'].SetXTitle('Invariant Mass  [GeV/c2]')
    h['HNL'].SetYTitle('No. of Particles')
@@ -463,6 +463,44 @@ top = ROOT.gGeoManager.GetTopVolume()
 z_ecal      = top.GetNode('Ecal_1').GetMatrix().GetTranslation()[2]
 z_ecalFront = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 z_ecalBack  = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
+
+def HNLKinematics():
+ HNLorigin={}
+ ut.bookHist(h,'HNLmomNoW','momentum unweighted',100,0.,300.)
+ ut.bookHist(h,'HNLmom','momentum',100,0.,300.)
+ ut.bookHist(h,'HNLPtNoW','Pt unweighted',100,0.,10.)
+ ut.bookHist(h,'HNLPt','Pt',100,0.,10.)
+ ut.bookHist(h,'HNLmom_recTracks','momentum',100,0.,300.)
+ ut.bookHist(h,'HNLmomNoW_recTracks','momentum unweighted',100,0.,300.)
+ #ut.bookHist(h,'HNL_sim','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
+
+ for n in range(sTree.GetEntries()): 
+
+  rc = sTree.GetEntry(n)
+  for hnlkey in [1,2]: 
+   if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015: 
+    theHNL = sTree.MCTrack[hnlkey]
+    wg = theHNL.GetWeight()
+    if not wg>0.: wg=1.
+    idMother = abs(sTree.MCTrack[hnlkey-1].GetPdgCode())
+    if not HNLorigin.has_key(idMother): HNLorigin[idMother]=0
+    HNLorigin[idMother]+=wg
+    P = theHNL.GetP()
+    Pt = theHNL.GetPt()
+    h['HNLmom'].Fill(P,wg) 
+    h['HNLmomNoW'].Fill(P) 
+    h['HNLPt'].Fill(Pt,wg) 
+    h['HNLPtNoW'].Fill(Pt) 
+    for HNL in sTree.Particles:
+     t1,t2 = HNL.GetDaughter(0),HNL.GetDaughter(1) 
+     for tr in [t1,t2]:
+      xx  = sTree.FitTracks[tr].getFittedState()
+      Prec = xx.getMom().Mag()
+      h['HNLmom_recTracks'].Fill(Prec,wg) 
+      h['HNLmomNoW_recTracks'].Fill(Prec)
+ theSum = 0
+ for x in HNLorigin: theSum+=HNLorigin[x]   
+ for x in HNLorigin: print "%4i : %5.4F relative fraction: %5.4F "%(x,HNLorigin[x],HNLorigin[x]/theSum)
 
 # EVENT LOOP
 def myEventLoop(n):
@@ -691,43 +729,7 @@ def myEventLoop(n):
     h['Vxpull'].Fill( (mctrack.GetStartX()-HNLPos.X())/ROOT.TMath.Sqrt(covX[0][0]) )
     h['Vypull'].Fill( (mctrack.GetStartY()-HNLPos.Y())/ROOT.TMath.Sqrt(covX[1][1]) )
 
-def HNLKinematics():
- HNLorigin={}
- ut.bookHist(h,'HNLmomNoW','momentum unweighted',100,0.,300.)
- ut.bookHist(h,'HNLmom','momentum',100,0.,300.)
- ut.bookHist(h,'HNLPtNoW','Pt unweighted',100,0.,10.)
- ut.bookHist(h,'HNLPt','Pt',100,0.,10.)
- ut.bookHist(h,'HNLmom_recTracks','momentum',100,0.,300.)
- ut.bookHist(h,'HNLmomNoW_recTracks','momentum unweighted',100,0.,300.)
- ut.bookHist(h,'HNL_sim','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
 
- for n in range(sTree.GetEntries()): 
-
-  rc = sTree.GetEntry(n)
-  for hnlkey in [1,2]: 
-   if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015: 
-    theHNL = sTree.MCTrack[hnlkey]
-    wg = theHNL.GetWeight()
-    if not wg>0.: wg=1.
-    idMother = abs(sTree.MCTrack[hnlkey-1].GetPdgCode())
-    if not HNLorigin.has_key(idMother): HNLorigin[idMother]=0
-    HNLorigin[idMother]+=wg
-    P = theHNL.GetP()
-    Pt = theHNL.GetPt()
-    h['HNLmom'].Fill(P,wg) 
-    h['HNLmomNoW'].Fill(P) 
-    h['HNLPt'].Fill(Pt,wg) 
-    h['HNLPtNoW'].Fill(Pt) 
-    for HNL in sTree.Particles:
-     t1,t2 = HNL.GetDaughter(0),HNL.GetDaughter(1) 
-     for tr in [t1,t2]:
-      xx  = sTree.FitTracks[tr].getFittedState()
-      Prec = xx.getMom().Mag()
-      h['HNLmom_recTracks'].Fill(Prec,wg) 
-      h['HNLmomNoW_recTracks'].Fill(Prec)
- theSum = 0
- for x in HNLorigin: theSum+=HNLorigin[x]   
- for x in HNLorigin: print "%4i : %5.4F relative fraction: %5.4F "%(x,HNLorigin[x],HNLorigin[x]/theSum)
 # initialize ecalStructure
 caloTasks = []
 sTree.GetEvent(0)
@@ -796,8 +798,9 @@ if sTree.GetBranch("MCTrack"):
             print(mc_particle)
             if mc_particle.GetPdgCode() == 9900015:
                 inv_mass = mc_particle.GetMass()
-                h['HNL_sim'].Fill(inv_mass)
+                h['HNL_true'].Fill(inv_mass)
 
+HNLKinematics()
 makePlots()
 # output histograms=
 hfile = inputFile.split(',')[0].replace('_rec','_MCMTEST')
@@ -808,17 +811,7 @@ if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
 ROOT.gROOT.cd()
 ut.writeHists(h,hfile)
 
-#for HNL in sTree.Particles:
-    #t1 = HNL.GetDaughter(0) 
-
-#MC_id = sTree.MCTrack.PdgCode()
-
 #if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:
-
-#mom = reps[tr].getMom(states[tr])
-#pid = abs(states[tr].getPDG()) 
-#if pid == 2212: pid = 211
-#mass = PDG.GetParticle(pid).Mass()
 
 #mo = sTree.MCTrack[mcp]
 #if abs(mo.GetPdgCode()) == 9900015:
