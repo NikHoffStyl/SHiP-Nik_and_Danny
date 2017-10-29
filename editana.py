@@ -143,10 +143,10 @@ ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
 ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 #
 ut.bookHist(h,'HNL','Original Reconstructed Mass',500,0.,2.) # original one for the reconstructed mass
-ut.bookHist(h,'HNL_true','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
+ut.bookHist(h,'HNL_true','Monte Carlo Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
 ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # new one for the reconstructed mass
 #
-ut.bookHist(h,'HNLw','Reconstructed Mass with weights',500,0.,2.)
+ut.bookHist(h,'HNLw','Original Reconstructed Mass with weights',500,0.,2.)
 ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)
 ut.bookHist(h,'meas2','number of measurements, fitted track',40,-0.5,39.5)
 ut.bookHist(h,'measVSchi2','number of measurements vs chi2/meas',40,-0.5,39.5,100,0.,10.)
@@ -342,7 +342,7 @@ def myVertex(t1,t2,PosDir):
    Z = c.z()+v.z()*t
    return X,Y,Z,abs(dist)
 
-def  RedoVertexing(t1,t2):    
+def RedoVertexing(t1,t2):    
      PosDir = {} 
      for tr in [t1,t2]:
       xx  = sTree.FitTracks[tr].getFittedState()
@@ -448,21 +448,6 @@ def ecalCluster2MC(aClus):
         mMax = m
   return mMax,eMax/aClus.Energy()
 
-def makePlots():
-   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)
-   cv = h['Mass_Comparison'].cd(1)
-   h['HNL_true'].SetXTitle('Invariant Mass [GeV/c2]')
-   h['HNL_true'].SetYTitle('No. of Particles')
-   h['HNL_true'].Draw()
-   #fitSingleGauss('HNL_true',0.9,1.1)
-   cv = h['Mass_Comparison'].cd(2)
-   h['HNL'].SetXTitle('Invariant Mass  [GeV/c2]')
-   h['HNL'].SetYTitle('No. of Particles')
-   h['HNL'].Draw()
-   fitSingleGauss('HNL',0.9,1.1)
-   #--------------------------------------------------------------------------------------------------------------
-   h['Mass_Comparison'].Print('Mass_Comparison.png')
-
 def HNLKinematics():
  HNLorigin={}
  ut.bookHist(h,'HNLmomNoW','momentum unweighted',100,0.,300.)
@@ -500,6 +485,21 @@ def HNLKinematics():
  theSum = 0
  for x in HNLorigin: theSum+=HNLorigin[x]   
  for x in HNLorigin: print "%4i : %5.4F relative fraction: %5.4F "%(x,HNLorigin[x],HNLorigin[x]/theSum)
+
+def makePlots():
+   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)
+   cv = h['Mass_Comparison'].cd(1)
+   h['HNL_true'].SetXTitle('Invariant Mass [GeV/c2]')
+   h['HNL_true'].SetYTitle('No. of Particles')
+   h['HNL_true'].Draw()
+   #fitSingleGauss('HNL_true',0.9,1.1)
+   cv = h['Mass_Comparison'].cd(2)
+   h['HNL'].SetXTitle('Invariant Mass  [GeV/c2]')
+   h['HNL'].SetYTitle('No. of Particles')
+   h['HNL'].Draw()
+   fitSingleGauss('HNL',0.9,1.1)
+   #--------------------------------------------------------------------------------------------------------------
+   h['Mass_Comparison'].Print('Mass_Comparison.png')
 
 def myEventLoop(n):
   global ecalReconstructed
@@ -741,7 +741,7 @@ def HNL_Mass():
 
 # ------------------------------------------------------------------------------------------------------------------------
 
-# initialize ecalStructure
+# initialize ecal structure
 caloTasks = []
 sTree.GetEvent(0)
 ecalGeo = ecalGeoFile+'z'+str(ShipGeo.ecal.z)+".geo"
