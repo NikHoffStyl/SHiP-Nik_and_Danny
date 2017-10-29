@@ -162,7 +162,7 @@ ut.bookHist(h,'nrUVT','nr of hits in UVT',100,-0.5,99.5)
 ut.bookHist(h,'nrSBT','nr of hits in SBT',100,-0.5,99.5)
 ut.bookHist(h,'nrRPC','nr of hits in RPC',100,-0.5,99.5)
 
-# ------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------
 
 nEvents = min(sTree.GetEntries(),nEvents)
 
@@ -175,7 +175,7 @@ z_ecal      = top.GetNode('Ecal_1').GetMatrix().GetTranslation()[2]
 z_ecalFront = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 z_ecalBack  = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 
-# ------------------------------------------------------FUNCTIONS---------------------------------------------------------
+#------------------------------------------------------FUNCTIONS---------------------------------------------------------
 
 def VertexError(t1,t2,PosDir,CovMat,scalFac):
 # with improved Vx x,y resolution
@@ -740,7 +740,7 @@ def HNL_Mass():
                     inv_mass = mc_particle.GetMass()
                     h['HNL_true'].Fill(inv_mass) # new one we made
 
-# ------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------
 
 # initialize ecal structure
 caloTasks = []
@@ -794,7 +794,7 @@ else:
  ecalReconstructed = ecalReco.InitPython(sTree.EcalClusters, ecalStructure, ecalCalib)
  ecalMatch.InitPython(ecalStructure, ecalReconstructed, sTree.MCTrack)
 
-# ------------------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------
 
 for n in range(nEvents):
     myEventLoop(n)
