@@ -33,7 +33,13 @@ def get_linenumber():
     cf = currentframe()
     return cf.f_back.f_lineno
 testFile.write('This Is A log of Line numbers in editana2: \n')
-#CHECKS OPTIONS GIVEN TO INPUT FILES
+def LineActivity(ns_variable,ns_line):     
+    if ns_variable==ns_line:
+        testFile.write(str(ns_line) + '\n')
+        ns_variable+=1
+
+
+ #CHECKS OPTIONS GIVEN TO INPUT FILES
 def inputOptsArgs():
     inputFile  = None
     geoFile    = None
@@ -48,81 +54,81 @@ def inputOptsArgs():
     for o, a in opts:
             if o in ("-f",):
                 inputFile = a
-                testFile.write(str( get_linenumber()) + '\n') #does this
+                LineActivity(get_linenumber(),get_linenumber()) #does this
             if o in ("-g", "--geoFile",):
                 geoFile = a
-                testFile.write(str( get_linenumber()) + '\n') #does this
+                LineActivity(get_linenumber(),get_linenumber()) #does this
             if o in ("-Y",):
                 dy = float(a)
-                testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+                LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
             if o in ("-n", "--nEvents=",):
                 nEvents = int(a)
-                testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+                LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
     return a, dy, geoFile, inputFile, nEvents, o
 a, dy, geoFile, inputFile, nEvents, o = inputOptsArgs()
-testFile.write(str( get_linenumber()) + '\n') #does this
+LineActivity(get_linenumber(),get_linenumber()) #does this
 #SETS TREE FROM INPUT FILE
 if not inputFile.find(',')<0 :  
   sTree = ROOT.TChain("cbmsim")
-  testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+  LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
   for x in inputFile.split(','):
    if x[0:4] == "/eos":
     sTree.AddFile("root://eoslhcb.cern.ch/"+x)
-    testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+    LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
    else: sTree.AddFile(x)
-   testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+   LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
 elif inputFile[0:4] == "/eos":
   eospath = "root://eoslhcb.cern.ch/"+inputFile
   f = ROOT.TFile.Open(eospath)
   sTree = f.cbmsim
-  testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+  LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
 else:
-  testFile.write(str( get_linenumber()) + '\n') #does this
+  LineActivity(get_linenumber(),get_linenumber()) #does this
   f = ROOT.TFile(inputFile)
   sTree = f.cbmsim
 
 # TRIES TO FIGURE OUT WHICH ECAL GEOMETRY TO LOAD
 if not geoFile:
  geoFile = inputFile.replace('ship.','geofile_full.').replace('_rec.','.')
- testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+ LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
 if geoFile[0:4] == "/eos":
   eospath = "root://eoslhcb.cern.ch/"+geoFile
   fgeo = ROOT.TFile.Open(eospath)
-  testFile.write(str( get_linenumber()) + '\n') #doesnt do this
-else:  
-  fgeo = ROOT.TFile(geoFile)
-  testFile.write(str( get_linenumber()) + '\n') #does this
+  LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
+else:
+    fgeo = ROOT.TFile(geoFile)
+    LineActivity(get_linenumber(),get_linenumber()) #does this
 sGeo = fgeo.FAIRGeom
 
 if not fgeo.FindKey('ShipGeo'):
  # old geofile, missing Shipgeo dictionary
- testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+ LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
  if sGeo.GetVolume('EcalModule3') :  
      ecalGeoFile = "ecal_ellipse6x12m2.geo"
-     testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+     LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
  else: 
      ecalGeoFile = "ecal_ellipse5x10m2.geo"
-     testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+     LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
  print 'found ecal geo for ',ecalGeoFile
  # re-create geometry and mag. field
  if not dy:
   # try to extract from input file name
-  testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+  LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
   tmp = inputFile.split('.')
   try:
     dy = float( tmp[1]+'.'+tmp[2] )
-    testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+    LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
   except:
     dy = 10.
-    testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+    LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
  ShipGeo = ConfigRegistry.loadpy("$FAIRSHIP/geometry/geometry_config.py", Yheight = dy, EcalGeoFile = ecalGeoFile )
-else: 
+else: #it finds ShipGeo in fgeo so does this
  # new geofile, load Shipgeo dictionary written by run_simScript.py
   upkl    = Unpickler(fgeo)
-  ShipGeo = upkl.load('ShipGeo')
+  ShipGeo = upkl.load('ShipGeo') #load is def in def Unpickler
   ecalGeoFile = ShipGeo.ecal.File
   dy = ShipGeo.Yheight/u.m
-  testFile.write(str( get_linenumber()) + '\n') #does this
+  LineActivity(get_linenumber(),get_linenumber()) #does this
 
 # CREATE GEOMETRY
 import shipDet_conf
@@ -199,8 +205,6 @@ ut.bookHist(h,'nrRPC','nr of hits in RPC',100,-0.5,99.5)
 # ------------------------------------------------------------------------------------------------------------------------
 
 import TrackExtrapolateTool
-
-#FUNCTIONS
 def VertexError(t1,t2,PosDir,CovMat,scalFac):
 # with improved Vx x,y resolution
    a,u = PosDir[t1]['position'],PosDir[t1]['direction']
@@ -267,9 +271,13 @@ def dist2InnerWall(X,Y,Z):
  # return distance to inner wall perpendicular to z-axis, if outside decayVolume return 0.
   node = sGeo.FindNode(X,Y,Z)
   if ShipGeo.tankDesign < 5:
-     if not 'cave' in node.GetName(): return dist  # TP 
+     if not 'cave' in node.GetName():
+         #testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+         return dist  # TP 
   else:
-     if not 'decayVol' in node.GetName(): return dist
+     if not 'decayVol' in node.GetName():
+        #testFile.write(str( get_linenumber()) + '\n') #does this
+        return dist
   start = array('d',[X,Y,Z])
   nsteps = 8
   dalpha = 2*ROOT.TMath.Pi()/nsteps
@@ -280,9 +288,13 @@ def dist2InnerWall(X,Y,Z):
     sdir  = array('d',[ROOT.TMath.Sin(alpha),ROOT.TMath.Cos(alpha),0.])
     node = sGeo.InitTrack(start, sdir)
     nxt = sGeo.FindNextBoundary()
-    if ShipGeo.tankDesign < 5 and nxt.GetName().find('I')<0: return 0    
+    if ShipGeo.tankDesign < 5 and nxt.GetName().find('I')<0:
+        #testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+        return 0    
     distance = sGeo.GetStep()
-    if distance < minDistance  : minDistance = distance
+    if distance < minDistance  :
+       #testFile.write(str( get_linenumber()) + '\n') #does this
+       minDistance = distance
   return minDistance
 
 def isInFiducial(X,Y,Z):
@@ -311,7 +323,7 @@ def checkHNLorigin(sTree):
  # hnlkey = 2 # pythia8 cascade events
  # hnlkey = 1 # pythia8 primary events
  for hnlkey in [1,2]: 
-  if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:  #Qstn for Kostas would we need to use abs(), also can test this first by outputting to say  print if -9900015
+  if abs(sTree.MCTrack[hnlkey].GetPdgCode()) == 9900015:  #would we need to use abs(), also can test this first by outputting to say  print if -9900015
    theHNLVx = sTree.MCTrack[hnlkey+1]  #this must be giving a particle class again, but don't understand name
    X,Y,Z =  theHNLVx.GetStartX(),theHNLVx.GetStartY(),theHNLVx.GetStartZ()  #gives x,y,z of paricle with index hnlkey+1 in MCTrack
    if not isInFiducial(X,Y,Z): flag = False
@@ -476,15 +488,17 @@ def ecalCluster2MC(aClus):
   return mMax,eMax/aClus.Energy()
 
 def makePlots():
-   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)
+   ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=510,cx=2,cy=1)
    cv = h['Mass_Comparison'].cd(1)
    h['HNL_sim'].SetXTitle('Invariant Mass [GeV/c2]')
    h['HNL_sim'].SetYTitle('No. of Particles')
+   h['HNL_sim'].GetYaxis().SetTitleOffset(1.52)
    h['HNL_sim'].Draw()
    #fitSingleGauss('HNL_sim',0.9,1.1)
    cv = h['Mass_Comparison'].cd(2)
    h['HNL'].SetXTitle('Invariant Mass  [GeV/c2]')
    h['HNL'].SetYTitle('No. of Particles')
+   h['HNL'].GetYaxis().SetTitleOffset(1.5)
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
    #--------------------------------------------------------------------------------------------------------------
@@ -504,23 +518,42 @@ def myEventLoop(n):
 # check if tracks are made from real pattern recognition
   measCut = measCutFK
   if sTree.GetBranch("FitTracks_PR"):
-      print("found FitTracks_PR")
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
       sTree.FitTracks = sTree.FitTracks_PR
       measCut = measCutPR
-  if sTree.GetBranch("fitTrack2MC_PR"):  sTree.fitTrack2MC = sTree.fitTrack2MC_PR
-  if sTree.GetBranch("Particles_PR"):    sTree.Particles   = sTree.Particles_PR
-  if not checkHNLorigin(sTree): return
+  if sTree.GetBranch("fitTrack2MC_PR"):
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+      sTree.fitTrack2MC = sTree.fitTrack2MC_PR
+  if sTree.GetBranch("Particles_PR"):
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+      sTree.Particles   = sTree.Particles_PR
+  if not checkHNLorigin(sTree):
+      LineActivity(get_linenumber()+n, get_linenumber()) #does this
+      return
   wg = sTree.MCTrack[1].GetWeight()
-  if not wg>0.: wg=1.
+  if not wg>0.:
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+      wg=1.
 
 # make some ecal cluster analysis if exist
   if sTree.FindBranch("EcalClusters"):
-   if calReco:  ecalReconstructed.Delete()
-   else:        ecalReconstructed = sTree.EcalReconstructed
-   for x in caloTasks: 
-    if x.GetName() == 'ecalFiller': x.Exec('start',sTree.EcalPointLite)
-    elif x.GetName() == 'ecalMatch':  x.Exec('start',ecalReconstructed,sTree.MCTrack)
-    else : x.Exec('start')
+   LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+   if calReco:
+       LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+       ecalReconstructed.Delete()
+   else:
+       LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+       ecalReconstructed = sTree.EcalReconstructed
+   for x in caloTasks:
+    if x.GetName() == 'ecalFiller': 
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        x.Exec('start',sTree.EcalPointLite)
+    elif x.GetName() == 'ecalMatch':
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        x.Exec('start',ecalReconstructed,sTree.MCTrack)
+    else : 
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        x.Exec('start')
    for aClus in ecalReconstructed:
     mMax = aClus.MCTrack()
     if mMax <0 or mMax > sTree.MCTrack.GetEntries(): 
