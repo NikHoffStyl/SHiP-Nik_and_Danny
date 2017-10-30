@@ -556,17 +556,27 @@ def myEventLoop(n):
         x.Exec('start')
    for aClus in ecalReconstructed:
     mMax = aClus.MCTrack()
-    if mMax <0 or mMax > sTree.MCTrack.GetEntries(): 
-     aP = None # this should never happen, otherwise the ECAL MC matching has a bug
-    else: aP = sTree.MCTrack[mMax]
+    if mMax <0 or mMax > sTree.MCTrack.GetEntries():
+        aP = None # this should never happen, otherwise the ECAL MC matching has a bug
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+    else: 
+        aP = sTree.MCTrack[mMax]
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
     if aP:    
       tmp = PDG.GetParticle(aP.GetPdgCode())
-      if tmp: pName = 'ecalReconstructed_'+tmp.GetName()
-      else: pName = 'ecalReconstructed_'+str(aP.GetPdgCode())
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+      if tmp:
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          pName = 'ecalReconstructed_'+tmp.GetName()
+      else:
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          pName = 'ecalReconstructed_'+str(aP.GetPdgCode())
     else:
-      pName = 'ecalReconstructed_unknown' 
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        pName = 'ecalReconstructed_unknown' 
     if not h.has_key(pName): 
       ut.bookHist(h,pName,'x/y and energy for '+pName.split('_')[1],50,-3.,3.,50,-6.,6.)
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
     rc = h[pName].Fill(aClus.X()/u.m,aClus.Y()/u.m,aClus.RecoE()/u.GeV)
 # look at distance to tracks 
     for fT in sTree.FitTracks:
@@ -850,20 +860,22 @@ else:
 
 
 nEvents = min(sTree.GetEntries(),nEvents)
-#if sTree.GetBranch("FitTracks"):
-#    print('found branch FitTracks')
-#    for n in range(nEvents):
-#        for k, reco_part in enumerate(sTree.FitTracks):
-#            print(k, reco_part)
-#            if reco_part.GetPdgCode() == 13 or reco_part.GetPdgCode() == 211:
-#                #print(k)
-#                partkey = sTree.fitTrack2MC[k]
-#                reco_part = sTree.MCTrack[partkey] # gives particle of track
-#                motherkey = reco_part.GetMotherId() # stores the id of the mother
-#                reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
-#                if reco_mother.GetPdgCode() == 9900015:
-#                    print('found mother of particle')
-
+if sTree.GetBranch("FitTracks"):
+    LineActivity(get_linenumber(), get_linenumber()) #does this
+    k=0
+    for n in range(nEvents):
+        for index,reco_part in enumerate(sTree.FitTracks):
+            LineActivity(get_linenumber()+k, get_linenumber()) #doesnt do this
+            k+=1
+            #print(index, reco_part)
+            if reco_part.GetPdgCode() == 13 or reco_part.GetPdgCode() == 211:
+                #partkey = sTree.fitTrack2MC[index]
+                #reco_part = sTree.MCTrack[partkey] # gives particle of track
+                #motherkey = reco_part.GetMotherId() # stores the id of the mother
+                #reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
+                #if reco_mother.GetPdgCode() == 9900015:
+                    #print('found mother of particle')
+                dummyfcns=0
 # START EVENT LOOP
 for n in range(nEvents):
     myEventLoop(n)
@@ -871,9 +883,8 @@ for n in range(nEvents):
 
 
 if sTree.GetBranch("MCTrack"):
-    print('found branch MCTrack')
+    LineActivity(get_linenumber(), get_linenumber()) #doesnt do this
     for n in range(nEvents):
-        #print(n)
         for mc_particle in sTree.MCTrack:
             #print(mc_particle)
             if mc_particle.GetPdgCode() == 9900015:
