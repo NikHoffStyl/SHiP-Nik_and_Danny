@@ -226,12 +226,17 @@ def VertexError(t1,t2,PosDir,CovMat,scalFac):
      for k in range(4):
        for j in range(3): 
         KD = 0
-        if i==j: KD = 1
+        if i==j: 
+            LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
+            KD = 1
         if k==0 or k==2:
        # cova and covc
          temp  = ( u[j]*Vsq - v[j]*UV )*u[i] + (u[j]*UV-v[j]*Usq)*v[i]
+         LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
          sign = -1
-         if k==2 : sign = +1
+         if k==2 : 
+             LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
+             sign = +1
          T[i][3*k+j] = 0.5*( KD + sign*temp/denom )
         elif k==1:
        # covu
@@ -240,13 +245,15 @@ def VertexError(t1,t2,PosDir,CovMat,scalFac):
          bNAZ = denom*( ca[j]*UV+(u.Dot(ca)*v[j]) - 2*ca.Dot(v)*u[j] )
          bZAN = ( ca.Dot(u)*UV-ca.Dot(v)*Usq )*2*( u[j]*Vsq-v[j]*UV )
          T[i][3*k+j] = 0.5*( Va*KD + u[i]/denom**2*(aNAZ-aZAN) + v[i]/denom**2*(bNAZ-bZAN) )
+         LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
         elif k==3:
        # covv
          aNAZ = denom*( 2*ca.Dot(u)*v[j] - ca.Dot(v)*u[j] - ca[j]*UV )
          aZAN = ( ca.Dot(u)*Vsq-ca.Dot(v)*UV )*2*( v[j]*Usq-u[j]*UV )
          bNAZ = denom*( ca.Dot(u)*u[j]-ca[j]*Usq ) 
          bZAN = ( ca.Dot(u)*UV-ca.Dot(v)*Usq )*2*( v[j]*Usq-u[j]*UV )
-         T[i][3*k+j] = 0.5*(Vb*KD + u[i]/denom**2*(aNAZ-aZAN) + v[i]/denom**2*(bNAZ-bZAN) ) 
+         T[i][3*k+j] = 0.5*(Vb*KD + u[i]/denom**2*(aNAZ-aZAN) + v[i]/denom**2*(bNAZ-bZAN) )
+         LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
    transT = ROOT.TMatrixD(12,3)
    transT.Transpose(T)
    CovTracks = ROOT.TMatrixD(12,12)
@@ -255,8 +262,12 @@ def VertexError(t1,t2,PosDir,CovMat,scalFac):
      for i in range(6):
        for j in range(6): 
         xfac = 1.
-        if i>2: xfac = scalFac[tlist[k]]  
-        if j>2: xfac = xfac * scalFac[tlist[k]]
+        if i>2:
+            xfac = scalFac[tlist[k]]  
+            LineActivity(get_linenumber()+k+i+j,get_linenumber()) #doesnt do this
+        if j>2:
+            xfac = xfac * scalFac[tlist[k]]
+            LineActivity(get_linenumber()+k+i+j,get_linenumber()) #doesnt do this
         CovTracks[i+k*6][j+k*6] = CovMat[tlist[k]][i][j] * xfac
         # if i==5 or j==5 :  CovMat[tlist[k]][i][j] = 0 # ignore error on z-direction
    tmp   = ROOT.TMatrixD(3,12)
@@ -864,17 +875,19 @@ if sTree.GetBranch("FitTracks"):
     LineActivity(get_linenumber(), get_linenumber()) #does this
     k=0
     for n in range(nEvents):
+        rc = sTree.GetEntry(n)
         for index,reco_part in enumerate(sTree.FitTracks):
             LineActivity(get_linenumber()+k, get_linenumber()) #doesnt do this
             k+=1
-            #print(index, reco_part)
-            if reco_part.GetPdgCode() == 13 or reco_part.GetPdgCode() == 211:
-                #partkey = sTree.fitTrack2MC[index]
-                #reco_part = sTree.MCTrack[partkey] # gives particle of track
-                #motherkey = reco_part.GetMotherId() # stores the id of the mother
-                #reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
-                #if reco_mother.GetPdgCode() == 9900015:
-                    #print('found mother of particle')
+            print(index, reco_part)
+            #
+            partkey = sTree.fitTrack2MC[index]
+            true_part = sTree.MCTrack[partkey] # gives particle of track
+            if abs(true_part.GetPdgCode()) == 13 or abs(true_part.GetPdgCode()) == 211:
+                motherkey = true_part.GetMotherId() # stores the id of the mother
+                reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
+                if reco_mother.GetPdgCode() == 9900015:
+                    print('found mother of particle')
                 dummyfcns=0
 # START EVENT LOOP
 for n in range(nEvents):
