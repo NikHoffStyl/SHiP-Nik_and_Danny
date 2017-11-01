@@ -66,7 +66,7 @@ def inputOptsArgs():
                 LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
     return a, dy, geoFile, inputFile, nEvents, o
 a, dy, geoFile, inputFile, nEvents, o = inputOptsArgs()
-LineActivity(get_linenumber(),get_linenumber()) #does this
+
 #SETS TREE FROM INPUT FILE
 if not inputFile.find(',')<0 :  
   sTree = ROOT.TChain("cbmsim")
@@ -183,7 +183,7 @@ ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
 ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 #
 ut.bookHist(h,'HNL','Original Reconstructed Mass',500,0.,2.) # original one for the reconstructed mass
-ut.bookHist(h,'HNL_sim','Simulated Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
+ut.bookHist(h,'HNL_true','True Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
 ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # new one for the reconstructed mass
 #
 ut.bookHist(h,'HNLw','Reconstructed Mass with weights',500,0.,2.)
@@ -501,10 +501,10 @@ def ecalCluster2MC(aClus):
 def makePlots():
    ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=510,cx=2,cy=1)
    cv = h['Mass_Comparison'].cd(1)
-   h['HNL_sim'].SetXTitle('Invariant Mass [GeV/c2]')
-   h['HNL_sim'].SetYTitle('No. of Particles')
-   h['HNL_sim'].GetYaxis().SetTitleOffset(1.52)
-   h['HNL_sim'].Draw()
+   h['HNL_true'].SetXTitle('Invariant Mass [GeV/c2]')
+   h['HNL_true'].SetYTitle('No. of Particles')
+   h['HNL_true'].GetYaxis().SetTitleOffset(1.52)
+   h['HNL_true'].Draw()
    #fitSingleGauss('HNL_sim',0.9,1.1)
    cv = h['Mass_Comparison'].cd(2)
    h['HNL'].SetXTitle('Invariant Mass  [GeV/c2]')
@@ -512,6 +512,11 @@ def makePlots():
    h['HNL'].GetYaxis().SetTitleOffset(1.5)
    h['HNL'].Draw()
    fitSingleGauss('HNL',0.9,1.1)
+   #cv = h['Mass_Comparison'].cd(3)
+   #h['HNL_reco'].SetXTitle('Invariant Mass [GeV/c2]')
+   #h['HNL_reco'].SetYTitle('No. of Particles')
+   #h['HNL_reco'].GetYaxis().SetTitleOffset(1.52)
+   #h['HNL_reco'].Draw()
    #--------------------------------------------------------------------------------------------------------------
    h['Mass_Comparison'].Print('Mass_Comparison.png')
    print 'finished making plots'
@@ -872,37 +877,56 @@ else:
 
 nEvents = min(sTree.GetEntries(),nEvents)
 if sTree.GetBranch("FitTracks"):
-    LineActivity(get_linenumber(), get_linenumber()) #does this
-    k=0
     for n in range(nEvents):
         rc = sTree.GetEntry(n)
+        emptylist=[]
         for index,reco_part in enumerate(sTree.FitTracks):
-            LineActivity(get_linenumber()+k, get_linenumber()) #doesnt do this
-            k+=1
-            print(index, reco_part)
-            #
             partkey = sTree.fitTrack2MC[index]
             true_part = sTree.MCTrack[partkey] # gives particle of track
-            if abs(true_part.GetPdgCode()) == 13 or abs(true_part.GetPdgCode()) == 211:
-                motherkey = true_part.GetMotherId() # stores the id of the mother
-                reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
-                if reco_mother.GetPdgCode() == 9900015:
-                    print('found mother of particle')
-                dummyfcns=0
+            if abs(true_part.GetPdgCode()) == 13: 
+                muonMotherkey = true_part.GetMotherId() # stores the id of the mother
+                emptylist.append(muonMotherkey)
+                true_mother = sTree.MCTrack[muonMotherkey]
+                if true_mother.GetPdgCode() == 9900015:
+                    muonMotherTrue_mass = true_mother.GetMass()
+                    h['HNL_true'].Fill(muonMotherTrue_mass)
+            if abs(true_part.GetPdgCode()) == 211: 
+                pionMotherkey = true_part.GetMotherId() # stores the id of the mother
+                true_mother = sTree.MCTrack[pionMotherkey]
+                for muonMotherkey in emptylist:
+                    if not pionMotherkey==muonMotherkey:
+                        if true_mother.GetPdgCode() == 9900015: 
+                            pionMotherTrue_mass = true_mother.GetMass()
+                            h['HNL_true'].Fill(pionnMotherTrue_mass)
+
+#if sTree.GetBranch("FitTracks"):
+#    for n in range(nEvents):
+#        rc = sTree.GetEntry(n)
+#        for index,reco_part in enumerate(sTree.FitTracks):
+#            partkey = sTree.fitTrack2MC[index]
+#            true_part = sTree.MCTrack[partkey] # gives particle of track
+#            if abs(true_part.GetPdgCode()) == 13 or abs(true_part.GetPdgCode()) == 211:
+#                motherkey = true_part.GetMotherId() # stores the id of the mother
+#                true_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
+#                if true_mother.GetPdgCode() == 9900015:
+#                    muonMotherTrue_mass = true_mother.GetMass()
+#                    h['HNL_true'].Fill(muonMotherTrue_mass)
+
+            
 # START EVENT LOOP
 for n in range(nEvents):
     myEventLoop(n)
     sTree.FitTracks.Delete()
 
 
-if sTree.GetBranch("MCTrack"):
-    LineActivity(get_linenumber(), get_linenumber()) #doesnt do this
-    for n in range(nEvents):
-        for mc_particle in sTree.MCTrack:
-            #print(mc_particle)
-            if mc_particle.GetPdgCode() == 9900015:
-                inv_mass = mc_particle.GetMass()
-                h['HNL_sim'].Fill(inv_mass)
+#if sTree.GetBranch("MCTrack"):
+#    LineActivity(get_linenumber(), get_linenumber()) #doesnt do this
+#    for n in range(nEvents):
+#        for mc_particle in sTree.MCTrack:
+#            #print(mc_particle)
+#            if mc_particle.GetPdgCode() == 9900015:
+#                inv_mass = mc_particle.GetMass()
+#                h['HNL_reco'].Fill(inv_mass)
 
 
 
