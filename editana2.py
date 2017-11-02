@@ -889,15 +889,18 @@ if sTree.GetBranch("FitTracks"):
                 true_mother = sTree.MCTrack[muonMotherkey]
                 if true_mother.GetPdgCode() == 9900015:
                     muonMotherTrue_mass = true_mother.GetMass()
-                    h['HNL_true'].Fill(muonMotherTrue_mass)
+                    #h['HNL_true'].Fill(muonMotherTrue_mass)
+        for index,reco_part in enumerate(sTree.FitTracks):
+            partkey = sTree.fitTrack2MC[index]
+            true_part = sTree.MCTrack[partkey] # gives particle of track
             if abs(true_part.GetPdgCode()) == 211: 
                 pionMotherkey = true_part.GetMotherId() # stores the id of the mother
                 true_mother = sTree.MCTrack[pionMotherkey]
                 for muonMotherkey in emptylist:
-                    if not pionMotherkey==muonMotherkey:
+                    if pionMotherkey==muonMotherkey:
                         if true_mother.GetPdgCode() == 9900015: 
                             pionMotherTrue_mass = true_mother.GetMass()
-                            h['HNL_true'].Fill(pionnMotherTrue_mass)
+                            h['HNL_true'].Fill(pionMotherTrue_mass)
 
 #if sTree.GetBranch("FitTracks"):
 #    for n in range(nEvents):
