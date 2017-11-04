@@ -580,31 +580,22 @@ def HNL_Mass():
                     h['HNL_true'].Fill(true_mass)
 
 def makePlots():
-   ut.bookCanvas(h,key='Test_Mass_Comparison',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
-   cv = h['Test_Mass_Comparison'].cd(1)
+   ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
+   cv = h['Test_Mass'].cd(1)
    h['HNL_true'].SetXTitle('Invariant mass [GeV/c2]')
    h['HNL_true'].SetYTitle('No. of Particles')
    h['HNL_true'].Draw()
-   #--------------------------------------------------------------------------------------------------------------
-   cv = h['Test_Mass_Comparison'].cd(2)
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Test_Mass'].cd(2)
    h['HNL_reco'].SetXTitle('Invariant mass [GeV/c2]')
    h['HNL_reco'].SetYTitle('No. of Particles')
    h['HNL_reco'].Draw()
-   #fitSingleGauss('HNL_reco',0.9,1.1)
-   #--------------------------------------------------------------------------------------------------------------
-   cv = h['Test_Mass_Comparison'].cd(3)
-   h['HNL'].SetXTitle('Invariant mass [GeV/c2]')
-   h['HNL'].SetYTitle('No. of Particles')
-   h['HNL'].Draw()
-   h['Test_Mass_Comparison'].Print('Test_Mass_Comparison.png')
-   fitSingleGauss('HNL',0.9,1.1)
-   #--------------------------------------------------------------------------------------------------------------
-   cv = h['Test_Mass_Comparison'].cd(4)
-   h['Pion'].SetXTitle('Invariant mass [GeV/c2]')
-   h['Pion'].SetYTitle('No. of Particles')
-   h['Pion'].Draw()
-   h['Test_Mass_Comparison'].Print('Test_Mass_Comparison.png')
-   fitSingleGauss('Pion',0.13,0.15)
+   fitSingleGauss('HNL_reco',0.9,1.1)
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Test_Mass'].cd(3)
+   h['Chi2'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   h['Test_Mass'].Print('Test_Mass.png')
    print('finished making plots')
 
 def myEventLoop(n):
@@ -838,25 +829,96 @@ for n in range(nEvents):
     myEventLoop(n)
     sTree.FitTracks.Delete()
 
+ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)
 if sTree.GetBranch("FitTracks"):
-    for n in range(nEvents):
+    print('found branch FitTracks')
+    for n in range(nEvents): # loops over events
         rc = sTree.GetEntry(n)
-        fittedTracks = {}
-        for index,reco_part in enumerate(sTree.FitTracks):
-            #print(index, reco_part)
-            partkey = sTree.fitTrack2MC[index]
-            true_part = sTree.MCTrack[partkey] # gives particle of track
-            if abs(true_part.GetPdgCode()) == 211: # if particle is pion
-                pi_motherkey = true_part.GetMotherId() # stores the id of the mother
-                true_mother = sTree.MCTrack[pi_motherkey] # retrieves mother particle using id
-                if true_mother.GetPdgCode() == 9900015: # pdg code for HNL
-                    #print('found HNL mother')
-                    fittedTracks[index] = reco_part
-                    fittedstate = reco_part.getFittedState()
-                    piMom = fittedstate.getMomMag()
-                    piMass = true_part.GetMass()
-                    piEnergy = ROOT.TMath.Sqrt((piMass**2) + (piMom**2))
+        fittedtrack1 = {} # empty dictionaries
+        fittedtrack2 = {}
+        for index,reco_muon in enumerate(sTree.FitTracks): # loops over tracks
+            check = checkFiducialVolume(sTree,index,dy) # checks if HNL decayed in fiducial volume 
+            if check == False: break
+            partkey = sTree.fitTrack2MC[index] # matches track to MC particle
+            true_muon = sTree.MCTrack[partkey] # finds MC particle
+            if abs(true_muon.GetPdgCode()) == 13: # muon code
+                muonMotherkey = true_muon.GetMotherId()
+                true_mother = sTree.MCTrack[muonMotherkey] # finds muon mother
+                if true_mother.GetPdgCode() == 9900015: # HNL code
 
+                    mu_status = reco_muon.getFitStatus() # gets fit status
+                    mu_rchi2 = mu_status.getChi2() # chi squared value
+                    mu_nmeas = mu_status.getNdf()
+                    mu_chi2 = (mu_rchi2/mu_nmeas)
+
+                    fittedtrack1[index] = reco_muon
+                    fittedstate1 = fittedtrack1[index].getFittedState()
+
+                    mu_M = true_muon.GetMass()
+                    muPx = fittedstate1.getMom().x()
+                    muPy = fittedstate1.getMom().y()
+                    muPz = fittedstate1.getMom().z()
+                    muP = fittedstate1.getMomMag()
+                    muE = ROOT.TMath.Sqrt((mu_M**2) + (muP**2))
+
+                    Muon_Vector = ROOT.TLorentzVector() # declares TLorentzVector class
+                    Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE) # sets values
+
+                    for index,reco_pion in enumerate(sTree.FitTracks): # loops over tracks
+                        partkey = sTree.fitTrack2MC[index] # matches track to MC particle
+                        true_pion = sTree.MCTrack[partkey] # finds MC particle
+                        if abs(true_pion.GetPdgCode()) == 211: # pion code
+                            pionMotherkey = true_pion.GetMotherId()
+                            true_mother = sTree.MCTrack[pionMotherkey] # finds muon mother
+                            if true_mother.GetPdgCode() == 9900015: # HNL code
+                                    if pionMotherkey == muonMotherkey: # if particles correspond to same mother
+                                        pionMotherTrue_mass = true_mother.GetMass()
+                                        h['HNL_true'].Fill(pionMotherTrue_mass) # true HNL mass
+
+                                        pi_status = reco_pion.getFitStatus() # gets fit status
+                                        pi_rchi2 = pi_status.getChi2() # chi squared value
+                                        pi_nmeas = pi_status.getNdf()
+                                        pi_chi2 = (pi_rchi2/pi_nmeas)
+
+                                        fittedtrack2[index] = reco_pion
+                                        fittedstate2 = fittedtrack2[index].getFittedState()
+
+                                        pi_M = true_pion.GetMass()
+                                        piP = fittedstate2.getMomMag()
+                                        piPx = fittedstate2.getMom().x()
+                                        piPy = fittedstate2.getMom().y()
+                                        piPz = fittedstate2.getMom().z()
+                                        piE = ROOT.TMath.Sqrt((pi_M**2) + (piP**2))
+
+                                        Pion_Vector = ROOT.TLorentzVector() # declares TLorentzVector class
+                                        Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE) # sets values
+                            
+                                        HNL_Vector = Muon_Vector + Pion_Vector # adds the 4-vectors
+                                        HNL_mass = HNL_Vector.M()
+                                        h['HNL_reco'].Fill(HNL_mass) # reconstructed HNL mass
+                                        
+                                        h['Chi2'].Fill(mu_chi2) # fills chi squared histogram
+                                        h['Chi2'].Fill(pi_chi2)
+
+
+#if sTree.GetBranch("FitTracks"):
+#    for n in range(nEvents):
+#        rc = sTree.GetEntry(n)
+#        fittedTracks = {}
+#        for index,reco_part in enumerate(sTree.FitTracks):
+#            #print(index, reco_part)
+#            partkey = sTree.fitTrack2MC[index]
+#            true_part = sTree.MCTrack[partkey] # gives particle of track
+#            if abs(true_part.GetPdgCode()) == 211: # if particle is pion
+#                pi_motherkey = true_part.GetMotherId() # stores the id of the mother
+#                true_mother = sTree.MCTrack[pi_motherkey] # retrieves mother particle using id
+#                if true_mother.GetPdgCode() == 9900015: # pdg code for HNL
+#                    #print('found HNL mother')
+#                    fittedTracks[index] = reco_part
+#                    fittedstate = reco_part.getFittedState()
+#                    piMom = fittedstate.getMomMag()
+#                    piMass = true_part.GetMass()
+#                    piEnergy = ROOT.TMath.Sqrt((piMass**2) + (piMom**2))
 
 #if sTree.GetBranch("FitTracks"):
 #    for n in range(nEvents):
@@ -937,7 +999,7 @@ if sTree.GetBranch("FitTracks"):
 #                            HNL_mass = ROOT.TMath.Sqrt(((piEnergy + E)**2) - ((piMom + muMom)**2)) # gotta fix
 #                            #h['HNL_reco'].Fill(HNL_mass)
 
-HNL_Mass() 
+#HNL_Mass() 
 #HNL_Mass2()
 #time_res()
 #HNLKinematics()
