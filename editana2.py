@@ -534,18 +534,17 @@ def myEventLoop(n):
 # check if tracks are made from real pattern recognition
   measCut = measCutFK
   if sTree.GetBranch("FitTracks_PR"):
-      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
       sTree.FitTracks = sTree.FitTracks_PR
-      measCut = measCutPR
+      measCut = measCutPR#doesnt do this
   if sTree.GetBranch("fitTrack2MC_PR"):
-      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
-      sTree.fitTrack2MC = sTree.fitTrack2MC_PR
+      LineActivity(get_linenumber()+n, get_linenumber())
+      sTree.fitTrack2MC = sTree.fitTrack2MC_PR #doesnt do this
   if sTree.GetBranch("Particles_PR"):
-      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
-      sTree.Particles   = sTree.Particles_PR
+      LineActivity(get_linenumber()+n, get_linenumber()) 
+      sTree.Particles   = sTree.Particles_PR  #doesnt do this
   if not checkHNLorigin(sTree):
-      LineActivity(get_linenumber()+n, get_linenumber()) #does this
-      return
+      LineActivity(get_linenumber()+n, get_linenumber()) 
+      return   #does this
   wg = sTree.MCTrack[1].GetWeight()
   if not wg>0.:
       LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
@@ -600,9 +599,14 @@ def myEventLoop(n):
      if rc:
       pdgcode = fT.getFittedState().getPDG()
       tmp = PDG.GetParticle(pdgcode)
-      if tmp: tName = 'ecalReconstructed_dist_'+tmp.GetName()
-      else: tName = 'ecalReconstructed_dist_'+str(aP.GetPdgCode())
-      if not h.has_key(tName): 
+      if tmp:
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          tName = 'ecalReconstructed_dist_'+tmp.GetName()
+      else:
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          tName = 'ecalReconstructed_dist_'+str(aP.GetPdgCode())
+      if not h.has_key(tName):
+       LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
        p = tName.split('dist_')[1]
        ut.bookHist(h,tName,'Ecal cluster distance t0 '+p,100,0.,100.*u.cm)
        ut.bookHist(h,tName.replace('dist','distx'),'Ecal cluster distance to '+p+' in X ',100,-50.*u.cm,50.*u.cm)
@@ -613,17 +617,26 @@ def myEventLoop(n):
       rc = h[tName.replace('dist','disty')].Fill( aClus.Y()-pos.Y() )
 # compare with old method
    for aClus in sTree.EcalClusters:
+     LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
      rc = h['ecalClusters'].Fill(aClus.X()/u.m,aClus.Y()/u.m,aClus.Energy()/u.GeV)
      mMax,frac = ecalCluster2MC(aClus)
 # return MC track most contributing, and its fraction of energy
      if mMax>0:    
       aP = sTree.MCTrack[mMax]   
       tmp = PDG.GetParticle(aP.GetPdgCode())
-      if tmp: pName = 'ecalClusters_'+tmp.GetName()
-      else: pName = 'ecalClusters_'+str(aP.GetPdgCode())
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+      if tmp: 
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          pName = 'ecalClusters_'+tmp.GetName()
+      else:
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          pName = 'ecalClusters_'+str(aP.GetPdgCode())
      else:
-      pName = 'ecalClusters_unknown' 
-     if not h.has_key(pName): ut.bookHist(h,pName,'x/y and energy for '+pName.split('_')[1],50,-3.,3.,50,-6.,6.)
+         LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+         pName = 'ecalClusters_unknown' 
+     if not h.has_key(pName):
+         LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+         ut.bookHist(h,pName,'x/y and energy for '+pName.split('_')[1],50,-3.,3.,50,-6.,6.)
      rc = h[pName].Fill(aClus.X()/u.m,aClus.Y()/u.m,aClus.Energy()/u.GeV)
      
 # make some straw hit analysis
@@ -634,28 +647,47 @@ def myEventLoop(n):
      bot = ROOT.TVector3()
      modules["Strawtubes"].StrawEndPoints(detID,bot,top)
      dw  = ahit.dist2Wire()
-     if detID < 50000000 : 
-      if abs(top.y())==abs(bot.y()): h['disty'].Fill(dw)
-      if abs(top.y())>abs(bot.y()): h['distu'].Fill(dw)
-      if abs(top.y())<abs(bot.y()): h['distv'].Fill(dw)
+     if detID < 50000000 :
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+      if abs(top.y())==abs(bot.y()):
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          h['disty'].Fill(dw)
+      if abs(top.y())>abs(bot.y()):
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          h['distu'].Fill(dw)
+      if abs(top.y())<abs(bot.y()):
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          h['distv'].Fill(dw)
 #
      trID = ahit.GetTrackID()
      if not trID < 0 :
-      if hitlist.has_key(trID):  hitlist[trID]+=1
-      else:  hitlist[trID]=1
-  for tr in hitlist:  h['meanhits'].Fill(hitlist[tr])
+         if hitlist.has_key(trID):
+             LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+             hitlist[trID]+=1
+         else:
+             LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+             hitlist[trID]=1
+  for tr in hitlist:
+      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+      h['meanhits'].Fill(hitlist[tr])
   key = -1
   fittedTracks = {}
   for atrack in sTree.FitTracks:
    key+=1
 # kill tracks outside fiducial volume
-   if not checkFiducialVolume(sTree,key,dy): continue
+   if not checkFiducialVolume(sTree,key,dy):
+       LineActivity(get_linenumber()+n+key, get_linenumber()) #doesnt do this
+       continue
    fitStatus   = atrack.getFitStatus()
    nmeas = fitStatus.getNdf()
    h['meas'].Fill(nmeas)
-   if not fitStatus.isFitConverged() : continue
+   if not fitStatus.isFitConverged() :
+       LineActivity(get_linenumber()+n+key, get_linenumber()) #doesnt do this
+       continue
    h['meas2'].Fill(nmeas)
-   if nmeas < measCut: continue
+   if nmeas < measCut:
+       LineActivity(get_linenumber()+n+key, get_linenumber()) #doesnt do this
+       continue
    fittedTracks[key] = atrack
 # needs different study why fit has not converged, continue with fitted tracks
    rchi2 = fitStatus.getChi2()
@@ -668,10 +700,14 @@ def myEventLoop(n):
    P = fittedState.getMomMag()
    Px,Py,Pz = fittedState.getMom().x(),fittedState.getMom().y(),fittedState.getMom().z()
    cov = fittedState.get6DCov()
-   if len(sTree.fitTrack2MC)-1<key: continue
+   if len(sTree.fitTrack2MC)-1<key:
+       LineActivity(get_linenumber()+n+key, get_linenumber()) #doesnt do this
+       continue
    mcPartKey = sTree.fitTrack2MC[key]
    mcPart    = sTree.MCTrack[mcPartKey]
-   if not mcPart : continue
+   if not mcPart :
+       LineActivity(get_linenumber()+n+key, get_linenumber()) #doesnt do this
+       continue
    Ptruth_start     = mcPart.GetP()
    Ptruthz_start    = mcPart.GetPz()
    # get p truth from first strawpoint
@@ -683,7 +719,9 @@ def myEventLoop(n):
    h['pullPOverPy'].Fill( Ptruth,(Ptruthy-Py)/ROOT.TMath.Sqrt(cov[4][4]) )   
    h['pullPOverPz'].Fill( Ptruth,(Ptruthz-Pz)/ROOT.TMath.Sqrt(cov[5][5]) )   
    h['delPOverPz'].Fill(Ptruthz,delPOverPz)
-   if chi2>chi2CutOff: continue
+   if chi2>chi2CutOff:
+       LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+       continue
    h['delPOverP2'].Fill(Ptruth,delPOverP)
    h['delPOverP2z'].Fill(Ptruth,delPOverPz)
 # try measure impact parameter
@@ -692,9 +730,13 @@ def myEventLoop(n):
    vx = ROOT.TVector3()
    mcPart.GetStartVertex(vx)
    t = 0
-   for i in range(3):   t += trackDir(i)*(vx(i)-trackPos(i)) 
+   for i in range(3):
+       LineActivity(get_linenumber()+n+key+i, get_linenumber()) #doesnt do this
+       t += trackDir(i)*(vx(i)-trackPos(i)) 
    dist = 0
-   for i in range(3):   dist += (vx(i)-trackPos(i)-t*trackDir(i))**2
+   for i in range(3):
+       LineActivity(get_linenumber()+n+key+i, get_linenumber()) #doesnt do this
+       dist += (vx(i)-trackPos(i)-t*trackDir(i))**2
    dist = ROOT.TMath.Sqrt(dist)
    h['IP'].Fill(dist) 
 # ---
@@ -702,33 +744,50 @@ def myEventLoop(n):
   for HNL in sTree.Particles:
     t1,t2 = HNL.GetDaughter(0),HNL.GetDaughter(1) 
 # kill tracks outside fiducial volume, if enabled
-    if not checkFiducialVolume(sTree,t1,dy) or not checkFiducialVolume(sTree,t2,dy) : continue
+    if not checkFiducialVolume(sTree,t1,dy) or not checkFiducialVolume(sTree,t2,dy) :
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        continue
     checkMeasurements = True
 # cut on nDOF
     for tr in [t1,t2]:
       fitStatus  = sTree.FitTracks[tr].getFitStatus()
       nmeas = fitStatus.getNdf()
-      if nmeas < measCut: checkMeasurements = False
-    if not checkMeasurements: continue
+      if nmeas < measCut:
+          LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+          checkMeasurements = False
+    if not checkMeasurements:
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        continue
 # check mc matching 
-    if not match2HNL(HNL): continue
+    if not match2HNL(HNL):
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        continue
     HNLPos = ROOT.TLorentzVector()
     HNL.ProductionVertex(HNLPos)
     HNLMom = ROOT.TLorentzVector()
     HNL.Momentum(HNLMom)
 # check if DOCA info exist
     if hasattr(HNL,"GetDoca"):
-      doca  =  HNL.GetDoca()
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        doca  =  HNL.GetDoca()
     elif HNL.GetMother(1)==99 :
-      doca  =  HNLPos.T()
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        doca  =  HNLPos.T()
     else:
-# redo doca calculation
-     xv,yv,zv,doca,HNLMom  = RedoVertexing(t1,t2)
-     if HNLMom == -1: continue
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        # redo doca calculation
+        xv,yv,zv,doca,HNLMom  = RedoVertexing(t1,t2)
+        if HNLMom == -1:
+            LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+            continue
  # check if decay inside decay volume
-    if not isInFiducial(HNLPos.X(),HNLPos.Y(),HNLPos.Z()): continue  
+    if not isInFiducial(HNLPos.X(),HNLPos.Y(),HNLPos.Z()):
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        continue  
     h['Doca'].Fill(doca) 
-    if  doca > docaCut : continue
+    if  doca > docaCut :
+        LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+        continue
     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
     dist = ImpactParameter(tr,HNLPos,HNLMom)
     #maybe add if statement here?
@@ -901,20 +960,6 @@ if sTree.GetBranch("FitTracks"):
                         if true_mother.GetPdgCode() == 9900015: 
                             pionMotherTrue_mass = true_mother.GetMass()
                             h['HNL_true'].Fill(pionMotherTrue_mass)
-
-#if sTree.GetBranch("FitTracks"):
-#    for n in range(nEvents):
-#        rc = sTree.GetEntry(n)
-#        for index,reco_part in enumerate(sTree.FitTracks):
-#            partkey = sTree.fitTrack2MC[index]
-#            true_part = sTree.MCTrack[partkey] # gives particle of track
-#            if abs(true_part.GetPdgCode()) == 13 or abs(true_part.GetPdgCode()) == 211:
-#                motherkey = true_part.GetMotherId() # stores the id of the mother
-#                true_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
-#                if true_mother.GetPdgCode() == 9900015:
-#                    muonMotherTrue_mass = true_mother.GetMass()
-#                    h['HNL_true'].Fill(muonMotherTrue_mass)
-
             
 # START EVENT LOOP
 for n in range(nEvents):
@@ -990,3 +1035,15 @@ testFile.close()
 #                reco_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
 #                if reco_mother.GetPdgCode() == 9900015:
 #                    print('found mother of particle')
+#if sTree.GetBranch("FitTracks"):
+#    for n in range(nEvents):
+#        rc = sTree.GetEntry(n)
+#        for index,reco_part in enumerate(sTree.FitTracks):
+#            partkey = sTree.fitTrack2MC[index]
+#            true_part = sTree.MCTrack[partkey] # gives particle of track
+#            if abs(true_part.GetPdgCode()) == 13 or abs(true_part.GetPdgCode()) == 211:
+#                motherkey = true_part.GetMotherId() # stores the id of the mother
+#                true_mother = sTree.MCTrack[motherkey] # retrieves mother particle using id
+#                if true_mother.GetPdgCode() == 9900015:
+#                    muonMotherTrue_mass = true_mother.GetMass()
+#                    h['HNL_true'].Fill(muonMotherTrue_mass)
