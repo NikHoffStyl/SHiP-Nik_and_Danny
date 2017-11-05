@@ -1002,7 +1002,7 @@ if sTree.GetBranch("FitTracks"):
 #HNL_Mass() 
 #HNL_Mass2()
 #time_res()
-#HNLKinematics()
+HNLKinematics()
 makePlots()
 
 # Output histograms and ROOT file
