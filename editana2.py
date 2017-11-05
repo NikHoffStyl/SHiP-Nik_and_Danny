@@ -174,6 +174,10 @@ def create_Hists():
     ut.bookHist(h,'HNL_true','True Mass',500,0.,2.) # new one for the simulated (Monte Carlo) mass
     ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # new one for the reconstructed mass
     ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)
+    ut.bookHist(h,'HNL_mom','Monte Carlo Momentum',100,0.,300.)
+    ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',100,0.,200.)
+    ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',100,0.,200.)
+    ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300)
     #
     ut.bookHist(h,'HNLw','Reconstructed Mass with weights',500,0.,2.)
     ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)##
@@ -464,25 +468,32 @@ def match2HNL(p):
        if hnlKey[0]==hnlKey[1]: matched = True
     return matched
 
-def time_res():
-    if sTree.GetBranch("EcalPoint"):
-        print('found branch EcalPoint')
-        if sTree.GetBranch("strawtubesPoint"):
-            print('found branch strawtubespoint')
-            ut.bookHist(h,'time_res','Time Resolution Test',500,0.,2.)
-            for n in range(nEvents):
-                rc = sTree.GetEntry(n)
-                for ahit in sTree.EcalPoint:
-                    t1 = ahit.GetTime()
-                    ecalID = ahit.GetTrackID()
-                    LineActivity(get_linenumber()+n,get_linenumber)
-                    for ahit in sTree.strawtubesPoint:
-                        t2 = ahit.GetTime()
-                        strawID = ahit.GetTrackID()
-                        if strawID == ecalID:
-                            time = abs(t2-t1)
-                            h['time_res'].Fill(time)
-
+def time_res(partkey):
+    if sTree.GetBranch("strawtubesPoint"):
+        if sTree.GetBranch("EcalPoint"):
+            z_array = []
+            t_array = []
+            straw_time=0
+            for k,hits in enumerate(sTree.strawtubesPoint):
+                TrackID = hits.GetTrackID()
+                if TrackID == partkey:
+                    z_array.append(hits.GetZ())
+                    t_array.append(hits.GetTime())
+                   
+            min_z = z_array.index(min(z_array))
+            straw_time = t_array[min_z]
+            if not straw_time<=0:
+                for k,hits in enumerate(sTree.EcalPoint):
+                    TrackID = hits.GetTrackID()
+                    if TrackID == partkey:
+                        ecal_time = hits.GetTime()
+                        if not ecal_time <= straw_time:
+                            t = abs(straw_time - ecal_time)
+                            return t
+                    else: return None
+            else: return None
+        else: return None
+    else: return None
 def ecalCluster2MC(aClus):
  # return MC track most contributing, and its fraction of energy
   trackid    = ROOT.Long()
@@ -510,38 +521,41 @@ def makePlots():
    h['HNL_true'].SetXTitle('Invariant mass [GeV/c2]')
    h['HNL_true'].SetYTitle('No. of Particles')
    h['HNL_true'].Draw()
-   #----------------------------------------------------------------------------------------------------------------------
+   
    cv = h['Test_Mass'].cd(2)
    h['HNL_reco'].SetXTitle('Invariant mass [GeV/c2]')
    h['HNL_reco'].SetYTitle('No. of Particles')
    h['HNL_reco'].Draw()
    fitSingleGauss('HNL_reco',0.9,1.1)
-   #----------------------------------------------------------------------------------------------------------------------
+
+   #cv = h['Test_Mass'].cd(3)
+   #h['Chi2'].Draw()
    cv = h['Test_Mass'].cd(3)
-   h['Chi2'].Draw()
+   h['HNL_mom'].SetXTitle('Momentum [GeV/c]')
+   h['HNL_mom'].SetYTitle('No. of Particles')
+   h['HNL_mom'].Draw()
+
+   cv = h['Test_Mass'].cd(4)
+   h['HNL_mom_reco'].SetXTitle('Momentum [GeV/c]')
+   h['HNL_mom_reco'].SetYTitle('No. of Particles')
+   h['HNL_mom_reco'].Draw()
+   h['Test_Mass'].Print('MassAndMom.png')
    #----------------------------------------------------------------------------------------------------------------------
-   h['Test_Mass'].Print('Test_Mass2.png')
-   #ut.bookCanvas(h,key='Mass_Comparison',title='Fit Results',nx=1000,ny=510,cx=2,cy=1)
-   #cv = h['Mass_Comparison'].cd(1)
-   #h['HNL_true'].SetXTitle('Invariant Mass [GeV/c2]')
-   #h['HNL_true'].SetYTitle('No. of Particles')
-   #h['HNL_true'].GetYaxis().SetTitleOffset(1.52)
-   #h['HNL_true'].Draw()
-   ##fitSingleGauss('HNL_sim',0.9,1.1)
-   #cv = h['Mass_Comparison'].cd(2)
-   #h['HNL'].SetXTitle('Invariant Mass  [GeV/c2]')
-   #h['HNL'].SetYTitle('No. of Particles')
-   #h['HNL'].GetYaxis().SetTitleOffset(1.5)
-   #h['HNL'].Draw()
-   #fitSingleGauss('HNL',0.9,1.1)
-   ##cv = h['Mass_Comparison'].cd(3)
-   ##h['HNL_reco'].SetXTitle('Invariant Mass [GeV/c2]')
-   ##h['HNL_reco'].SetYTitle('No. of Particles')
-   ##h['HNL_reco'].GetYaxis().SetTitleOffset(1.52)
-   ##h['HNL_reco'].Draw()
-   ##--------------------------------------------------------------------------------------------------------------
-   #h['Mass_Comparison'].Print('Mass_Comparison.png')
-   print ('finished making plots')
+   ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
+   cv = h['Time_Res'].cd(1)
+   h['Time'].SetXTitle('Time [ns]')
+   h['Time'].SetYTitle('Frequency')
+   h['Time'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Time_Res'].cd(2)
+   h['Time2'].SetXTitle('Time [ns]')
+   h['Time2'].SetYTitle('Frequency')
+   h['Time2'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Time_Res'].cd(3)
+   h['Chi2'].Draw()
+   h['Time_Res'].Print('TimeRes.png')
+   print ('Made the plots')
 
 # calculate z front face of ecal, needed later
 top = ROOT.gGeoManager.GetTopVolume()
@@ -954,34 +968,35 @@ else:
  ecalReconstructed = ecalReco.InitPython(sTree.EcalClusters, ecalStructure, ecalCalib)
  ecalMatch.InitPython(ecalStructure, ecalReconstructed, sTree.MCTrack)
 
-ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)
-
 nEvents = min(sTree.GetEntries(),nEvents)
+for n in range(nEvents):
+    myEventLoop(n)
+    sTree.FitTracks.Delete()
+
 def finStateMuPi():
     #INVARIANT MASS OF HNL THAT DECAYED TO MU-PI
     if sTree.GetBranch("FitTracks"):
         for n in range(nEvents):                            #loop over events
             rc = sTree.GetEntry(n)                              #load tree entry
-            emptylist=[]                                        #create empty list
-            #fittedtrack1 = {}                                   #create empty dictionaries
-            #fittedtrack2 = {}                                   #
+            keylist=[]                                          #create empty list
+            fittedtrack1 = {}                                   #create empty dictionaries
+            dicMuChi2 = {}
             for index,reco_part in enumerate(sTree.FitTracks):  #loops over index and data of track particles
                 if not checkFiducialVolume(sTree,index,dy): break   #exits loop if HNL decayed in fiducial volume 
                 partkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
                 true_muon = sTree.MCTrack[partkey]                  #gives MC particle data
                 if abs(true_muon.GetPdgCode()) == 13:               #checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             #stores a number index of MC track of mother
-                    emptylist.append(muonMotherkey)                     #adds to list
+                    keylist.append(muonMotherkey)                     #adds to list
                     true_mother = sTree.MCTrack[muonMotherkey]          #obtains mother particle data
                     if true_mother.GetPdgCode() == 9900015:             #checks mother is HNL
                         mu_status = reco_part.getFitStatus()                #gets fit status
                         mu_rchi2 = mu_status.getChi2()                      #gets chi squared value
                         mu_nmeas = mu_status.getNdf()                       #gets number of measurements
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       #gets chi value
+                        dicMuChi2[str(muonMotherkey)]=mu_chi2
 
-                        #fittedtrack1[index] = reco_part                     #sets library entry 
                         fittedstate1 = reco_part.getFittedState()           #get reconstructed muon fitted state
-                        #print ('Mu:'+ str(muonMotherkey))
                         mu_M = true_muon.GetMass()                          #gets mass of MC muon
                         muPx = fittedstate1.getMom().x()                    #then its momentum in x,
                         muPy = fittedstate1.getMom().y()                    #y  
@@ -991,26 +1006,30 @@ def finStateMuPi():
 
                         Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                         Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE)          # inputs four-momentum elements
+                        fittedtrack1[str(muonMotherkey)]=Muon_Vector
 
                         muonMotherTrue_mass = true_mother.GetMass()         #gets HNL mass
+
+                        mu_t = time_res(partkey)
+                        if mu_t != None:
+                            h['Time'].Fill(mu_t)
+
             for index,reco_part in enumerate(sTree.FitTracks):  #loops over index and data of track particles
                 partkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
                 true_pion = sTree.MCTrack[partkey]                  #gives MC particle data
                 if abs(true_pion.GetPdgCode()) == 211:              #checks particle is pion
                     pionMotherkey = true_pion.GetMotherId()             #stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[pionMotherkey]          #obtains mother particle data
-                    for muonMotherkey in emptylist:                     #loops through muonMother keys
+                    for muonMotherkey in keylist:                       #loops through muonMother keys
                         if pionMotherkey==muonMotherkey:                    #check if keys are the same
                             if true_mother.GetPdgCode() == 9900015:             #check if mother is HNL
                                 pionMotherTrue_mass = true_mother.GetMass()         #get HNL/final states mother mass
                                 h['HNL_true'].Fill(pionMotherTrue_mass)             #true HNL mass
-                                #print('Pion:'+ str(pionMotherkey))
                                 pi_status = reco_part.getFitStatus()                #gets fit status
                                 pi_rchi2 = pi_status.getChi2()                      #chi squared value
                                 pi_nmeas = pi_status.getNdf()                       #gets number of measurements
                                 pi_chi2 = (pi_rchi2/pi_nmeas)                       #gets chi value
 
-                                #fittedtrack2[index] = reco_pion                     #sets library entry 
                                 fittedstate2 = reco_part.getFittedState()           #get reconstructed pion fitted state
 
                                 pi_M = true_pion.GetMass()                          #gets mass of MC muon
@@ -1023,19 +1042,17 @@ def finStateMuPi():
                                 Pion_Vector = ROOT.TLorentzVector()                 #declares variable as TLorentzVector class
                                 Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          #inputs four-momentum elements
                             
-                                HNL_Vector = Muon_Vector + Pion_Vector              #adds the 4-momenta
+                                HNL_Vector = fittedtrack1[str(muonMotherkey)] + Pion_Vector #adds the 4-momenta
                                 HNL_mass = HNL_Vector.M()                           #sets HNL mass
                                 h['HNL_reco'].Fill(HNL_mass)                        #fill histograms                                       
-                                h['Chi2'].Fill(mu_chi2)                             #----||-------
+                                h['Chi2'].Fill(dicMuChi2[str(muonMotherkey)])       #----||-------
                                 h['Chi2'].Fill(pi_chi2)                             #----||-------
-                                h['HNL_true'].Fill(pionMotherTrue_mass)             #----||-------
+                                
+                                pi_t = time_res(partkey)
+                                if pi_t != None:
+                                    h['Time2'].Fill(pi_t)
 finStateMuPi()
             
-# START EVENT LOOP
-for n in range(nEvents):
-    myEventLoop(n)
-    sTree.FitTracks.Delete()
-
 makePlots()
 hfile = inputFile.split(',')[0].replace('_rec','_NStesting') #create outputFile
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
