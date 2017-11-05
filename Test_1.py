@@ -596,12 +596,14 @@ def makePlots():
    fitSingleGauss('HNL_reco',0.9,1.1)
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Test_Mass'].cd(3)
-   h['Chi2'].Draw()
-   #----------------------------------------------------------------------------------------------------------------------
-   cv = h['Test_Mass'].cd(4)
    h['HNL_mom'].SetXTitle('Momentum [GeV/c]')
    h['HNL_mom'].SetYTitle('No. of Particles')
    h['HNL_mom'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Test_Mass'].cd(4)
+   h['HNL_mom_reco'].SetXTitle('Momentum [GeV/c]')
+   h['HNL_mom_reco'].SetYTitle('No. of Particles')
+   h['HNL_mom_reco'].Draw()
    h['Test_Mass'].Print('HNL_Graphs.png')
    #----------------------------------------------------------------------------------------------------------------------
    ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
@@ -614,6 +616,9 @@ def makePlots():
    h['Time2'].SetXTitle('Time [ns]')
    h['Time2'].SetYTitle('Frequency')
    h['Time2'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Time_Res'].cd(3)
+   h['Chi2'].Draw()
    h['Time_Res'].Print('Time_Res.png')
 
 def myEventLoop(n):
@@ -851,6 +856,7 @@ ut.bookHist(h,'HNL_mom','Monte Carlo Momentum',100,0.,300.)
 ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',100,0.,200.)
 ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',100,0.,200.)
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)
+ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300)
 if sTree.GetBranch("FitTracks"):
     print('found branch FitTracks')
     for n in range(nEvents): # loops over events
@@ -920,7 +926,9 @@ if sTree.GetBranch("FitTracks"):
 
                                         HNL_Vector = Muon_Vector + Pion_Vector # sums the 4-vectors
                                         HNL_mass = HNL_Vector.M()
+                                        HNL_reco_mom = HNL_Vector.P()
                                         h['HNL_reco'].Fill(HNL_mass) # reconstructed HNL mass
+                                        h['HNL_mom_reco'].Fill(HNL_reco_mom)
 
                                         pi_t = time_res(partkey)
                                         if pi_t != -1:
