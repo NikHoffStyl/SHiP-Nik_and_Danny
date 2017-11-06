@@ -527,6 +527,17 @@ else:
 
 # ------------------------------------------------------------------------------------------------------------------------
 
+def HNL_Mass():
+    if sTree.GetBranch("MCTrack"):
+        print('found branch MCTrack')
+        for n in range(sTree.GetEntries()): 
+            #print(n)
+            for mc_particle in sTree.MCTrack:
+                if mc_particle.GetPdgCode() == 9900015:
+                    #print(mc_particle)
+                    true_mass = mc_particle.GetMass()
+                    h['HNL_true'].Fill(true_mass)
+
 def HNL_Mass2():
     if sTree.GetBranch("MCTrack"):
         print('found branch MCTrack')
@@ -554,33 +565,30 @@ def time_res(partkey):
         if sTree.GetBranch("EcalPoint"):
             z_array = []
             t_array = []
+            straw_time = 0
             for k,hits in enumerate(sTree.strawtubesPoint):
                 TrackID = hits.GetTrackID()
                 if TrackID == partkey:
                     z_array.append(hits.GetZ())
                     t_array.append(hits.GetTime())
+                else: return -5
                    
             min_z = z_array.index(min(z_array))
+            len_z = len(z_array)
+            print(len_z)
             straw_time = t_array[min_z]
-                    
-            for k,hits in enumerate(sTree.EcalPoint):
-                TrackID = hits.GetTrackID()
-                if TrackID == partkey:
-                    ecal_time = hits.GetTime()
-                    t = abs(straw_time - ecal_time)
-                    return t
-                else: return -1
-
-def HNL_Mass():
-    if sTree.GetBranch("MCTrack"):
-        print('found branch MCTrack')
-        for n in range(sTree.GetEntries()): 
-            #print(n)
-            for mc_particle in sTree.MCTrack:
-                if mc_particle.GetPdgCode() == 9900015:
-                    #print(mc_particle)
-                    true_mass = mc_particle.GetMass()
-                    h['HNL_true'].Fill(true_mass)
+            if not straw_time <= 0:        
+                for k,hits in enumerate(sTree.EcalPoint):
+                    TrackID = hits.GetTrackID()
+                    if TrackID == partkey:
+                        ecal_time = hits.GetTime()
+                        if not ecal_time <= straw_time:
+                            t = abs(straw_time - ecal_time)
+                            return t
+                    else: return -1
+            else: return -2
+        else: return -3
+    else: return -4
 
 def makePlots():
    ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
@@ -853,10 +861,11 @@ for n in range(nEvents):
     sTree.FitTracks.Delete()
 
 ut.bookHist(h,'HNL_mom','Monte Carlo Momentum',100,0.,300.)
+ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300)
 ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',100,0.,200.)
 ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',100,0.,200.)
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)
-ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300)
+
 if sTree.GetBranch("FitTracks"):
     print('found branch FitTracks')
     for n in range(nEvents): # loops over events
@@ -934,109 +943,16 @@ if sTree.GetBranch("FitTracks"):
                                         if pi_t != -1:
                                             h['Time2'].Fill(pi_t)
 
+#for n in range(nEvents):
+#    rc = sTree.GetEntry(n)
+#    for index,hits in enumerate(sTree.strawtubesPoint):
+#        code = hits.GetPdgCode()
+#        if code == 13:
+#            print(code,index)
 
-#if sTree.GetBranch("FitTracks"):
-#    for n in range(nEvents):
-#        rc = sTree.GetEntry(n)
-#        fittedTracks = {}
-#        for index,reco_part in enumerate(sTree.FitTracks):
-#            #print(index, reco_part)
-#            partkey = sTree.fitTrack2MC[index]
-#            true_part = sTree.MCTrack[partkey] # gives particle of track
-#            if abs(true_part.GetPdgCode()) == 211: # if particle is pion
-#                pi_motherkey = true_part.GetMotherId() # stores the id of the mother
-#                true_mother = sTree.MCTrack[pi_motherkey] # retrieves mother particle using id
-#                if true_mother.GetPdgCode() == 9900015: # pdg code for HNL
-#                    #print('found HNL mother')
-#                    fittedTracks[index] = reco_part
-#                    fittedstate = reco_part.getFittedState()
-#                    piMom = fittedstate.getMomMag()
-#                    piMass = true_part.GetMass()
-#                    piEnergy = ROOT.TMath.Sqrt((piMass**2) + (piMom**2))
-
-#if sTree.GetBranch("FitTracks"):
-#    for n in range(nEvents):
-#        rc = sTree.GetEntry(n)
-#        fittedTracks = {}
-#        for index,reco_part in enumerate(sTree.FitTracks):
-#            #print(index, reco_part)
-#            partkey = sTree.fitTrack2MC[index]
-#            true_part = sTree.MCTrack[partkey] # gives particle of track
-#            if abs(true_part.GetPdgCode()) == 211: # if particle is pion
-#                pi_motherkey = true_part.GetMotherId() # stores the id of the mother
-#                true_mother = sTree.MCTrack[pi_motherkey] # retrieves mother particle using id
-#                if true_mother.GetPdgCode() == 9900015: # pdg code for HNL
-#                    #print('found HNL mother')
-#                    fittedTracks[index] = reco_part
-#                    fittedState1 = reco_part.getFittedState()
-#                    piMom = fittedState1.getMomMag()
-#                    pi_mass = true_part.GetMass()
-#                    piEnergy = ROOT.TMath.Sqrt((pi_mass*pi_mass) + (piMom*piMom))
-#                    #print('Pion Energy = ' + str(piEnergy))
-#                    for index,reco_part in enumerate(sTree.FitTracks):
-#                        muonkey = sTree.fitTrack2MC[index]
-#                        true_muon = sTree.MCTrack[partkey] # gives particle of track
-#                        if abs(true_muon.GetPdgCode()) == 13: # if particle is muon
-#                            mu_motherkey = true_muon.GetMotherId()
-#                            if mu_motherkey == pi_motherkey:
-#                                fittedTracks[index] = reco_part
-#                                fittedState2 = reco_part.getFittedState()
-#                                muMom = fittedState2.getMomMag()
-#                                mu_mass = true_muon.GetMass()
-#                                muEnergy = ROOT.TMath.Sqrt((mu_mass*mu_mass) + (muMom*muMom))
-#                                print('Muon Energy = ' + str(muEnergy))
-#                                HNL_mass = ROOT.TMath.Sqrt(((piEnergy + muEnergy)**2) - ((piMom + muMom)**2))
-#                                h['HNL_reco'].Fill(HNL_mass)
-
-
-#if sTree.GetBranch("FitTracks"):
-#    for n in range(nEvents):
-#        rc = sTree.GetEntry(n)
-#        emptylist=[]
-#        muonenergy=[]
-#        fittedTracks = {}
-#        for index,reco_part in enumerate(sTree.FitTracks):
-#            partkey = sTree.fitTrack2MC[index]
-#            true_part = sTree.MCTrack[partkey] # gives particle of track
-#            if abs(true_part.GetPdgCode()) == 13: 
-#                muonMotherkey = true_part.GetMotherId() # stores the id of the mother
-#                emptylist.append(muonMotherkey)
-#                true_mother = sTree.MCTrack[muonMotherkey]
-#                if true_mother.GetPdgCode() == 9900015:
-#                    muonMotherTrue_mass = true_mother.GetMass()
-
-#                    fittedTracks[index] = reco_part
-#                    mu_mass = true_part.GetMass()
-#                    fittedState1 = fittedTracks[index].getFittedState()
-#                    muMom = fittedState1.getMomMag()
-#                    muEnergy = ROOT.TMath.Sqrt((mu_mass*mu_mass) + (muMom*muMom))
-#                    muonenergy.append(muEnergy) # gotta fix
-    
-#        for index,reco_part in enumerate(sTree.FitTracks):
-#            partkey = sTree.fitTrack2MC[index]
-#            true_part = sTree.MCTrack[partkey] # gives particle of track
-#            if abs(true_part.GetPdgCode()) == 211: 
-#                pionMotherkey = true_part.GetMotherId() # stores the id of the mother
-#                true_mother = sTree.MCTrack[pionMotherkey]
-#                for muonMotherkey in emptylist:
-#                    if pionMotherkey==muonMotherkey:
-#                        if true_mother.GetPdgCode() == 9900015: 
-#                            pionMotherTrue_mass = true_mother.GetMass()
-#                            h['HNL_true'].Fill(pionMotherTrue_mass)
-
-#                            fittedState2 = reco_part.getFittedState()
-#                            piMom = fittedState2.getMomMag()
-#                            pi_mass = true_part.GetMass()
-#                            piEnergy = ROOT.TMath.Sqrt((pi_mass*pi_mass) + (piMom*piMom))
-                            
-#                            E = muonenergy[muonMotherkey] # gotta fix
-#                            HNL_mass = ROOT.TMath.Sqrt(((piEnergy + E)**2) - ((piMom + muMom)**2)) # gotta fix
-#                            #h['HNL_reco'].Fill(HNL_mass)
-
+#HNLKinematics()
 #HNL_Mass() 
 #HNL_Mass2()
-#time_res()
-HNLKinematics()
 makePlots()
 
 # Output histograms and ROOT file
