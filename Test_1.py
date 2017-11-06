@@ -291,6 +291,7 @@ def getPtruthFirst(sTree,mcPartKey):
    Ptruth,Ptruthx,Ptruthy,Ptruthz = -1.,-1.,-1.,-1.
    for ahit in sTree.strawtubesPoint:
      if ahit.GetTrackID() == mcPartKey:
+        #print('Help me Im trapped in a laptop!')
         Ptruthx,Ptruthy,Ptruthz = ahit.GetPx(),ahit.GetPy(),ahit.GetPz()
         Ptruth  = ROOT.TMath.Sqrt(Ptruthx**2+Ptruthy**2+Ptruthz**2)
         break
@@ -571,11 +572,11 @@ def time_res(partkey):
                 if TrackID == partkey:
                     z_array.append(hits.GetZ())
                     t_array.append(hits.GetTime())
-                else: return -5
+                else: return None
                    
             min_z = z_array.index(min(z_array))
-            len_z = len(z_array)
-            print(len_z)
+            #len_z = len(z_array)
+            #print(len_z)
             straw_time = t_array[min_z]
             if not straw_time <= 0:        
                 for k,hits in enumerate(sTree.EcalPoint):
@@ -585,10 +586,10 @@ def time_res(partkey):
                         if not ecal_time <= straw_time:
                             t = abs(straw_time - ecal_time)
                             return t
-                    else: return -1
-            else: return -2
-        else: return -3
-    else: return -4
+                    else: return None
+            else: return None
+        else: return None
+    else: return None
 
 def makePlots():
    ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
@@ -899,7 +900,7 @@ if sTree.GetBranch("FitTracks"):
                     Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE) # sets values
 
                     mu_t = time_res(partkey)
-                    if mu_t != -1:
+                    if mu_t != None:
                         h['Time'].Fill(mu_t)
 
                     for index,reco_pion in enumerate(sTree.FitTracks): # loops over tracks
@@ -940,7 +941,7 @@ if sTree.GetBranch("FitTracks"):
                                         h['HNL_mom_reco'].Fill(HNL_reco_mom)
 
                                         pi_t = time_res(partkey)
-                                        if pi_t != -1:
+                                        if pi_t != None:
                                             h['Time2'].Fill(pi_t)
 
 #for n in range(nEvents):
