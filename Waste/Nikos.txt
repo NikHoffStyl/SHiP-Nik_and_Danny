@@ -1,0 +1,53 @@
+export Linux_Flavour_="CentOS Linux release 7.2.1511 (Core) "
+export System_="x86_64"
+source /opt/FairShipRun/check_system.sh                               
+if [ "$same_system" == "1" ]; then 
+  export SIMPATH="/opt/FairSoftInst"
+  export ROOTSYS="/opt/FairSoftInst"
+  export FAIRROOTPATH="/opt/FairRootInst"
+  if (true); then
+    export GEANT4_LIBRARY_DIR="/opt/FairSoftInst/lib"
+    export GEANT4_INCLUDE_DIR="/opt/FairSoftInst/include/Geant4:/opt/FairSoftInst/transport/geant4/source/interfaces/common/include:/opt/FairSoftInst/transport/geant4/physics_lists/hadronic/Packaging/include:/opt/FairSoftInst/transport/geant4/physics_lists/hadronic/QGSP/include"
+    export GEANT4VMC_INCLUDE_DIR="/opt/FairSoftInst/include/geant4vmc"
+    export GEANT4VMC_LIBRARY_DIR="/opt/FairSoftInst/lib"
+    export GEANT4VMC_MACRO_DIR="/opt/FairSoftInst/share/geant4_vmc/macro"
+    export CLHEP_INCLUDE_DIR=""
+    export CLHEP_LIBRARY_DIR=""
+    export CLHEP_BASE_DIR=""
+    export PLUTO_LIBRARY_DIR=""
+    export PLUTO_INCLUDE_DIR=""
+    export PYTHIA6_LIBRARY_DIR="/opt/FairSoftInst/lib"
+    export G3SYS="/opt/FairSoftInst/share/geant3"
+    export GEANT3_INCLUDE_DIR="/opt/FairSoftInst/include/TGeant3"
+    export GEANT3_LIBRARY_DIR="/opt/FairSoftInst/lib"
+    export GEANT3_LIBRARIES="/opt/FairSoftInst/lib64/libgeant321.so"
+    export USE_VGM="1"
+    export PYTHIA8DATA="/opt/FairSoftInst/share/pythia8/xmldoc"
+    export CLASSPATH=""
+
+    export G4LEDATA="/opt/FairSoftInst/share/Geant4/data/G4EMLOW"
+    export G4LEVELGAMMADATA="/opt/FairSoftInst/share/Geant4/data/PhotonEvaporation"
+    export G4NeutronHPCrossSections="/opt/FairSoftInst/share/Geant4/data/G4NDL"
+    export G4NEUTRONHPDATA="/opt/FairSoftInst/share/Geant4/data/G4NDL"
+    export G4NEUTRONXSDATA="/opt/FairSoftInst/share/Geant4/data/G4NEUTRONXS"
+    export G4PIIDATA="/opt/FairSoftInst/share/Geant4/data/G4PII"
+    export G4RADIOACTIVEDATA="/opt/FairSoftInst/share/Geant4/data/RadioactiveDecay"
+    export G4REALSURFACEDATA="/opt/FairSoftInst/share/Geant4/data/RealSurface"
+    export G4SAIDXSDATA="/opt/FairSoftInst/share/Geant4/data/G4SAIDDATA"
+  fi
+  export ROOT_LIBRARY_DIR="/opt/FairSoftInst/lib/root"
+  export ROOT_LIBRARIES="-L/opt/FairSoftInst/lib/root -lGui -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lMultiProc -pthread -lm -ldl -rdynamic"
+  export ROOT_INCLUDE_DIR="/opt/FairSoftInst/include/root"
+  export ROOT_INCLUDE_PATH="/opt/FairRootInst/include"
+  export VMCWORKDIR="/opt/FairShip"
+  export FAIRLIBDIR="/opt/FairShipRun/lib"
+  export PYTHONPATH="/opt/FairShip/python:/opt/FairSoftInst/lib:/opt/FairSoftInst/lib/root:/opt/FairSoftInst/lib/Geant4:/opt/FairSoftInst/lib/g4py"
+  export DYLD_LIBRARY_PATH=""
+  export LD_LIBRARY_PATH="/opt/FairShipRun/lib:/opt/FairRootInst/lib:/opt/FairSoftInst/lib/root:/opt/FairSoftInst/lib"
+  export PATH="/opt/FairSoftInst/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+fi
+export GENIE=/opt/FairSoft/generators/genie
+export GENPATH=/opt/FairSoftInst/share
+export LHAPATH=/opt/FairSoftInst/share/lhapdf/data
+export FAIRSHIPRUN=/opt/FairShipRun
+export FAIRSHIP=/opt/FairShip
