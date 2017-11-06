@@ -1024,7 +1024,9 @@ def finStateMuPi():
                         if pionMotherkey==muonMotherkey:                    #check if keys are the same
                             if true_mother.GetPdgCode() == 9900015:             #check if mother is HNL
                                 pionMotherTrue_mass = true_mother.GetMass()         #get HNL/final states mother mass
+                                pionMotherTrue_mom = true_mother.GetP()             #get HNL/final states mother mom
                                 h['HNL_true'].Fill(pionMotherTrue_mass)             #true HNL mass
+                                h['HNL_mom'].Fill(pionMotherTrue_mom)               # true HNL momentum
                                 pi_status = reco_part.getFitStatus()                #gets fit status
                                 pi_rchi2 = pi_status.getChi2()                      #chi squared value
                                 pi_nmeas = pi_status.getNdf()                       #gets number of measurements
@@ -1044,7 +1046,9 @@ def finStateMuPi():
                             
                                 HNL_Vector = fittedtrack1[str(muonMotherkey)] + Pion_Vector #adds the 4-momenta
                                 HNL_mass = HNL_Vector.M()                           #sets HNL mass
-                                h['HNL_reco'].Fill(HNL_mass)                        #fill histograms                                       
+                                HNL_reco_mom = HNL_Vector.P()                       #sets HNL mom
+                                h['HNL_reco'].Fill(HNL_mass)                        #fill histograms
+                                h['HNL_mom_reco'].Fill(HNL_reco_mom)                #----||-------
                                 h['Chi2'].Fill(dicMuChi2[str(muonMotherkey)])       #----||-------
                                 h['Chi2'].Fill(pi_chi2)                             #----||-------
                                 
@@ -1052,7 +1056,7 @@ def finStateMuPi():
                                 if pi_t != None:
                                     h['Time2'].Fill(pi_t)
 finStateMuPi()
-            
+HNLKinematics()            
 makePlots()
 hfile = inputFile.split(',')[0].replace('_rec','_NStesting') #create outputFile
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
