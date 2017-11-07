@@ -23,15 +23,17 @@ fiducialCut = True
 measCutFK = 25
 measCutPR = 22
 docaCut = 2.
-testFile=open('EDITA_lineLog.txt','w')
-testFile.write('Log of Active Tested Line numbers: \n')
+lineLogFile=open('EDITA_lineLog.txt','w')
+particleDataFile=open('partData.txt','w')
+lineLogFile.write('Log of Active Tested Line numbers: \n')
+particleDataFile.write('Particle Data File: \n')
 
 def get_linenumber():
     curframe = currentframe()
     return curframe.f_back.f_lineno
 def LineActivity(ns_variable,ns_line):     
     if ns_variable==ns_line:
-        testFile.write(str(ns_line) + '\n')
+        lineLogFile.write(str(ns_line) + '\n')
         ns_variable+=1
 def inputOptsArgs():
     inputFile  = None
@@ -175,8 +177,8 @@ def create_Hists():
     ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # new one for the reconstructed mass
     ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)
     ut.bookHist(h,'HNL_mom','Monte Carlo Momentum',100,0.,300.)
-    ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',100,0.,200.)
-    ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',100,0.,200.)
+    ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',200,0.,200.)
+    ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',500,0.,200.)
     ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300)
     #
     ut.bookHist(h,'HNLw','Reconstructed Mass with weights',500,0.,2.)
@@ -274,11 +276,10 @@ def dist2InnerWall(X,Y,Z):
   node = sGeo.FindNode(X,Y,Z)
   if ShipGeo.tankDesign < 5:
      if not 'cave' in node.GetName():
-         #testFile.write(str( get_linenumber()) + '\n') #doesnt do this
          return dist  # TP 
   else:
      if not 'decayVol' in node.GetName():
-        #testFile.write(str( get_linenumber()) + '\n') #does this
+        #does this
         return dist
   start = array('d',[X,Y,Z])
   nsteps = 8
@@ -291,11 +292,11 @@ def dist2InnerWall(X,Y,Z):
     node = sGeo.InitTrack(start, sdir)
     nxt = sGeo.FindNextBoundary()
     if ShipGeo.tankDesign < 5 and nxt.GetName().find('I')<0:
-        #testFile.write(str( get_linenumber()) + '\n') #doesnt do this
+        #doesnt do this
         return 0    
     distance = sGeo.GetStep()
     if distance < minDistance  :
-       #testFile.write(str( get_linenumber()) + '\n') #does this
+       #does this
        minDistance = distance
   return minDistance
 
@@ -469,30 +470,39 @@ def match2HNL(p):
 
 def time_res(partkey):
     if sTree.GetBranch("strawtubesPoint"):
-        if sTree.GetBranch("EcalPoint"):
-            z_array = []
-            t_array = []
-            straw_time=0
-            for k,hits in enumerate(sTree.strawtubesPoint):
-                TrackID = hits.GetTrackID()
-                if TrackID == partkey:
-                    z_array.append(hits.GetZ())
-                    t_array.append(hits.GetTime())
-                   
-            min_z = z_array.index(min(z_array))
-            straw_time = t_array[min_z]
+        z_array = []
+        t_array = []
+        #ecal_time=-1
+        #ecal_zpos=-1
+        #minZval=-1
+        #straw_time=-1
+        #t=-1
+        straw_time=0
+        for k,hits in enumerate(sTree.strawtubesPoint):
+            TrackID = hits.GetTrackID()
+            if TrackID == partkey:
+                z_array.append(hits.GetZ())
+                t_array.append(hits.GetTime())
+    
+        minZval=min(z_array)   
+        min_z = z_array.index(min(z_array))
+        straw_time = t_array[min_z]
+    else: return None,None,None,None,None
+    if sTree.GetBranch("EcalPoint"):
             if not straw_time<=0:
                 for k,hits in enumerate(sTree.EcalPoint):
                     TrackID = hits.GetTrackID()
                     if TrackID == partkey:
                         ecal_time = hits.GetTime()
+                        ecal_zpos = hits.GetZ()
                         if not ecal_time <= straw_time:
                             t = abs(straw_time - ecal_time)
-                            return t
-                    else: return None
-            else: return None
-        else: return None
-    else: return None
+                            return ecal_time,ecal_zpos, minZval, straw_time, t 
+                    else: return None,None,None,None,None
+            else: return None,None,None,None,None
+    else: return None,None,None,None,None
+    
+
 def ecalCluster2MC(aClus):
  # return MC track most contributing, and its fraction of energy
   trackid    = ROOT.Long()
@@ -1044,6 +1054,7 @@ def finStateMuPi():
                                 piPx = fittedstate2.getMom().x()                    #y
                                 piPy = fittedstate2.getMom().y()                    #and z
                                 piPz = fittedstate2.getMom().z()                    #then its momentum magnitude
+                                #print(piPz)
                                 piE = ROOT.TMath.Sqrt((pi_M**2) + (piP**2))         #then its energy
 
                                 Pion_Vector = ROOT.TLorentzVector()                 #declares variable as TLorentzVector class
@@ -1057,22 +1068,25 @@ def finStateMuPi():
                                 h['Chi2'].Fill(dicMuChi2[str(muonMotherkey)])       #----||-------
                                 h['Chi2'].Fill(pi_chi2)                             #----||-------
                                 
-                                mu_t = time_res(mupartkey[str(muonMotherkey)])
-                                if mu_t != None:
-                                    h['Time'].Fill(mu_t)
+                                muEcalT,muEcalZ, muMinStrawZ, muStrawT, mu_t = time_res(mupartkey[str(muonMotherkey)])      #
+                                particleDataFile.write('mu: \t' + str(muEcalT) + '\t' + str(muEcalZ) + '\t' + str(muMinStrawZ) + '\t' + str(muStrawT) + '\t' + str(mu_t) + '\n')
+                                if mu_t != None:                                    #
+                                    h['Time'].Fill(mu_t)                                #
 
-                                pi_t = time_res(partkey)
-                                if pi_t != None:
-                                    h['Time2'].Fill(pi_t)
+                                piEcalT,piEcalZ,piMinStrawZ,piStrawT,pi_t = time_res(partkey)                            #
+                                particleDataFile.write('pi: \t' + str(piEcalT) + '\t' + str(piEcalZ) + '\t' + str(piMinStrawZ) + '\t' + str(piStrawT) + '\t' + str(pi_t) + '\n')
+                                if pi_t != None:                                    #
+                                    h['Time2'].Fill(pi_t)                               #
 finStateMuPi()
 #HNLKinematics()            
 makePlots()
-hfile = inputFile.split(',')[0].replace('_rec','_NStesting') #create outputFile
+hfile = inputFile.split(',')[0].replace('_rec','_NStesting')#create outputFile
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
 # do not write to eos, write to local directory 
   tmp = hfile.split('/')
-  hfile = tmp[len(tmp)-1]     #occurs only for cern users
+  hfile = tmp[len(tmp)-1]                                   #occurs only for cern users
 ROOT.gROOT.cd()
-ut.writeHists(h,hfile)                                       #write histograms to outputFile
-testFile.close()                                             #close lineTestLogFile
+ut.writeHists(h,hfile)                                      #write histograms to outputFile
+lineLogFile.close()                                         #close lineTestLogFile
+particleDataFile.close()                                    #close File
 
