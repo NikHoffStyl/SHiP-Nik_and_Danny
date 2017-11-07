@@ -472,18 +472,13 @@ def time_res(partkey):
     if sTree.GetBranch("strawtubesPoint"):
         z_array = []
         t_array = []
-        #ecal_time=-1
-        #ecal_zpos=-1
-        #minZval=-1
-        #straw_time=-1
-        #t=-1
         straw_time=0
         for k,hits in enumerate(sTree.strawtubesPoint):
             TrackID = hits.GetTrackID()
+            #print(TrackID)
             if TrackID == partkey:
                 z_array.append(hits.GetZ())
                 t_array.append(hits.GetTime())
-    
         minZval=min(z_array)   
         min_z = z_array.index(min(z_array))
         straw_time = t_array[min_z]
@@ -993,8 +988,8 @@ def finStateMuPi():
             mupartkey={}
             for index,reco_part in enumerate(sTree.FitTracks):  #loops over index and data of track particles
                 if not checkFiducialVolume(sTree,index,dy): break   #exits loop if HNL decayed in fiducial volume 
-                partkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
-                true_muon = sTree.MCTrack[partkey]                  #gives MC particle data
+                muPartkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
+                true_muon = sTree.MCTrack[muPartkey]                  #gives MC particle data
                 if abs(true_muon.GetPdgCode()) == 13:               #checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             #stores a number index of MC track of mother
                     keylist.append(muonMotherkey)                     #adds to list
@@ -1006,7 +1001,7 @@ def finStateMuPi():
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       #gets chi value
                         dicMuChi2[str(muonMotherkey)]=mu_chi2
 
-                        mupartkey[str(muonMotherkey)] = partkey
+                        mupartkey[str(muonMotherkey)] = muPartkey
 
                         fittedstate1 = reco_part.getFittedState()           #get reconstructed muon fitted state
                         mu_M = true_muon.GetMass()                          #gets mass of MC muon
@@ -1022,16 +1017,12 @@ def finStateMuPi():
 
                         muonMotherTrue_mass = true_mother.GetMass()         #gets HNL mass
 
-                        #mu_t = time_res(partkey)
-                        #if mu_t != None:
-                        #    h['Time'].Fill(mu_t)
-
                     if true_mother.GetPdgCode() == 211:             #checks mother is HNL
                         print('Pion has decayed to a muon')
 
             for index,reco_part in enumerate(sTree.FitTracks):  #loops over index and data of track particles
-                partkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
-                true_pion = sTree.MCTrack[partkey]                  #gives MC particle data
+                piPartkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
+                true_pion = sTree.MCTrack[piPartkey]                  #gives MC particle data
                 if abs(true_pion.GetPdgCode()) == 211:              #checks particle is pion
                     pionMotherkey = true_pion.GetMotherId()             #stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[pionMotherkey]          #obtains mother particle data
@@ -1067,17 +1058,47 @@ def finStateMuPi():
                                 h['HNL_mom_reco'].Fill(HNL_reco_mom)                #----||-------
                                 h['Chi2'].Fill(dicMuChi2[str(muonMotherkey)])       #----||-------
                                 h['Chi2'].Fill(pi_chi2)                             #----||-------
+                                print(mupartkey[str(muonMotherkey)])
                                 
                                 muEcalT,muEcalZ, muMinStrawZ, muStrawT, mu_t = time_res(mupartkey[str(muonMotherkey)])      #
                                 particleDataFile.write('mu: \t' + str(muEcalT) + '\t' + str(muEcalZ) + '\t' + str(muMinStrawZ) + '\t' + str(muStrawT) + '\t' + str(mu_t) + '\n')
                                 if mu_t != None:                                    #
                                     h['Time'].Fill(mu_t)                                #
 
-                                piEcalT,piEcalZ,piMinStrawZ,piStrawT,pi_t = time_res(partkey)                            #
+                                piEcalT,piEcalZ,piMinStrawZ,piStrawT,pi_t = time_res(piPartkey)                            #
                                 particleDataFile.write('pi: \t' + str(piEcalT) + '\t' + str(piEcalZ) + '\t' + str(piMinStrawZ) + '\t' + str(piStrawT) + '\t' + str(pi_t) + '\n')
                                 if pi_t != None:                                    #
                                     h['Time2'].Fill(pi_t)                               #
 finStateMuPi()
+
+#for n in (nEvents):
+#    rc = sTree.GetEntry(n)
+#    if sTree.GetBranch("strawtubesPoint"):
+#        z_array = []
+#        t_array = []
+#        straw_time=0
+#        for k,hits in enumerate(sTree.strawtubesPoint):
+#            TrackID = hits.GetTrackID()
+#            if TrackID == partkey:
+#                z_array.append(hits.GetZ())
+#                t_array.append(hits.GetTime())
+#        minZval=min(z_array)   
+#        min_z = z_array.index(min(z_array))
+#        straw_time = t_array[min_z]
+#    else: return None,None,None,None,None
+#    if sTree.GetBranch("EcalPoint"):
+#            if not straw_time<=0:
+#                for k,hits in enumerate(sTree.EcalPoint):
+#                    TrackID = hits.GetTrackID()
+#                    if TrackID == partkey:
+#                        ecal_time = hits.GetTime()
+#                        ecal_zpos = hits.GetZ()
+#                        if not ecal_time <= straw_time:
+#                            t = abs(straw_time - ecal_time)
+#                            return ecal_time,ecal_zpos, minZval, straw_time, t 
+#                    else: return None,None,None,None,None
+#            else: return None,None,None,None,None
+#    else: return None,None,None,None,None
 #HNLKinematics()            
 makePlots()
 hfile = inputFile.split(',')[0].replace('_rec','_NStesting')#create outputFile
