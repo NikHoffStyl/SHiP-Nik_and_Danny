@@ -1016,8 +1016,8 @@ def finStateMuPi():
                         #if mu_t != None:
                         #    h['Time'].Fill(mu_t)
 
-                        if true_mother.GetPdgCode() == 211:             #checks mother is HNL
-                            print('Pion has decayed to a muon')
+                    if true_mother.GetPdgCode() == 211:             #checks mother is HNL
+                        print('Pion has decayed to a muon')
 
             for index,reco_part in enumerate(sTree.FitTracks):  #loops over index and data of track particles
                 partkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
