@@ -268,7 +268,6 @@ def VertexError(t1,t2,PosDir,CovMat,scalFac):
    covX.Mult(tmp,transT)
    return X,covX,dist
 
-
 def dist2InnerWall(X,Y,Z):
   dist = 0
  # return distance to inner wall perpendicular to z-axis, if outside decayVolume return 0.
@@ -979,8 +978,9 @@ def finStateMuPi():
         for n in range(nEvents):                            #loop over events
             rc = sTree.GetEntry(n)                              #load tree entry
             keylist=[]                                          #create empty list
-            fittedtrack1 = {}                                   #create empty dictionaries
+            muVector = {}                                   #create empty dictionaries
             dicMuChi2 = {}
+            mupartkey={}
             for index,reco_part in enumerate(sTree.FitTracks):  #loops over index and data of track particles
                 if not checkFiducialVolume(sTree,index,dy): break   #exits loop if HNL decayed in fiducial volume 
                 partkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
@@ -996,6 +996,8 @@ def finStateMuPi():
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       #gets chi value
                         dicMuChi2[str(muonMotherkey)]=mu_chi2
 
+                        mupartkey[str(muonMotherkey)] = partkey
+
                         fittedstate1 = reco_part.getFittedState()           #get reconstructed muon fitted state
                         mu_M = true_muon.GetMass()                          #gets mass of MC muon
                         muPx = fittedstate1.getMom().x()                    #then its momentum in x,
@@ -1006,13 +1008,16 @@ def finStateMuPi():
 
                         Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                         Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE)          # inputs four-momentum elements
-                        fittedtrack1[str(muonMotherkey)]=Muon_Vector
+                        muVector[str(muonMotherkey)]=Muon_Vector
 
                         muonMotherTrue_mass = true_mother.GetMass()         #gets HNL mass
 
-                        mu_t = time_res(partkey)
-                        if mu_t != None:
-                            h['Time'].Fill(mu_t)
+                        #mu_t = time_res(partkey)
+                        #if mu_t != None:
+                        #    h['Time'].Fill(mu_t)
+
+                        if true_mother.GetPdgCode() == 211:             #checks mother is HNL
+                            print('Pion has decayed to a muon')
 
             for index,reco_part in enumerate(sTree.FitTracks):  #loops over index and data of track particles
                 partkey = sTree.fitTrack2MC[index]                  #mathches track to MC particle key
@@ -1044,7 +1049,7 @@ def finStateMuPi():
                                 Pion_Vector = ROOT.TLorentzVector()                 #declares variable as TLorentzVector class
                                 Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          #inputs four-momentum elements
                             
-                                HNL_Vector = fittedtrack1[str(muonMotherkey)] + Pion_Vector #adds the 4-momenta
+                                HNL_Vector = muVector[str(muonMotherkey)] + Pion_Vector #adds the 4-momenta
                                 HNL_mass = HNL_Vector.M()                           #sets HNL mass
                                 HNL_reco_mom = HNL_Vector.P()                       #sets HNL mom
                                 h['HNL_reco'].Fill(HNL_mass)                        #fill histograms
@@ -1052,11 +1057,15 @@ def finStateMuPi():
                                 h['Chi2'].Fill(dicMuChi2[str(muonMotherkey)])       #----||-------
                                 h['Chi2'].Fill(pi_chi2)                             #----||-------
                                 
+                                mu_t = time_res(mupartkey[str(muonMotherkey)])
+                                if mu_t != None:
+                                    h['Time'].Fill(mu_t)
+
                                 pi_t = time_res(partkey)
                                 if pi_t != None:
                                     h['Time2'].Fill(pi_t)
 finStateMuPi()
-HNLKinematics()            
+#HNLKinematics()            
 makePlots()
 hfile = inputFile.split(',')[0].replace('_rec','_NStesting') #create outputFile
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
