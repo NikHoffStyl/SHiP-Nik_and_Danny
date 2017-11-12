@@ -48,17 +48,13 @@ def inputOptsArgs():
             sys.exit()
     for o, a in opts:
             if o in ("-f",):
-                inputFile = a
-                LineActivity(get_linenumber(),get_linenumber()) #does this
+                inputFile = a           #does this
             if o in ("-g", "--geoFile",):
-                geoFile = a
-                LineActivity(get_linenumber(),get_linenumber()) #does this
+                geoFile = a             #does this
             if o in ("-Y",):
-                dy = float(a)
-                LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
+                dy = float(a)           #doesnt do this
             if o in ("-n", "--nEvents=",):
-                nEvents = int(a)
-                LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
+                nEvents = int(a)        #doesnt do this
     return a, dy, geoFile, inputFile, nEvents, o
 a, dy, geoFile, inputFile, nEvents, o = inputOptsArgs()
 
@@ -93,25 +89,20 @@ sGeo = fgeo.FAIRGeom
 
 if not fgeo.FindKey('ShipGeo'):
  # old geofile, missing Shipgeo dictionary
- LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
+ #doesnt do this
  if sGeo.GetVolume('EcalModule3') :  
-     ecalGeoFile = "ecal_ellipse6x12m2.geo"
-     LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
+     ecalGeoFile = "ecal_ellipse6x12m2.geo"     #doesnt do this
  else: 
-     ecalGeoFile = "ecal_ellipse5x10m2.geo"
-     LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
+     ecalGeoFile = "ecal_ellipse5x10m2.geo"     #doesnt do this
  print 'found ecal geo for ',ecalGeoFile
  # re-create geometry and mag. field
  if not dy:
   # try to extract from input file name
-  LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
-  tmp = inputFile.split('.')
+  tmp = inputFile.split('.')                    #doesnt do this
   try:
-    dy = float( tmp[1]+'.'+tmp[2] )
-    LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
+    dy = float( tmp[1]+'.'+tmp[2] )             #doesnt do this
   except:
-    dy = 10.
-    LineActivity(get_linenumber(),get_linenumber()) #doesnt do this
+    dy = 10.                                    #doesnt do this
  ShipGeo = ConfigRegistry.loadpy("$FAIRSHIP/geometry/geometry_config.py", Yheight = dy, EcalGeoFile = ecalGeoFile )
 else: #it finds ShipGeo in fgeo so does this
  # new geofile, load Shipgeo dictionary written by run_simScript.py
@@ -119,7 +110,6 @@ else: #it finds ShipGeo in fgeo so does this
   ShipGeo = upkl.load('ShipGeo') #load is def in def Unpickler
   ecalGeoFile = ShipGeo.ecal.File
   dy = ShipGeo.Yheight/u.m
-  LineActivity(get_linenumber(),get_linenumber()) #does this so obviously finds ShipGeo
 
 # CREATE GEOMETRY
 
@@ -220,16 +210,13 @@ def VertexError(t1,t2,PosDir,CovMat,scalFac):
      for k in range(4):
        for j in range(3): 
         KD = 0
-        if i==j: 
-            LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
+        if i==j:    #doesnt do this
             KD = 1
         if k==0 or k==2:
        # cova and covc
-         temp  = ( u[j]*Vsq - v[j]*UV )*u[i] + (u[j]*UV-v[j]*Usq)*v[i]
-         LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
+         temp  = ( u[j]*Vsq - v[j]*UV )*u[i] + (u[j]*UV-v[j]*Usq)*v[i]  #doesnt do this
          sign = -1
-         if k==2 : 
-             LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
+         if k==2 :  #doesnt do this
              sign = +1
          T[i][3*k+j] = 0.5*( KD + sign*temp/denom )
         elif k==1:
@@ -238,8 +225,7 @@ def VertexError(t1,t2,PosDir,CovMat,scalFac):
          aZAN = ( ca.Dot(u)*Vsq-ca.Dot(v)*UV )*2*( u[j]*Vsq-v[j]*UV )
          bNAZ = denom*( ca[j]*UV+(u.Dot(ca)*v[j]) - 2*ca.Dot(v)*u[j] )
          bZAN = ( ca.Dot(u)*UV-ca.Dot(v)*Usq )*2*( u[j]*Vsq-v[j]*UV )
-         T[i][3*k+j] = 0.5*( Va*KD + u[i]/denom**2*(aNAZ-aZAN) + v[i]/denom**2*(bNAZ-bZAN) )
-         LineActivity(get_linenumber()+i+k+j,get_linenumber()) #doesnt do this
+         T[i][3*k+j] = 0.5*( Va*KD + u[i]/denom**2*(aNAZ-aZAN) + v[i]/denom**2*(bNAZ-bZAN) )   #doesnt do this
         elif k==3:
        # covv
          aNAZ = denom*( 2*ca.Dot(u)*v[j] - ca.Dot(v)*u[j] - ca[j]*UV )
@@ -477,26 +463,74 @@ def time_res(partkey):
             TrackID = hits.GetTrackID()
             #print(TrackID)
             if TrackID == partkey:
+                LineActivity(get_linenumber(),get_linenumber())
                 z_array.append(hits.GetZ())
                 t_array.append(hits.GetTime())
+            else: LineActivity(get_linenumber(),get_linenumber())
         minZval=min(z_array)   
         min_z = z_array.index(min(z_array))
         straw_time = t_array[min_z]
-    else: return None,None,None,None,None
+    else:
+        LineActivity(get_linenumber(),get_linenumber())
+        return None,None,None,None,None
     if sTree.GetBranch("EcalPoint"):
             if not straw_time<=0:
                 for k,hits in enumerate(sTree.EcalPoint):
                     TrackID = hits.GetTrackID()
                     if TrackID == partkey:
+                        LineActivity(get_linenumber(),get_linenumber())
                         ecal_time = hits.GetTime()
                         ecal_zpos = hits.GetZ()
                         if not ecal_time <= straw_time:
                             t = abs(straw_time - ecal_time)
-                            return ecal_time,ecal_zpos, minZval, straw_time, t 
-                    else: return None,None,None,None,None
-            else: return None,None,None,None,None
-    else: return None,None,None,None,None
-    
+                            return ecal_time,ecal_zpos, minZval, straw_time, t
+                        else:LineActivity(get_linenumber(),get_linenumber())
+                    else:
+                        LineActivity(get_linenumber(),get_linenumber())
+                        return None,None,None,None,None
+            else:
+                LineActivity(get_linenumber(),get_linenumber())
+                return None,None,None,None,None
+    else:
+        LineActivity(get_linenumber(),get_linenumber())
+        return None,None,None,None,None
+
+def time_resVrs2(partkey):
+    if sTree.GetBranch("strawtubesPoint"):
+        z_array = []
+        t_array = []
+        straw_time=0
+        for k,hits in enumerate(sTree.strawtubesPoint):
+            #print(k,hits)
+            TrackID = hits.GetTrackID()
+            #print(TrackID)
+            if TrackID == partkey:
+                LineActivity(get_linenumber(),get_linenumber())
+                z_array.append(hits.GetZ())
+                t_array.append(hits.GetTime())
+            else: LineActivity(get_linenumber(),get_linenumber())
+        minZval=min(z_array)   
+        min_z = z_array.index(min(z_array))
+        straw_time = t_array[min_z]
+    else:
+        LineActivity(get_linenumber(),get_linenumber())
+        return None,None,None,None,None
+    if sTree.GetBranch("EcalPoint"):
+            if not straw_time<=0:
+                for k,hits in enumerate(sTree.EcalPoint):
+                    #print(k,hits)
+                    TrackID = hits.GetTrackID()
+                    ecal_time = hits.GetTime()
+                    ecal_zpos = hits.GetZ()
+                    if not ecal_time <= straw_time:
+                        t = abs(straw_time - ecal_time)
+                        return ecal_time, ecal_zpos, minZval, straw_time, t 
+            else:
+                LineActivity(get_linenumber(),get_linenumber())
+                return None,None,None,None,None
+    else:
+        LineActivity(get_linenumber(),get_linenumber())
+        return None,None,None,None,None
 
 def ecalCluster2MC(aClus):
  # return MC track most contributing, and its fraction of energy
@@ -575,19 +609,15 @@ def myEventLoop(n):
   measCut = measCutFK
   if sTree.GetBranch("FitTracks_PR"):
       sTree.FitTracks = sTree.FitTracks_PR
-      measCut = measCutPR#doesnt do this
+      measCut = measCutPR       #doesnt do this
   if sTree.GetBranch("fitTrack2MC_PR"):
-      LineActivity(get_linenumber()+n, get_linenumber())
       sTree.fitTrack2MC = sTree.fitTrack2MC_PR #doesnt do this
   if sTree.GetBranch("Particles_PR"):
-      LineActivity(get_linenumber()+n, get_linenumber()) 
       sTree.Particles   = sTree.Particles_PR  #doesnt do this
   if not checkHNLorigin(sTree):
-      LineActivity(get_linenumber()+n, get_linenumber()) 
       return   #does this
   wg = sTree.MCTrack[1].GetWeight()
-  if not wg>0.:
-      LineActivity(get_linenumber()+n, get_linenumber()) #doesnt do this
+  if not wg>0.:  #doesnt do this
       wg=1.
 
 # make some ecal cluster analysis if exist
@@ -1001,7 +1031,7 @@ def finStateMuPi():
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       #gets chi value
                         dicMuChi2[str(muonMotherkey)]=mu_chi2
 
-                        mupartkey[str(muonMotherkey)] = muPartkey
+                        mupartkey[str(muonMotherkey)] = muPartkey           #muon Track Id
 
                         fittedstate1 = reco_part.getFittedState()           #get reconstructed muon fitted state
                         mu_M = true_muon.GetMass()                          #gets mass of MC muon
@@ -1045,7 +1075,7 @@ def finStateMuPi():
                                 piPx = fittedstate2.getMom().x()                    #y
                                 piPy = fittedstate2.getMom().y()                    #and z
                                 piPz = fittedstate2.getMom().z()                    #then its momentum magnitude
-                                #print(piPz)
+                                #print(piPz)                                         #prints TrackID of pion
                                 piE = ROOT.TMath.Sqrt((pi_M**2) + (piP**2))         #then its energy
 
                                 Pion_Vector = ROOT.TLorentzVector()                 #declares variable as TLorentzVector class
@@ -1058,15 +1088,17 @@ def finStateMuPi():
                                 h['HNL_mom_reco'].Fill(HNL_reco_mom)                #----||-------
                                 h['Chi2'].Fill(dicMuChi2[str(muonMotherkey)])       #----||-------
                                 h['Chi2'].Fill(pi_chi2)                             #----||-------
-                                print(mupartkey[str(muonMotherkey)])
+                                #print(mupartkey[str(muonMotherkey)])                #prints Track ID of muon
                                 
                                 muEcalT,muEcalZ, muMinStrawZ, muStrawT, mu_t = time_res(mupartkey[str(muonMotherkey)])      #
-                                particleDataFile.write('mu: \t' + str(muEcalT) + '\t' + str(muEcalZ) + '\t' + str(muMinStrawZ) + '\t' + str(muStrawT) + '\t' + str(mu_t) + '\n')
+                                #particleDataFile.write('mu: \t' + str(muEcalT) + '\t' + str(muEcalZ) + '\t' + str(muMinStrawZ) + '\t' + str(muStrawT) + '\t' + str(mu_t) + '\n')
                                 if mu_t != None:                                    #
                                     h['Time'].Fill(mu_t)                                #
 
-                                piEcalT,piEcalZ,piMinStrawZ,piStrawT,pi_t = time_res(piPartkey)                            #
-                                particleDataFile.write('pi: \t' + str(piEcalT) + '\t' + str(piEcalZ) + '\t' + str(piMinStrawZ) + '\t' + str(piStrawT) + '\t' + str(pi_t) + '\n')
+                                piEcalT,piEcalZ,piMinStrawZ,piStrawT,pi_t = time_resVrs2(piPartkey)                          #
+                                pideltaZz=piEcalZ-piMinStrawZ
+                                #particleDataFile.write('pi: \t' + str(piEcalT) + '\t' + str(piEcalZ) + '\t' + str(piMinStrawZ) + '\t' + str(piStrawT) + '\t' + str(pi_t) + '\t' +  str(piPz) + '\n')
+                                particleDataFile.write('pi: \t'+ str(pideltaZz)+ '\t'  +  str(piPz) + '\n')
                                 if pi_t != None:                                    #
                                     h['Time2'].Fill(pi_t)                               #
 finStateMuPi()
