@@ -497,6 +497,8 @@ def time_res(partkey):
 
 def time_resVrs2(partkey):
     if sTree.GetBranch("strawtubesPoint"):
+        x_array = []
+        y_array = []
         z_array = []
         t_array = []
         straw_time=0
@@ -506,15 +508,19 @@ def time_resVrs2(partkey):
             #print(TrackID)
             if TrackID == partkey:
                 LineActivity(get_linenumber(),get_linenumber())
+                x_array.append(hits.GetX())
+                y_array.append(hits.GetY())
                 z_array.append(hits.GetZ())
                 t_array.append(hits.GetTime())
             else: LineActivity(get_linenumber(),get_linenumber())
-        minZval=min(z_array)   
+        minZval=min(z_array)
         min_z = z_array.index(min(z_array))
+        minXval = x_array[min_z]
+        minYval = y_array[min_z]
         straw_time = t_array[min_z]
     else:
         LineActivity(get_linenumber(),get_linenumber())
-        return None,None,None,None,None
+        return None,None,None,None,None,None,None,None,None
     if sTree.GetBranch("EcalPoint"):
             if not straw_time<=0:
                 for k,hits in enumerate(sTree.EcalPoint):
@@ -522,15 +528,17 @@ def time_resVrs2(partkey):
                     TrackID = hits.GetTrackID()
                     ecal_time = hits.GetTime()
                     ecal_zpos = hits.GetZ()
+                    ecal_xpos = hits.GetX()
+                    ecal_ypos = hits.GetY()
                     if not ecal_time <= straw_time:
                         t = abs(straw_time - ecal_time)
-                        return ecal_time, ecal_zpos, minZval, straw_time, t 
+                        return ecal_time, ecal_xpos, ecal_ypos, ecal_zpos, minXval,minYval,minZval, straw_time, t 
             else:
                 LineActivity(get_linenumber(),get_linenumber())
-                return None,None,None,None,None
+                return None,None,None,None,None,None,None,None,None
     else:
         LineActivity(get_linenumber(),get_linenumber())
-        return None,None,None,None,None
+        return None,None,None,None,None,None,None,None,None
 
 def ecalCluster2MC(aClus):
  # return MC track most contributing, and its fraction of energy
@@ -1093,14 +1101,18 @@ def finStateMuPi():
                                 muEcalT,muEcalZ, muMinStrawZ, muStrawT, mu_t = time_res(mupartkey[str(muonMotherkey)])      #
                                 #particleDataFile.write('mu: \t' + str(muEcalT) + '\t' + str(muEcalZ) + '\t' + str(muMinStrawZ) + '\t' + str(muStrawT) + '\t' + str(mu_t) + '\n')
                                 if mu_t != None:                                    #
-                                    h['Time'].Fill(mu_t)                                #
+                                    h['Time'].Fill(mu_t)                            #
 
-                                piEcalT,piEcalZ,piMinStrawZ,piStrawT,pi_t = time_resVrs2(piPartkey)                          #
-                                pideltaZz=piEcalZ-piMinStrawZ
+                                piEcalT, piEcalX, piEcalY, piEcalZ, piMinXval,piMinYval,piMinZval, piStrawT, pi_t  = time_resVrs2(piPartkey)                          #
+                                piDeltaPos=ROOT.TMath.Sqrt(((piEcalX-piMinXval)**2)+((piEcalY-piMinYval)**2)+((piEcalZ-piMinZval)**2))
+                                piPjoules=piP*1.602*(10**(-13))
+                                piGammaVel=piPjoules/pi_M
+                                manualCalTime=piDeltaPos/piGammaVel
+                                #pideltaZz=piEcalZ-piMinStrawZ
                                 #particleDataFile.write('pi: \t' + str(piEcalT) + '\t' + str(piEcalZ) + '\t' + str(piMinStrawZ) + '\t' + str(piStrawT) + '\t' + str(pi_t) + '\t' +  str(piPz) + '\n')
-                                particleDataFile.write('pi: \t'+ str(pideltaZz)+ '\t'  +  str(piPz) + '\n')
-                                if pi_t != None:                                    #
-                                    h['Time2'].Fill(pi_t)                               #
+                                particleDataFile.write('pi: \t'+ str(piDeltaPos)+ '\t'  +  str(piPjoules) + '\t' +  str(manualCalTime) + '\n')
+                                if pi_t != None:                                     #
+                                    h['Time2'].Fill(pi_t)                            #
 finStateMuPi()
 
 #for n in (nEvents):
