@@ -526,6 +526,7 @@ def time_resVrs2(partkey):
                 for k,hits in enumerate(sTree.EcalPoint):
                     #print(k,hits)
                     TrackID = hits.GetTrackID()
+                    #print(TrackID)
                     ecal_time = hits.GetTime()
                     ecal_zpos = hits.GetZ()
                     ecal_xpos = hits.GetX()
@@ -1104,13 +1105,13 @@ def finStateMuPi():
                                     h['Time'].Fill(mu_t)                            #
 
                                 piEcalT, piEcalX, piEcalY, piEcalZ, piMinXval,piMinYval,piMinZval, piStrawT, pi_t  = time_resVrs2(piPartkey)                          #
-                                piDeltaPos=ROOT.TMath.Sqrt(((piEcalX-piMinXval)**2)+((piEcalY-piMinYval)**2)+((piEcalZ-piMinZval)**2))
+                                piDeltaPos=(ROOT.TMath.Sqrt(((piEcalX-piMinXval)**2)+((piEcalY-piMinYval)**2)+((piEcalZ-piMinZval)**2)))/100
                                 piPjoules=piP*1.602*(10**(-13))
-                                piGammaVel=piPjoules/pi_M
+                                piGammaVel=piP/(pi_M/(3*(10**8)))
                                 manualCalTime=piDeltaPos/piGammaVel
                                 #pideltaZz=piEcalZ-piMinStrawZ
                                 #particleDataFile.write('pi: \t' + str(piEcalT) + '\t' + str(piEcalZ) + '\t' + str(piMinStrawZ) + '\t' + str(piStrawT) + '\t' + str(pi_t) + '\t' +  str(piPz) + '\n')
-                                particleDataFile.write('pi: \t'+ str(piDeltaPos)+ '\t'  +  str(piPjoules) + '\t' +  str(manualCalTime) + '\n')
+                                particleDataFile.write('pi: \t'+ str(piDeltaPos)+ '\t'  +  str(piP) + '\t'  +  str(piPjoules) +'\t' +  str(manualCalTime) + '\n')
                                 if pi_t != None:                                     #
                                     h['Time2'].Fill(pi_t)                            #
 finStateMuPi()
