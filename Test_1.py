@@ -111,6 +111,58 @@ vetoStation_zDown = vetoStation.GetMatrix().GetTranslation()[2]+vetoStation.GetV
 T1Station = ROOT.gGeoManager.GetTopVolume().GetNode('Tr1_1')
 T1Station_zUp = T1Station.GetMatrix().GetTranslation()[2]-T1Station.GetVolume().GetShape().GetDZ()
 
+# initialize ecal structure
+caloTasks = []
+sTree.GetEvent(0)
+ecalGeo = ecalGeoFile+'z'+str(ShipGeo.ecal.z)+".geo"
+if not ecalGeo in os.listdir(os.environ["FAIRSHIP"]+"/geometry"): shipDet_conf.makeEcalGeoFile(ShipGeo.ecal.z,ShipGeo.ecal.File)
+ecalFiller = ROOT.ecalStructureFiller("ecalFiller", 0,ecalGeo)
+ecalFiller.SetUseMCPoints(ROOT.kTRUE)
+ecalFiller.StoreTrackInformation()
+ecalStructure = ecalFiller.InitPython(sTree.EcalPointLite)
+caloTasks.append(ecalFiller)
+if sTree.GetBranch("EcalReconstructed"):
+ calReco = False
+ sTree.GetEvent(0)
+ ecalReconstructed = sTree.EcalReconstructed
+else:
+ calReco = True
+ print "setup calo reconstruction of ecalReconstructed objects"
+# Calorimeter reconstruction
+ #GeV -> ADC conversion
+ ecalDigi=ROOT.ecalDigi("ecalDigi",0)
+ ecalPrepare=ROOT.ecalPrepare("ecalPrepare",0)
+ ecalStructure     = ecalFiller.InitPython(sTree.EcalPointLite)
+ ecalDigi.InitPython(ecalStructure)
+ caloTasks.append(ecalDigi)
+ ecalPrepare.InitPython(ecalStructure)
+ caloTasks.append(ecalPrepare)
+ # Cluster calibration
+ ecalClusterCalib=ROOT.ecalClusterCalibration("ecalClusterCalibration", 0)
+ #4x4 cm cells
+ ecalCl3PhS=ROOT.TFormula("ecalCl3PhS", "[0]+x*([1]+x*([2]+x*[3]))")
+ ecalCl3PhS.SetParameters(6.77797e-04, 5.75385e+00, 3.42690e-03, -1.16383e-04)
+ ecalClusterCalib.SetStraightCalibration(3, ecalCl3PhS)
+ ecalCl3Ph=ROOT.TFormula("ecalCl3Ph", "[0]+x*([1]+x*([2]+x*[3]))+[4]*x*y+[5]*x*y*y")
+ ecalCl3Ph.SetParameters(0.000750975, 5.7552, 0.00282783, -8.0025e-05, -0.000823651, 0.000111561)
+ ecalClusterCalib.SetCalibration(3, ecalCl3Ph)
+#6x6 cm cells
+ ecalCl2PhS=ROOT.TFormula("ecalCl2PhS", "[0]+x*([1]+x*([2]+x*[3]))")
+ ecalCl2PhS.SetParameters(8.14724e-04, 5.67428e+00, 3.39030e-03, -1.28388e-04)
+ ecalClusterCalib.SetStraightCalibration(2, ecalCl2PhS)
+ ecalCl2Ph=ROOT.TFormula("ecalCl2Ph", "[0]+x*([1]+x*([2]+x*[3]))+[4]*x*y+[5]*x*y*y")
+ ecalCl2Ph.SetParameters(0.000948095, 5.67471, 0.00339177, -0.000122629, -0.000169109, 8.33448e-06)
+ ecalClusterCalib.SetCalibration(2, ecalCl2Ph)
+ caloTasks.append(ecalClusterCalib)
+ ecalReco=ROOT.ecalReco('ecalReco',0)
+ caloTasks.append(ecalReco)
+# Match reco to MC
+ ecalMatch=ROOT.ecalMatch('ecalMatch',0)
+ caloTasks.append(ecalMatch)
+ ecalCalib         = ecalClusterCalib.InitPython()
+ ecalReconstructed = ecalReco.InitPython(sTree.EcalClusters, ecalStructure, ecalCalib)
+ ecalMatch.InitPython(ecalStructure, ecalReconstructed, sTree.MCTrack)
+
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
 h = {}
@@ -236,7 +288,6 @@ def time_res2(partkey):
         t_array = []
         for k,hits in enumerate(sTree.strawtubesPoint):
             TrackID = hits.GetTrackID()
-            #print(TrackID)
             if TrackID == partkey:
                 x_array.append(hits.GetX())
                 y_array.append(hits.GetY())
@@ -247,8 +298,7 @@ def time_res2(partkey):
         straw_zpos = min(z_array)
         straw_xpos = x_array[min_z_index]
         straw_ypos = y_array[min_z_index]
-        straw_time = t_array[min_z_index]
-        
+        straw_time = t_array[min_z_index]   
     else: return None
 
     if sTree.GetBranch("EcalPoint"):
@@ -264,7 +314,6 @@ def time_res2(partkey):
                         if not ecal_time <= straw_time:
                             t = abs(straw_time - ecal_time)
                             return t
-
             else: return None
     else: return None
 
@@ -332,8 +381,7 @@ def makePlots():
 nEvents = min(sTree.GetEntries(),nEvents)
 import TrackExtrapolateTool
 from array import array
-
-
+c = (3*(10**8))
 
 def finStateMuPi():
     if sTree.GetBranch("FitTracks"):
@@ -425,6 +473,11 @@ def finStateMuPi():
 
                                 h['HNL_true'].Fill(pionMotherTrue_mass)             # true HNL mass
                                 h['HNL_mom'].Fill(pionMotherTrue_mom)               # true HNL momentum
+
+                                piV = (piP*c) / (ROOT.TMath.Sqrt((pi_M**2)*(c**2) + (piP**2))) 
+                                muV = (muP*c) / (ROOT.TMath.Sqrt((mu_M**2)*(c**2) + (muP**2))) 
+                                print(piV)
+
                                 h['Pion_mom'].Fill(piP)
                                 h['Muon_mom'].Fill(muP)
                             

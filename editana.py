@@ -816,7 +816,7 @@ HNLKinematics()
 makePlots()
 
 # Output histograms and ROOT file
-hfile = inputFile.split(',')[0].replace('_rec','_MCMTEST')
+hfile = inputFile.split(',')[0].replace('_rec','_editana')
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
 # do not write to eos, write to local directory 
   tmp = hfile.split('/')
