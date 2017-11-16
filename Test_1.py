@@ -163,6 +163,9 @@ else:
  ecalReconstructed = ecalReco.InitPython(sTree.EcalClusters, ecalStructure, ecalCalib)
  ecalMatch.InitPython(ecalStructure, ecalReconstructed, sTree.MCTrack)
 
+import TrackExtrapolateTool
+from array import array
+
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
 h = {}
@@ -342,131 +345,6 @@ def time_res(partkey):
             else: return None,None,None,None,None
     else: return None,None,None,None,None
 
-def time_res2(partkey,V):
-    if sTree.GetBranch("strawtubesPoint"):
-        x_array = []
-        y_array = []
-        z_array = []
-        t_array = []
-        for k,hits in enumerate(sTree.strawtubesPoint):
-            TrackID = hits.GetTrackID()
-            if TrackID == partkey:
-                x_array.append(hits.GetX())
-                y_array.append(hits.GetY())
-                z_array.append(hits.GetZ())
-                t_array.append(hits.GetTime())
-        
-        min_z_index = z_array.index(min(z_array))
-        straw_z = min(z_array)
-        straw_x = x_array[min_z_index]
-        straw_y = y_array[min_z_index]
-        straw_time = t_array[min_z_index]   
-    else: return None
-
-    if sTree.GetBranch("EcalPoint"):
-            if not straw_time<=0:
-                for k,hits in enumerate(sTree.EcalPoint):
-                    TrackID = hits.GetTrackID()
-                    if TrackID == partkey:
-                        ecal_x = hits.GetX()
-                        ecal_y = hits.GetY()
-                        ecal_z = hits.GetZ()
-                        ecal_time = hits.GetTime()
-
-                        if not ecal_time <= straw_time:
-                            #r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-                            #t = (0.01*r)/V # need to sort out the units
-                            t = abs(straw_time - ecal_time)
-                            return t
-            else: return None
-    else: return None
-
-def inv_mass():
-    if sTree.GetBranch("Particles"):
-        ut.bookHist(h,'HNL_example','Example Reconstructed Mass',500,0.,2.)
-        trackcheck = 0
-        meascheck = 0
-        fiducialcheck = 0
-        docacheck = 0
-        convergecheck = 0
-        Vector = {}
-        for n in range(nEvents):
-            rc = sTree.GetEntry(n)
-            for HNL in sTree.Particles:
-                t1,t2 = HNL.GetDaughter(0),HNL.GetDaughter(1)
-
-                if not checkFiducialVolume(sTree,t1,dy):
-                    trackcheck+=1
-                    continue
-                if not checkFiducialVolume(sTree,t2,dy):
-                    trackcheck+=1
-                    continue
-
-                checkMeasurements = True
-                checkConvergence = True
-                for track in [t1,t2]:
-                    fitstatus  = sTree.FitTracks[track].getFitStatus()
-                    nmeas = fitstatus.getNdf()
-                    if not fitstatus.isFitConverged(): checkConvergence = False
-                    if nmeas < 25: checkMeasurements = False
-               
-                if not checkMeasurements: 
-                    meascheck+=1
-                    continue
-                if not checkConvergence:
-                    convergecheck+=1
-                    continue
-
-                HNLPos = ROOT.TLorentzVector()
-                HNL.ProductionVertex(HNLPos)
-                HNLMom = ROOT.TLorentzVector()
-                HNL.Momentum(HNLMom)
-
-                xv,yv,zv,doca,HNLMom  = RedoVertexing(t1,t2)
-
-                #for track in [t1,t2]:
-                #    if sTree.GetBranch("FitTracks"):
-                #        fittedstate  = sTree.FitTracks[track].getFittedState()
-                
-                #        particle_ID = sTree.fitTrack2MC[track]
-                #        particle = sTree.MCTrack[particle_ID]
-                #        M = particle.GetMass()
-
-                #        Px = fittedstate.getMom().x()
-                #        Py = fittedstate.getMom().y()  
-                #        Pz = fittedstate.getMom().z()
-                #        P = fittedstate.getMomMag()
-                #        E = ROOT.TMath.Sqrt((M**2) + (P**2))
-
-                #        Vector[track] = ROOT.TLorentzVector()
-                #        Vector[track].SetPxPyPzE(Px,Py,Pz,E)
-                #HNLMom = Vector[t1] + Vector[t2]
-                
-                if HNLMom == -1: continue
-                if not isInFiducial(HNLPos.X(),HNLPos.Y(),HNLPos.Z()):
-                    fiducialcheck+=1
-                    continue
-                if  doca > 2.: 
-                    docacheck+=1
-                    continue
-
-                mass = HNLMom.M()
-                h['HNL_example'].Fill(mass)
-
-        print('\n'+str(trackcheck) + ' tracks outside fiducial volume')
-        print(str(fiducialcheck) + ' HNL decays outside fiducial volume')
-        print(str(meascheck) + ' tracks with not enough measurements')
-        print(str(convergecheck) + ' track fits failed to converge')
-        print(str(docacheck) + ' DOCA too small\n')
-
-        ut.bookCanvas(h,key='Example_Mass',title='Fit Results 3',nx=500,ny=500,cx=1,cy=1)
-        cv = h['Example_Mass'].cd(1)
-        h['HNL_example'].SetXTitle('Invariant mass [GeV/c2]')
-        h['HNL_example'].SetYTitle('No. of Particles')
-        h['HNL_example'].Draw()
-        fitSingleGauss('HNL_example',0.9,1.1)
-        h['Example_Mass'].Print('Example_Mass.png')
-
 def makePlots():
    ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['Test_Mass'].cd(1)
@@ -645,14 +523,7 @@ def finStateMuPi_COPY():
         print(str(convergecheck) + ' track fits failed to converge')
         print(str(measurecheck) + ' tracks with not enough measurements\n')
 
-# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
-
-nEvents = min(sTree.GetEntries(),nEvents)
-import TrackExtrapolateTool
-from array import array
-c = 3*(10**8)
-
-def finStateMuPi():
+def finStateMuPi_COPY2():
     if sTree.GetBranch("FitTracks"):
         pi_decaycheck = 0                               # counter for pions decaying to muons before detection
         fiducialcheck = 0                               # counter for tracks outside ficucial volume
@@ -664,11 +535,7 @@ def finStateMuPi():
             muVector = {}                                   # create empty dictionaries
             dicMuChi2 = {}
             mupartkey = {}
-            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
-                if not checkFiducialVolume(sTree,index,dy): 
-                    print('Decay outside fiducial volume')
-                    fiducialcheck+=1
-                    continue                                    # skips to next iteration if HNL decayed in fiducial volume 
+            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
                 if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
@@ -676,19 +543,22 @@ def finStateMuPi():
                     keylist.append(muonMotherkey)                     # adds to list
                     true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
                     if true_mother.GetPdgCode() == 9900015:             # checks mother is HNL
-                        mupartkey[str(muonMotherkey)] = muPartkey
 
-                        mu_status = reco_part.getFitStatus()                # gets fit status
+                        if not checkFiducialVolume(sTree,index,dy): 
+                            print('Decay outside fiducial volume')
+                            fiducialcheck+=1
+                            continue 
+                        mu_status = reco_part.getFitStatus()             
                         if not mu_status.isFitConverged():
                             print('Fit did not converge')
                             convergecheck+=1
                             continue
+                        mu_nmeas = mu_status.getNdf()                      
+                        if not mu_nmeas > 25:
+                            print('Too few measurements (muon track)')
+                            measurecheck+=1
+                            continue
 
-                        mu_nmeas = mu_status.getNdf()                       # gets number of measurements
-                        #if not mu_nmeas > 25:
-                            #print('Too few measurements (muon track)')
-                            #measurecheck+=1
-                            #continue
                         mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
                         dicMuChi2[str(muonMotherkey)] = mu_chi2             # stores in dictionary
@@ -704,6 +574,7 @@ def finStateMuPi():
                         Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                         Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE)          # inputs 4-vector elements
                         muVector[str(muonMotherkey)] = Muon_Vector
+                        mupartkey[str(muonMotherkey)] = muPartkey
 
                     if true_mother.GetPdgCode() == 211:             # checks if mother is pion not HNL
                         print('Pion has decayed to a muon')
@@ -721,17 +592,21 @@ def finStateMuPi():
                                 pionMotherTrue_mass = true_mother.GetMass()         # get HNL/final states mother mass
                                 pionMotherTrue_mom = true_mother.GetP()             # get HNL/final states mother mom
                                 
-                                pi_status = reco_part.getFitStatus()                # gets fit status
+                                if not checkFiducialVolume(sTree,index,dy): 
+                                    print('Decay outside fiducial volume')
+                                    fiducialcheck+=1
+                                    continue 
+                                pi_status = reco_part.getFitStatus()                
                                 if not pi_status.isFitConverged():
                                     print('Fit did not converge')
                                     convergecheck+=1
                                     continue
+                                pi_nmeas = pi_status.getNdf() 
+                                if not pi_nmeas > 25:
+                                    print('Too few measurements (pion track)')
+                                    measurecheck+=1
+                                    continue
 
-                                pi_nmeas = pi_status.getNdf()                       # gets number of measurements
-                                #if not pi_nmeas > 25:
-                                    #print('Too few measurements (pion track)')
-                                    #measurecheck+=1
-                                    #continue
                                 pi_rchi2 = pi_status.getChi2()                      # chi squared value
                                 pi_chi2 = (pi_rchi2/pi_nmeas)                       # gets chi value
 
@@ -747,13 +622,11 @@ def finStateMuPi():
                                 Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          # inputs 4-vector elements
                                 
                                 #--------------------------------------------------------
-                                piV = (piP*c) / ROOT.TMath.Sqrt(((pi_M*c)**2) + (piP**2))
-                                muV = (muP*c) / ROOT.TMath.Sqrt(((mu_M*c)**2) + (muP**2))
-                                h['Pion_mom'].Fill(piP)
-                                h['Muon_mom'].Fill(muP)
+                                #piV = (piP*c) / ROOT.TMath.Sqrt(((pi_M*c)**2) + (piP**2))
+                                #muV = (muP*c) / ROOT.TMath.Sqrt(((mu_M*c)**2) + (muP**2))
                                 #--------------------------------------------------------
 
-                                HNL_Vector = muVector[str(muonMotherkey)] + Pion_Vector # adds the 4-momenta
+                                HNL_Vector = muVector[muonMotherkey] + Pion_Vector # adds the 4-momenta
                                 HNL_mass = HNL_Vector.M()                           # sets HNL mass
                                 HNL_reco_mom = HNL_Vector.P()                       # sets HNL mom
                                 mom_diff = pionMotherTrue_mom - HNL_reco_mom
@@ -764,12 +637,14 @@ def finStateMuPi():
                                 h['HNL_mom_reco'].Fill(HNL_reco_mom)                
                                 h['Chi2'].Fill(dicMuChi2[str(muonMotherkey)])       
                                 h['Chi2'].Fill(pi_chi2)                             
-                                h['HNL_mom_diff'].Fill(mom_diff)                    
+                                h['HNL_mom_diff'].Fill(mom_diff)
+                                h['Pion_mom'].Fill(piP)
+                                h['Muon_mom'].Fill(muP)
                                 
-                                mu_t = time_res2(mupartkey[str(muonMotherkey)],muV)      
+                                mu_t = time_res2(mupartkey[str(muonMotherkey)])      
                                 if mu_t != None:                                  
                                     h['Time'].Fill(mu_t)                                
-                                pi_t = time_res2(piPartkey,piV)                            
+                                pi_t = time_res2(piPartkey)                            
                                 if pi_t != None:                                    
                                     h['Time2'].Fill(pi_t)      
 
@@ -777,6 +652,315 @@ def finStateMuPi():
         print(str(fiducialcheck) + ' HNL decays outside fiducial volume')
         print(str(convergecheck) + ' track fits failed to converge')
         print(str(measurecheck) + ' tracks with not enough measurements\n')
+
+def time_res2_COPY(partkey,v):
+    if sTree.GetBranch("strawtubesPoint"):
+        x_array = []
+        y_array = []
+        z_array = []
+        t_array = []
+        for k,hits in enumerate(sTree.strawtubesPoint):
+            TrackID = hits.GetTrackID()
+            if TrackID == partkey:
+                x_array.append(hits.GetX())
+                y_array.append(hits.GetY())
+                z_array.append(hits.GetZ())
+                t_array.append(hits.GetTime())
+        
+        min_z_index = z_array.index(min(z_array))
+        straw_z = 0.01*min(z_array)
+        straw_x = 0.01*x_array[min_z_index]
+        straw_y = 0.01*y_array[min_z_index]
+        straw_time = t_array[min_z_index]   
+    else: return None
+
+    if sTree.GetBranch("EcalPoint"):
+            if not straw_time<=0:
+                for k,hits in enumerate(sTree.EcalPoint):
+                    TrackID = hits.GetTrackID()
+                    if TrackID == partkey:
+                        ecal_x = 0.01*hits.GetX()
+                        ecal_y = 0.01*hits.GetY()
+                        ecal_z = 0.01*hits.GetZ()
+                        ecal_time = hits.GetTime()
+
+                        if not ecal_time <= straw_time:
+                            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
+                            #t = r/v # need to sort out the units
+                            t = abs(straw_time - ecal_time)
+                            return t
+            else: return None
+    else: return None
+
+# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
+
+nEvents = min(sTree.GetEntries(),nEvents)
+c = 3*(10**8)
+
+def time_res2(partkey,v):
+    if sTree.GetBranch("strawtubesPoint"):
+        x_array = []
+        y_array = []
+        z_array = []
+        t_array = []
+        for k,hits in enumerate(sTree.strawtubesPoint):
+            TrackID = hits.GetTrackID()
+            if TrackID == partkey:
+                x_array.append(hits.GetX())
+                y_array.append(hits.GetY())
+                z_array.append(hits.GetZ())
+                t_array.append(hits.GetTime())
+        
+        min_z_index = z_array.index(min(z_array))
+        straw_z = 0.01*min(z_array)
+        straw_x = 0.01*x_array[min_z_index]
+        straw_y = 0.01*y_array[min_z_index]
+        straw_time = t_array[min_z_index]   
+    else: return None
+
+    if sTree.GetBranch("EcalPoint"):
+            if not straw_time<=0:
+                for k,hits in enumerate(sTree.EcalPoint):
+                    TrackID = hits.GetTrackID()
+                    if TrackID == partkey:
+                        ecal_x = 0.01*hits.GetX()
+                        ecal_y = 0.01*hits.GetY()
+                        ecal_z = 0.01*hits.GetZ()
+                        ecal_time = hits.GetTime()
+
+                        if not ecal_time <= straw_time:
+                            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
+                            #t = r/v # need to sort out the units
+                            t = abs(straw_time - ecal_time)
+                            return t
+            else: return None
+    else: return None
+
+def inv_mass():
+    if sTree.GetBranch("Particles"):
+        ut.bookHist(h,'HNL_example','Example Reconstructed Mass',500,0.,2.)
+        trackcheck = 0
+        meascheck = 0
+        fiducialcheck = 0
+        docacheck = 0
+        convergecheck = 0
+        Vector = {}
+        for n in range(nEvents):
+            rc = sTree.GetEntry(n)
+            for HNL in sTree.Particles:
+                t1,t2 = HNL.GetDaughter(0),HNL.GetDaughter(1)
+                if not checkFiducialVolume(sTree,t1,dy):
+                    trackcheck+=1
+                    continue
+                if not checkFiducialVolume(sTree,t2,dy):
+                    trackcheck+=1
+                    continue
+                checkMeasurements = True
+                checkConvergence = True
+                for track in [t1,t2]:
+                    fitstatus  = sTree.FitTracks[track].getFitStatus()
+                    nmeas = fitstatus.getNdf()
+                    if not fitstatus.isFitConverged(): checkConvergence = False
+                    if nmeas < 25: checkMeasurements = False
+                if not checkMeasurements: 
+                    meascheck+=1
+                    continue
+                if not checkConvergence:
+                    convergecheck+=1
+                    continue
+
+                HNLPos = ROOT.TLorentzVector()
+                HNL.ProductionVertex(HNLPos)
+                HNLMom = ROOT.TLorentzVector()
+                HNL.Momentum(HNLMom)
+                
+                HNLMom_Redo = {}
+                xv,yv,zv,doca,HNLMom_Redo = RedoVertexing(t1,t2)
+
+                #reps,states,LV = {},{},{}
+                #for tr in [t1,t2]:     
+                #    xx = sTree.FitTracks[tr].getFittedState()
+                #    reps[tr]   = ROOT.genfit.RKTrackRep(xx.getPDG())
+                #    states[tr] = ROOT.genfit.StateOnPlane(reps[tr])
+                #    reps[tr].setPosMom(states[tr],xx.getPos(),xx.getMom())
+                #    mom = reps[tr].getMom(states[tr])
+                #    pid = abs(states[tr].getPDG()) # either 13 or 211 when I printed out values
+                #    mass = PDG.GetParticle(pid).Mass()
+                #    E = ROOT.TMath.Sqrt(mass*mass + mom.Mag2())
+                #    LV[tr] = ROOT.TLorentzVector()
+                #    LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
+                #HNLMom = LV[t1]+LV[t2]
+
+                for track in [t1,t2]:
+                    if sTree.GetBranch("FitTracks"):
+                        fittedstate  = sTree.FitTracks[track].getFittedState()
+                        particle_ID = sTree.fitTrack2MC[track]
+                        particle = sTree.MCTrack[particle_ID]
+                        M = particle.GetMass()
+                        Px = fittedstate.getMom().x()
+                        Py = fittedstate.getMom().y()  
+                        Pz = fittedstate.getMom().z()
+                        P = fittedstate.getMomMag()
+                        E = ROOT.TMath.Sqrt((M**2) + (P**2))
+                        Vector[track] = ROOT.TLorentzVector()
+                        Vector[track].SetPxPyPzE(Px,Py,Pz,E)
+                HNLMom = Vector[t1] + Vector[t2]
+                #doca = -1
+                
+                if HNLMom == -1: continue
+                if not isInFiducial(HNLPos.X(),HNLPos.Y(),HNLPos.Z()):
+                    fiducialcheck+=1
+                    continue
+                if  doca > 2.: 
+                    docacheck+=1
+                    continue
+
+                mass = HNLMom.M()
+                h['HNL_example'].Fill(mass)
+
+        print(str(trackcheck) + ' tracks outside fiducial volume')
+        print(str(convergecheck) + ' track fits failed to converge')
+        print(str(fiducialcheck) + ' HNL decays outside fiducial volume')
+        print(str(meascheck) + ' tracks with not enough measurements')
+        print(str(docacheck) + ' with DOCA too large\n')
+
+        ut.bookCanvas(h,key='Example_Mass',title='Fit Results 3',nx=500,ny=500,cx=1,cy=1)
+        cv = h['Example_Mass'].cd(1)
+        h['HNL_example'].SetXTitle('Invariant mass [GeV/c2]')
+        h['HNL_example'].SetYTitle('No. of Particles')
+        h['HNL_example'].Draw()
+        fitSingleGauss('HNL_example',0.9,1.1)
+        h['Example_Mass'].Print('Example_Mass.png')
+
+def finStateMuPi():
+    if sTree.GetBranch("FitTracks"):
+        pi_decaycheck = 0                               # counter for pions decaying to muons before detection
+        fiducialcheck = 0                               # counter for tracks outside ficucial volume
+        HNL_decaycheck = 0                              # counter HNL decays outside fiducial volume
+        convergecheck = 0                               # counter for failed track fits
+        measurecheck = 0
+        docacheck = 0
+        for n in range(nEvents):                            # loop over events
+            rc = sTree.GetEntry(n)                              # load tree entry
+            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
+                muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
+                true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
+                if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
+                    muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
+                    true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
+                    if true_mother.GetPdgCode() == 211:
+                        print('Pion has decayed to a muon')
+                        pi_decaycheck+=1
+                    if true_mother.GetPdgCode() == 9900015:             # checks mother is HNL
+
+                        Decay_X = true_muon.GetStartX()
+                        Decay_Y = true_muon.GetStartY()
+                        Decay_Z = true_muon.GetStartZ()
+                        if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
+                            #print('HNL decayed outside fiducial volume')
+                            HNL_decaycheck+=1
+                            continue
+                        if not checkFiducialVolume(sTree,index,dy): 
+                            #print('Track outside fiducial volume')
+                            fiducialcheck+=1
+                            continue 
+                        mu_status = reco_part.getFitStatus()             
+                        if not mu_status.isFitConverged():
+                            #print('Fit did not converge')
+                            convergecheck+=1
+                            continue
+                        mu_nmeas = mu_status.getNdf()                      
+                        if not mu_nmeas > 25:
+                            #print('Too few measurements (muon track)')
+                            measurecheck+=1
+                            continue
+
+                        mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
+                        mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
+
+                        fittedstate1 = reco_part.getFittedState()           # get reconstructed muon fitted state
+                        mu_M = true_muon.GetMass()                          # mass of MC muon
+                        muPx = fittedstate1.getMom().x()                    # momentum in x
+                        muPy = fittedstate1.getMom().y()                    # momentum in y  
+                        muPz = fittedstate1.getMom().z()                    # momentum in z
+                        muP = fittedstate1.getMomMag()                      # momentum magnitude
+                        muE = ROOT.TMath.Sqrt((mu_M**2) + (muP**2))         # energy
+
+                        Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                        Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE)          # inputs 4-vector elements
+
+                        for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
+                            piPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
+                            true_pion = sTree.MCTrack[piPartkey]                  # gives MC particle data
+                            if abs(true_pion.GetPdgCode()) == 211:              # checks particle is pion
+                                pionMotherkey = true_pion.GetMotherId()             # stores a number index of MC track of mother
+                                true_mother = sTree.MCTrack[pionMotherkey]          # obtains mother particle data
+                                if pionMotherkey==muonMotherkey:                    # check if keys are the same
+                                    pionMotherTrue_mass = true_mother.GetMass()         # get HNL/final states mother mass
+                                    pionMotherTrue_mom = true_mother.GetP()             # get HNL/final states mother mom
+                                
+                                    if not checkFiducialVolume(sTree,index,dy): 
+                                        #print('Decay outside fiducial volume')
+                                        fiducialcheck+=1
+                                        continue 
+                                    pi_status = reco_part.getFitStatus()                
+                                    if not pi_status.isFitConverged():
+                                        #print('Fit did not converge')
+                                        convergecheck+=1
+                                        continue
+                                    pi_nmeas = pi_status.getNdf() 
+                                    if not pi_nmeas > 25:
+                                        #print('Too few measurements (pion track)')
+                                        measurecheck+=1
+                                        continue
+
+                                    pi_rchi2 = pi_status.getChi2()                      # chi squared value
+                                    pi_chi2 = (pi_rchi2/pi_nmeas)                       # gets chi value
+
+                                    fittedstate2 = reco_part.getFittedState()           # get reconstructed pion fitted state
+                                    pi_M = true_pion.GetMass()                          # mass of MC pion
+                                    piP = fittedstate2.getMomMag()                      # momentum in x
+                                    piPx = fittedstate2.getMom().x()                    # momentum in y
+                                    piPy = fittedstate2.getMom().y()                    # momentum in z
+                                    piPz = fittedstate2.getMom().z()                    # momentum magnitude
+                                    piE = ROOT.TMath.Sqrt((pi_M**2) + (piP**2))         # energy
+
+                                    Pion_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                                    Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          # inputs 4-vector elements
+                                
+                                    #---------------------------------------------------------
+                                    piV = (piP*c) / ROOT.TMath.Sqrt(((pi_M*c)**2) + (piP**2))
+                                    muV = (muP*c) / ROOT.TMath.Sqrt(((mu_M*c)**2) + (muP**2))
+                                    #---------------------------------------------------------
+
+                                    HNL_Vector = Muon_Vector + Pion_Vector              # adds the 4-momenta
+                                    HNL_mass = HNL_Vector.M()                           # sets HNL mass
+                                    HNL_reco_mom = HNL_Vector.P()                       # sets HNL mom
+                                    mom_diff = pionMotherTrue_mom - HNL_reco_mom
+
+                                    h['HNL_true'].Fill(pionMotherTrue_mass)             # fill histograms 
+                                    h['HNL_mom'].Fill(pionMotherTrue_mom)
+                                    h['HNL_reco'].Fill(HNL_mass)                        
+                                    h['HNL_mom_reco'].Fill(HNL_reco_mom)                
+                                    h['Chi2'].Fill(mu_chi2)       
+                                    h['Chi2'].Fill(pi_chi2)                             
+                                    h['HNL_mom_diff'].Fill(mom_diff)
+                                    h['Pion_mom'].Fill(piP)
+                                    h['Muon_mom'].Fill(muP)
+                                
+                                    mu_t = time_res2(muPartkey,muV)      
+                                    if mu_t != None:                                  
+                                        h['Time'].Fill(mu_t)                                
+                                    pi_t = time_res2(piPartkey,piV)                            
+                                    if pi_t != None:                                    
+                                        h['Time2'].Fill(pi_t)      
+
+        print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection')
+        print(str(fiducialcheck) + ' tracks outside fiducial volume')
+        print(str(convergecheck) + ' track fits failed to converge')
+        print(str(HNL_decaycheck) + ' HNL decays outside fiducial volume')
+        print(str(measurecheck) + ' tracks with not enough measurements')
+        print(str(docacheck) + ' with DOCA too large\n')
         
 finStateMuPi()  
 inv_mass()
