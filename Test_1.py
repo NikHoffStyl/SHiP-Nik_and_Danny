@@ -8,13 +8,13 @@ import shipRoot_conf
 shipRoot_conf.configure()
 
 debug = False
-chi2CutOff  = 4.
 PDG = ROOT.TDatabasePDG.Instance()
 inputFile  = None
 geoFile    = None
 dy         = None
 nEvents    = 9999999
 fiducialCut = True
+chi2CutOff  = 4.
 measCutFK = 25
 measCutPR = 22
 docaCut = 2.
@@ -171,12 +171,12 @@ from array import array
 h = {}
 ut.bookHist(h,'HNL_true','Monte Carlo Mass',500,0.,2.) # true mass
 ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # reconstructed mass
-ut.bookHist(h,'HNL_mom','True & Reconstructed Momentum Distribution',100,0.,300.) # true momentum distribution
+ut.bookHist(h,'HNL_mom','True (red) & Reco. (blue) Momentum',100,0.,300.) # true momentum distribution
 ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300) # reconstructed momentum distribution
 ut.bookHist(h,'HNL_mom_diff','True/Reco Momentum Difference',100,-3.,3) # true/reco momentum difference
 
-ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',100,0.,200.) # muon daughter time of flight
-ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',100,0.,200.) # pion daughter time of flight
+ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',500,36.,40.) # muon daughter time of flight
+ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',500,36.,40.) # pion daughter time of flight
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
 
 ut.bookHist(h,'Muon_mom','Muon (HNL Daughter) Momentum',100,0.,200.) # HNL muon daughter momentum
@@ -241,17 +241,17 @@ def myVertex(t1,t2,PosDir):
    A,B = u.Mag2(), -u.Dot(v) 
    C,D = u.Dot(v), -v.Mag2()
    t = -(C*E-A*F)/(B*C-A*D)
-   X = c.x()+v.x()*t
+   X = c.x()+v.x()*t 
    Y = c.y()+v.y()*t
    Z = c.z()+v.z()*t
-   return X,Y,Z,abs(dist)
+   return X,Y,Z,abs(dist) # X,Y,Z are the coordinates of...?
 
 def RedoVertexing(t1,t2):    
      PosDir = {} 
      for tr in [t1,t2]:
       xx  = sTree.FitTracks[tr].getFittedState()
-      PosDir[tr] = [xx.getPos(),xx.getDir()]
-     xv,yv,zv,doca = myVertex(t1,t2,PosDir)
+      PosDir[tr] = [xx.getPos(),xx.getDir()] # Dir = direction?
+     xv,yv,zv,doca = myVertex(t1,t2,PosDir) # myVertex returns 3 X,Y,Z and abs(dist)
 # as we have learned, need iterative procedure
      dz = 99999.
      reps,states,newPosDir = {},{},{}
@@ -264,36 +264,38 @@ def RedoVertexing(t1,t2):
      # make a new rep for track 1,2
       for tr in [t1,t2]:     
        xx = sTree.FitTracks[tr].getFittedState()
-       reps[tr]   = ROOT.genfit.RKTrackRep(xx.getPDG())
-       states[tr] = ROOT.genfit.StateOnPlane(reps[tr])
-       reps[tr].setPosMom(states[tr],xx.getPos(),xx.getMom())
+       reps[tr]   = ROOT.genfit.RKTrackRep(xx.getPDG())     # what is rep?
+       states[tr] = ROOT.genfit.StateOnPlane(reps[tr])     # what is this?
+       reps[tr].setPosMom(states[tr],xx.getPos(),xx.getMom())   # and this?
        try:
         reps[tr].extrapolateToPoint(states[tr], newPos, False)
-       except:
+       except: 
         print 'SHiPAna: extrapolation did not work'
         rc = False  
-        break
+        break # breaks if extrapolation doesn't work
+
        newPosDir[tr] = [reps[tr].getPos(states[tr]),reps[tr].getDir(states[tr])]
       if not rc: break
       xv,yv,zv,doca = myVertex(t1,t2,newPosDir)
-      dz = abs(zBefore-zv)
+      dz = abs(zBefore-zv) # repeats until dz < 0.1 unless...
       step+=1
       if step > 10:  
          print 'abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz
          rc = False
-         break 
+         break # ... number of iterations exceeds 10
      if not rc: return xv,yv,zv,doca,-1 # extrapolation failed, makes no sense to continue
      LV={}
-     for tr in [t1,t2]:       
+     for tr in [t1,t2]: # from here on we have reproduced (see inv_mass() function)       
       mom = reps[tr].getMom(states[tr])
       pid = abs(states[tr].getPDG()) 
-      if pid == 2212: pid = 211
+      if pid == 2212: pid = 211 # why
       mass = PDG.GetParticle(pid).Mass()
       E = ROOT.TMath.Sqrt( mass*mass + mom.Mag2() )
       LV[tr] = ROOT.TLorentzVector()
       LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
      HNLMom = LV[t1]+LV[t2]
-     return xv,yv,zv,doca,HNLMom
+     #return xv,yv,zv,doca,HNLMom
+     return doca,HNLMom
 
 def fitSingleGauss(x,ba=None,be=None):
     name    = 'myGauss_'+x 
@@ -316,35 +318,6 @@ def fitSingleGauss(x,ba=None,be=None):
        myGauss.SetParName(3,'bckgr')
     h[x].Fit(myGauss,'','',ba,be) 
 
-def time_res(partkey):
-    if sTree.GetBranch("strawtubesPoint"):
-        z_array = []
-        t_array = []
-        straw_time=0
-        for k,hits in enumerate(sTree.strawtubesPoint):
-            TrackID = hits.GetTrackID()
-            #print(TrackID)
-            if TrackID == partkey:
-                z_array.append(hits.GetZ())
-                t_array.append(hits.GetTime())
-        minZval=min(z_array)   
-        min_z = z_array.index(min(z_array))
-        straw_time = t_array[min_z]
-    else: return None,None,None,None,None
-    if sTree.GetBranch("EcalPoint"):
-            if not straw_time<=0:
-                for k,hits in enumerate(sTree.EcalPoint):
-                    TrackID = hits.GetTrackID()
-                    if TrackID == partkey:
-                        ecal_time = hits.GetTime()
-                        ecal_zpos = hits.GetZ()
-                        if not ecal_time <= straw_time:
-                            t = abs(straw_time - ecal_time)
-                            return ecal_time,ecal_zpos, minZval, straw_time, t 
-                    else: return None,None,None,None,None
-            else: return None,None,None,None,None
-    else: return None,None,None,None,None
-
 def makePlots():
    ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['Test_Mass'].cd(1)
@@ -361,16 +334,16 @@ def makePlots():
    cv = h['Test_Mass'].cd(3)
    h['HNL_mom'].SetXTitle('Momentum [GeV/c]')
    h['HNL_mom'].SetYTitle('No. of Particles')
+   h['HNL_mom'].SetLineColor(2)
    h['HNL_mom'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
-   #cv = h['Test_Mass'].cd(4)
-   #h['HNL_mom_reco'].SetXTitle('Momentum [GeV/c]')
-   #h['HNL_mom_reco'].SetYTitle('No. of Particles')
    h['HNL_mom_reco'].Draw("same")
+   #----------------------------------------------------------------------------------------------------------------------
    cv = h['Test_Mass'].cd(4)
    h['HNL_mom_diff'].SetXTitle('Momentum Difference [GeV/c]')
    h['HNL_mom_diff'].SetYTitle('Frequency')
    h['HNL_mom_diff'].Draw()
+   fitSingleGauss('HNL_mom_diff',-0.2,0.2)
    h['Test_Mass'].Print('HNL_Graphs.png')
    #======================================================================================================================
    ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
@@ -692,20 +665,52 @@ def time_res2_COPY(partkey,v):
             else: return None
     else: return None
 
+def time_res(partkey):
+    if sTree.GetBranch("strawtubesPoint"):
+        z_array = []
+        t_array = []
+        straw_time=0
+        for k,hits in enumerate(sTree.strawtubesPoint):
+            TrackID = hits.GetTrackID()
+            #print(TrackID)
+            if TrackID == partkey:
+                z_array.append(hits.GetZ())
+                t_array.append(hits.GetTime())
+        minZval=min(z_array)   
+        min_z = z_array.index(min(z_array))
+        straw_time = t_array[min_z]
+    else: return None,None,None,None,None
+    if sTree.GetBranch("EcalPoint"):
+            if not straw_time<=0:
+                for k,hits in enumerate(sTree.EcalPoint):
+                    TrackID = hits.GetTrackID()
+                    if TrackID == partkey:
+                        ecal_time = hits.GetTime()
+                        ecal_zpos = hits.GetZ()
+                        if not ecal_time <= straw_time:
+                            t = abs(straw_time - ecal_time)
+                            return ecal_time,ecal_zpos, minZval, straw_time, t 
+                    else: return None,None,None,None,None
+            else: return None,None,None,None,None
+    else: return None,None,None,None,None
+
 # ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
 
 nEvents = min(sTree.GetEntries(),nEvents)
 c = 3*(10**8)
 
 def time_res2(partkey,v):
+    t = None
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
         z_array = []
         t_array = []
+        straw_time = -1
+        ecal_time = -1
         for k,hits in enumerate(sTree.strawtubesPoint):
-            TrackID = hits.GetTrackID()
-            if TrackID == partkey:
+            straw_TrackID = hits.GetTrackID()
+            if straw_TrackID == partkey:
                 x_array.append(hits.GetX())
                 y_array.append(hits.GetY())
                 z_array.append(hits.GetZ())
@@ -715,26 +720,22 @@ def time_res2(partkey,v):
         straw_z = 0.01*min(z_array)
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
-        straw_time = t_array[min_z_index]   
-    else: return None
+        straw_time = t_array[min_z_index]
 
-    if sTree.GetBranch("EcalPoint"):
-            if not straw_time<=0:
+        if sTree.GetBranch("EcalPoint"):
+            if not straw_time == -1:
                 for k,hits in enumerate(sTree.EcalPoint):
-                    TrackID = hits.GetTrackID()
-                    if TrackID == partkey:
+                    ecal_TrackID = hits.GetTrackID()
+                    if ecal_TrackID == partkey:
                         ecal_x = 0.01*hits.GetX()
                         ecal_y = 0.01*hits.GetY()
                         ecal_z = 0.01*hits.GetZ()
                         ecal_time = hits.GetTime()
-
-                        if not ecal_time <= straw_time:
-                            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
+                        if not ecal_time == -1:
+                            #r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
                             #t = r/v # need to sort out the units
                             t = abs(straw_time - ecal_time)
-                            return t
-            else: return None
-    else: return None
+    return t
 
 def inv_mass():
     if sTree.GetBranch("Particles"):
@@ -775,7 +776,7 @@ def inv_mass():
                 HNL.Momentum(HNLMom)
                 
                 HNLMom_Redo = {}
-                xv,yv,zv,doca,HNLMom_Redo = RedoVertexing(t1,t2)
+                doca,HNLMom_Redo = RedoVertexing(t1,t2)
 
                 #reps,states,LV = {},{},{}
                 #for tr in [t1,t2]:     
@@ -791,20 +792,20 @@ def inv_mass():
                 #    LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
                 #HNLMom = LV[t1]+LV[t2]
 
-                for track in [t1,t2]:
-                    if sTree.GetBranch("FitTracks"):
-                        fittedstate  = sTree.FitTracks[track].getFittedState()
-                        particle_ID = sTree.fitTrack2MC[track]
-                        particle = sTree.MCTrack[particle_ID]
-                        M = particle.GetMass()
-                        Px = fittedstate.getMom().x()
-                        Py = fittedstate.getMom().y()  
-                        Pz = fittedstate.getMom().z()
-                        P = fittedstate.getMomMag()
-                        E = ROOT.TMath.Sqrt((M**2) + (P**2))
-                        Vector[track] = ROOT.TLorentzVector()
-                        Vector[track].SetPxPyPzE(Px,Py,Pz,E)
-                HNLMom = Vector[t1] + Vector[t2]
+                #for track in [t1,t2]:
+                #    if sTree.GetBranch("FitTracks"):
+                #        fittedstate  = sTree.FitTracks[track].getFittedState()
+                #        particle_ID = sTree.fitTrack2MC[track]
+                #        particle = sTree.MCTrack[particle_ID]
+                #        M = particle.GetMass()
+                #        Px = fittedstate.getMom().x()
+                #        Py = fittedstate.getMom().y()  
+                #        Pz = fittedstate.getMom().z()
+                #        P = fittedstate.getMomMag()
+                #        E = ROOT.TMath.Sqrt((M**2) + (P**2))
+                #        Vector[track] = ROOT.TLorentzVector()
+                #        Vector[track].SetPxPyPzE(Px,Py,Pz,E)
+                #HNLMom = Vector[t1] + Vector[t2]
                 #doca = -1
                 
                 if HNLMom == -1: continue
@@ -815,7 +816,7 @@ def inv_mass():
                     docacheck+=1
                     continue
 
-                mass = HNLMom.M()
+                mass = HNLMom_Redo.M()
                 h['HNL_example'].Fill(mass)
 
         print(str(trackcheck) + ' tracks outside fiducial volume')
@@ -838,8 +839,8 @@ def finStateMuPi():
         fiducialcheck = 0                               # counter for tracks outside ficucial volume
         HNL_decaycheck = 0                              # counter HNL decays outside fiducial volume
         convergecheck = 0                               # counter for failed track fits
-        measurecheck = 0
-        docacheck = 0
+        measurecheck = 0                                # counter for too few measurements
+        docacheck = 0                                   # counter for doca too large
         for n in range(nEvents):                            # loop over events
             rc = sTree.GetEntry(n)                              # load tree entry
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
@@ -874,7 +875,6 @@ def finStateMuPi():
                             #print('Too few measurements (muon track)')
                             measurecheck+=1
                             continue
-
                         mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
 
@@ -898,7 +898,7 @@ def finStateMuPi():
                                 if pionMotherkey==muonMotherkey:                    # check if keys are the same
                                     pionMotherTrue_mass = true_mother.GetMass()         # get HNL/final states mother mass
                                     pionMotherTrue_mom = true_mother.GetP()             # get HNL/final states mother mom
-                                
+
                                     if not checkFiducialVolume(sTree,index,dy): 
                                         #print('Decay outside fiducial volume')
                                         fiducialcheck+=1
@@ -913,7 +913,6 @@ def finStateMuPi():
                                         #print('Too few measurements (pion track)')
                                         measurecheck+=1
                                         continue
-
                                     pi_rchi2 = pi_status.getChi2()                      # chi squared value
                                     pi_chi2 = (pi_rchi2/pi_nmeas)                       # gets chi value
 
@@ -965,7 +964,6 @@ def finStateMuPi():
 finStateMuPi()  
 inv_mass()
 makePlots()
-print('finished creating plots')
 
 # ---------------------------------------------------OUTPUT------------------------------------------------------------
 
