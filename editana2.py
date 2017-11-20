@@ -467,7 +467,7 @@ def time_res(partkey):
                 z_array.append(hits.GetZ())
                 t_array.append(hits.GetTime())
             else: LineActivity(get_linenumber(),get_linenumber())
-        minZval=min(z_array)   
+        straw_zpos=min(z_array)   
         min_z = z_array.index(min(z_array))
         straw_time = t_array[min_z]
     else:
@@ -483,7 +483,7 @@ def time_res(partkey):
                         ecal_zpos = hits.GetZ()
                         if not ecal_time <= straw_time:
                             t = abs(straw_time - ecal_time)
-                            return ecal_time,ecal_zpos, minZval, straw_time, t
+                            return ecal_time,ecal_zpos, straw_zpos, straw_time, t
                         else:LineActivity(get_linenumber(),get_linenumber())
                     else:
                         LineActivity(get_linenumber(),get_linenumber())
@@ -513,10 +513,10 @@ def time_resVrs2(partkey):
                 z_array.append(hits.GetZ())
                 t_array.append(hits.GetTime())
             else: LineActivity(get_linenumber(),get_linenumber())
-        minZval=min(z_array)
         min_z = z_array.index(min(z_array))
-        minXval = x_array[min_z]
-        minYval = y_array[min_z]
+        straw_zpos=min(z_array)
+        straw_xpos = x_array[min_z]
+        straw_ypos = y_array[min_z]
         straw_time = t_array[min_z]
     else:
         LineActivity(get_linenumber(),get_linenumber())
@@ -533,7 +533,7 @@ def time_resVrs2(partkey):
                     ecal_ypos = hits.GetY()
                     if not ecal_time <= straw_time:
                         t = abs(straw_time - ecal_time)
-                        return ecal_time, ecal_xpos, ecal_ypos, ecal_zpos, minXval,minYval,minZval, straw_time, t 
+                        return ecal_time, ecal_xpos, ecal_ypos, ecal_zpos, straw_xpos,straw_ypos,straw_zpos, straw_time, t 
             else:
                 LineActivity(get_linenumber(),get_linenumber())
                 return None,None,None,None,None,None,None,None,None
@@ -1104,8 +1104,8 @@ def finStateMuPi():
                                 if mu_t != None:                                    #
                                     h['Time'].Fill(mu_t)                            #
 
-                                piEcalT, piEcalX, piEcalY, piEcalZ, piMinXval,piMinYval,piMinZval, piStrawT, pi_t  = time_resVrs2(piPartkey)                          #
-                                piDeltaPos=(ROOT.TMath.Sqrt(((piEcalX-piMinXval)**2)+((piEcalY-piMinYval)**2)+((piEcalZ-piMinZval)**2)))/100
+                                piEcalT, piEcalX, piEcalY, piEcalZ, pistraw_xpos,pistraw_ypos,pistraw_zpos, piStrawT, pi_t  = time_resVrs2(piPartkey)                          #
+                                piDeltaPos=(ROOT.TMath.Sqrt(((piEcalX-pistraw_xpos)**2)+((piEcalY-pistraw_ypos)**2)+((piEcalZ-pistraw_zpos)**2)))/100
                                 piPjoules=piP*1.602*(10**(-13))
                                 piGammaVel=piP/(pi_M/(3*(10**8)))
                                 manualCalTime=piDeltaPos/piGammaVel
@@ -1127,7 +1127,7 @@ finStateMuPi()
 #            if TrackID == partkey:
 #                z_array.append(hits.GetZ())
 #                t_array.append(hits.GetTime())
-#        minZval=min(z_array)   
+#        straw_zpos=min(z_array)   
 #        min_z = z_array.index(min(z_array))
 #        straw_time = t_array[min_z]
 #    else: return None,None,None,None,None
@@ -1140,7 +1140,7 @@ finStateMuPi()
 #                        ecal_zpos = hits.GetZ()
 #                        if not ecal_time <= straw_time:
 #                            t = abs(straw_time - ecal_time)
-#                            return ecal_time,ecal_zpos, minZval, straw_time, t 
+#                            return ecal_time,ecal_zpos, straw_zpos, straw_time, t 
 #                    else: return None,None,None,None,None
 #            else: return None,None,None,None,None
 #    else: return None,None,None,None,None
