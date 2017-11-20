@@ -708,7 +708,6 @@ def time_res2(partkey,v):
         z_array = []
         t_array = []
         straw_time = 0
-        ecal_time = 0
         for k,hits in enumerate(sTree.strawtubesPoint):
             straw_TrackID = hits.GetTrackID()
             if straw_TrackID == partkey:
@@ -724,7 +723,7 @@ def time_res2(partkey,v):
         straw_time = t_array[min_z_index]
 
         if sTree.GetBranch("EcalPoint"):
-            if not straw_time == 0:
+            if not straw_time <= 0:
                 for k,hits in enumerate(sTree.EcalPoint):
                     ecal_TrackID = hits.GetTrackID()
                     if ecal_TrackID == partkey:
@@ -732,7 +731,7 @@ def time_res2(partkey,v):
                         ecal_y = 0.01*hits.GetY()
                         ecal_z = 0.01*hits.GetZ()
                         ecal_time = hits.GetTime()
-                        if not ecal_time == 0:
+                        if not ecal_time <= straw_time:
                             t1 = abs(straw_time - ecal_time)
                             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
                             t2 = (r/v)*(10**9) # need to sort out the units
