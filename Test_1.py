@@ -171,6 +171,7 @@ from array import array
 h = {}
 ut.bookHist(h,'HNL_true','Monte Carlo Mass',500,0.,2.) # true mass
 ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # reconstructed mass
+ut.bookHist(h,'HNL_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)
 ut.bookHist(h,'HNL_mom','True (red) & Reco. (blue) Momentum',100,0.,300.) # true momentum distribution
 ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300) # reconstructed momentum distribution
 ut.bookHist(h,'HNL_mom_diff','True/Reco Momentum Difference',100,-3.,3) # true/reco momentum difference
@@ -372,132 +373,6 @@ def makePlots():
 
 ############################
 
-def finStateMuPi_COPY():
-    if sTree.GetBranch("FitTracks"):
-        pi_decaycheck = 0                               # counter for pions decaying to muons before detection
-        fiducialcheck = 0                               # counter for tracks outside ficucial volume
-        convergecheck = 0                               # counter for failed track fits
-        measurecheck = 0
-        for n in range(nEvents):                            # loop over events
-            rc = sTree.GetEntry(n)                              # load tree entry
-            keylist = []                                          # create empty list
-            muVector = {}                                   # create empty dictionaries
-            dicMuChi2 = {}
-            mupartkey = {}
-            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
-                if not checkFiducialVolume(sTree,index,dy): 
-                    print('Decay outside fiducial volume')
-                    fiducialcheck+=1
-                    continue                                    # skips to next iteration if HNL decayed in fiducial volume 
-                muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
-                true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
-                if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
-                    muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
-                    keylist.append(muonMotherkey)                     # adds to list
-                    true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
-                    if true_mother.GetPdgCode() == 9900015:             # checks mother is HNL
-                        mupartkey[str(muonMotherkey)] = muPartkey
-
-                        mu_status = reco_part.getFitStatus()                # gets fit status
-                        if not mu_status.isFitConverged():
-                            print('Fit did not converge')
-                            convergecheck+=1
-                            continue
-
-                        mu_nmeas = mu_status.getNdf()                       # gets number of measurements
-                        #if not mu_nmeas > 25:
-                            #print('Too few measurements (muon track)')
-                            #measurecheck+=1
-                            #continue
-                        mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
-                        mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
-                        dicMuChi2[str(muonMotherkey)] = mu_chi2             # stores in dictionary
-
-                        fittedstate1 = reco_part.getFittedState()           # get reconstructed muon fitted state
-                        mu_M = true_muon.GetMass()                          # mass of MC muon
-                        muPx = fittedstate1.getMom().x()                    # momentum in x
-                        muPy = fittedstate1.getMom().y()                    # momentum in y  
-                        muPz = fittedstate1.getMom().z()                    # momentum in z
-                        muP = fittedstate1.getMomMag()                      # momentum magnitude
-                        muE = ROOT.TMath.Sqrt((mu_M**2) + (muP**2))         # energy
-
-                        Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                        Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE)          # inputs 4-vector elements
-                        muVector[str(muonMotherkey)] = Muon_Vector
-
-                    if true_mother.GetPdgCode() == 211:             # checks if mother is pion not HNL
-                        print('Pion has decayed to a muon')
-                        pi_decaycheck+=1
-
-            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
-                piPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
-                true_pion = sTree.MCTrack[piPartkey]                  # gives MC particle data
-                if abs(true_pion.GetPdgCode()) == 211:              # checks particle is pion
-                    pionMotherkey = true_pion.GetMotherId()             # stores a number index of MC track of mother
-                    true_mother = sTree.MCTrack[pionMotherkey]          # obtains mother particle data
-                    for muonMotherkey in keylist:                       # loops through muonMother keys
-                        if pionMotherkey==muonMotherkey:                    # check if keys are the same
-                            if true_mother.GetPdgCode() == 9900015:
-                                pionMotherTrue_mass = true_mother.GetMass()         # get HNL/final states mother mass
-                                pionMotherTrue_mom = true_mother.GetP()             # get HNL/final states mother mom
-                                
-                                pi_status = reco_part.getFitStatus()                # gets fit status
-                                if not pi_status.isFitConverged():
-                                    print('Fit did not converge')
-                                    convergecheck+=1
-                                    continue
-
-                                pi_nmeas = pi_status.getNdf()                       # gets number of measurements
-                                #if not pi_nmeas > 25:
-                                    #print('Too few measurements (pion track)')
-                                    #measurecheck+=1
-                                    #continue
-                                pi_rchi2 = pi_status.getChi2()                      # chi squared value
-                                pi_chi2 = (pi_rchi2/pi_nmeas)                       # gets chi value
-
-                                fittedstate2 = reco_part.getFittedState()           # get reconstructed pion fitted state
-                                pi_M = true_pion.GetMass()                          # mass of MC pion
-                                piP = fittedstate2.getMomMag()                      # momentum in x
-                                piPx = fittedstate2.getMom().x()                    # momentum in y
-                                piPy = fittedstate2.getMom().y()                    # momentum in z
-                                piPz = fittedstate2.getMom().z()                    # momentum magnitude
-                                piE = ROOT.TMath.Sqrt((pi_M**2) + (piP**2))         # energy
-
-                                Pion_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                                Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          # inputs 4-vector elements
-                                
-                                #--------------------------------------------------------
-                                piV = (piP*c) / ROOT.TMath.Sqrt(((pi_M*c)**2) + (piP**2))
-                                muV = (muP*c) / ROOT.TMath.Sqrt(((mu_M*c)**2) + (muP**2))
-                                h['Pion_mom'].Fill(piP)
-                                h['Muon_mom'].Fill(muP)
-                                #--------------------------------------------------------
-
-                                HNL_Vector = muVector[str(muonMotherkey)] + Pion_Vector # adds the 4-momenta
-                                HNL_mass = HNL_Vector.M()                           # sets HNL mass
-                                HNL_reco_mom = HNL_Vector.P()                       # sets HNL mom
-                                mom_diff = pionMotherTrue_mom - HNL_reco_mom
-
-                                h['HNL_true'].Fill(pionMotherTrue_mass)             # fill histograms 
-                                h['HNL_mom'].Fill(pionMotherTrue_mom)
-                                h['HNL_reco'].Fill(HNL_mass)                        
-                                h['HNL_mom_reco'].Fill(HNL_reco_mom)                
-                                h['Chi2'].Fill(dicMuChi2[str(muonMotherkey)])       
-                                h['Chi2'].Fill(pi_chi2)                             
-                                h['HNL_mom_diff'].Fill(mom_diff)                    
-                                
-                                mu_t = time_res2(mupartkey[str(muonMotherkey)],muV)      
-                                if mu_t != None:                                  
-                                    h['Time'].Fill(mu_t)                                
-                                pi_t = time_res2(piPartkey,piV)                            
-                                if pi_t != None:                                    
-                                    h['Time2'].Fill(pi_t)      
-
-        print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection')
-        print(str(fiducialcheck) + ' HNL decays outside fiducial volume')
-        print(str(convergecheck) + ' track fits failed to converge')
-        print(str(measurecheck) + ' tracks with not enough measurements\n')
-
 def finStateMuPi_COPY2():
     if sTree.GetBranch("FitTracks"):
         pi_decaycheck = 0                               # counter for pions decaying to muons before detection
@@ -667,35 +542,6 @@ def time_res2_COPY(partkey,v):
             else: return None
     else: return None
 
-def time_res(partkey):
-    if sTree.GetBranch("strawtubesPoint"):
-        z_array = []
-        t_array = []
-        straw_time=0
-        for k,hits in enumerate(sTree.strawtubesPoint):
-            TrackID = hits.GetTrackID()
-            #print(TrackID)
-            if TrackID == partkey:
-                z_array.append(hits.GetZ())
-                t_array.append(hits.GetTime())
-        minZval=min(z_array)   
-        min_z = z_array.index(min(z_array))
-        straw_time = t_array[min_z]
-    else: return None,None,None,None,None
-    if sTree.GetBranch("EcalPoint"):
-            if not straw_time<=0:
-                for k,hits in enumerate(sTree.EcalPoint):
-                    TrackID = hits.GetTrackID()
-                    if TrackID == partkey:
-                        ecal_time = hits.GetTime()
-                        ecal_zpos = hits.GetZ()
-                        if not ecal_time <= straw_time:
-                            t = abs(straw_time - ecal_time)
-                            return ecal_time,ecal_zpos, minZval, straw_time, t 
-                    else: return None,None,None,None,None
-            else: return None,None,None,None,None
-    else: return None,None,None,None,None
-
 # ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
 nEvents = min(sTree.GetEntries(),nEvents)
 
@@ -734,11 +580,11 @@ def time_res2(partkey,v):
                         if not ecal_time <= straw_time:
                             t1 = abs(straw_time - ecal_time)
                             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-                            t2 = (r/v)*(10**9) # need to sort out the units
+                            t2 = (r/v)*(10**9) # units of nanoseconds
                             
     return t1,t2
 
-def inv_mass():
+#def inv_mass():
     if sTree.GetBranch("Particles"):
         ut.bookHist(h,'HNL_example','Example Reconstructed Mass',500,0.,2.)
         trackcheck = 0
@@ -836,15 +682,9 @@ def inv_mass():
 
 def finStateMuPi():
     if sTree.GetBranch("FitTracks"):
-        pi_decaycheck = 0                               # counter for pions decaying to muons before detection
-        fiducialcheck = 0                               # counter for tracks outside ficucial volume
-        HNL_decaycheck = 0                              # counter HNL decays outside fiducial volume
-        convergecheck = 0                               # counter for failed track fits
-        measurecheck = 0                                # counter for too few measurements
-        docacheck = 0                                   # counter for doca too large
+        pi_decaycheck = 0
         for n in range(nEvents):                            # loop over events
             rc = sTree.GetEntry(n)                              # load tree entry
-
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
@@ -861,22 +701,19 @@ def finStateMuPi():
                         Decay_Z = true_muon.GetStartZ()
                         if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
                             #print('HNL decayed outside fiducial volume')
-                            HNL_decaycheck+=1
                             continue
                         if not checkFiducialVolume(sTree,index,dy): 
                             #print('Track outside fiducial volume')
-                            fiducialcheck+=1
                             continue 
                         mu_status = reco_part.getFitStatus()             
                         if not mu_status.isFitConverged():
                             #print('Fit did not converge')
-                            convergecheck+=1
                             continue
                         mu_nmeas = mu_status.getNdf()                      
                         if not mu_nmeas > 25:
                             #print('Too few measurements (muon track)')
-                            measurecheck+=1
                             continue
+
                         mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
 
@@ -891,8 +728,8 @@ def finStateMuPi():
                         Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                         Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE)          # inputs 4-vector elements
 
-                        for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
-                            piPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
+                        for index2,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
+                            piPartkey = sTree.fitTrack2MC[index2]                  # matches track to MC particle key
                             true_pion = sTree.MCTrack[piPartkey]                  # gives MC particle data
                             if abs(true_pion.GetPdgCode()) == 211:              # checks particle is pion
                                 pionMotherkey = true_pion.GetMotherId()             # stores a number index of MC track of mother
@@ -903,17 +740,14 @@ def finStateMuPi():
 
                                     if not checkFiducialVolume(sTree,index,dy): 
                                         #print('Decay outside fiducial volume')
-                                        fiducialcheck+=1
                                         continue 
                                     pi_status = reco_part.getFitStatus()                
                                     if not pi_status.isFitConverged():
                                         #print('Fit did not converge')
-                                        convergecheck+=1
                                         continue
                                     pi_nmeas = pi_status.getNdf() 
                                     if not pi_nmeas > 25:
                                         #print('Too few measurements (pion track)')
-                                        measurecheck+=1
                                         continue
 
                                     pi_rchi2 = pi_status.getChi2()                      # chi squared value
@@ -927,19 +761,27 @@ def finStateMuPi():
                                     piPz = fittedstate2.getMom().z()                    # momentum magnitude
                                     piE = ROOT.TMath.Sqrt((pi_M**2) + (piP**2))         # energy
 
+                                    piV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((pi_M**2) + (piP**2))       # pion velocity
+                                    muV = (3*(10**8)*muP) / ROOT.TMath.Sqrt((mu_M**2) + (muP**2))       # muon velocity
+
                                     Pion_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          # inputs 4-vector elements
-                                
-                                    #---------------------------------------------------------
-                                    piV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((pi_M**2) + (piP**2))
-                                    muV = (3*(10**8)*muP) / ROOT.TMath.Sqrt((mu_M**2) + (muP**2))
-                                    #---------------------------------------------------------
-
+                              
                                     HNL_Vector = Muon_Vector + Pion_Vector              # adds the 4-momenta
-                                    HNL_mass = HNL_Vector.M()                           # sets HNL mass
-                                    HNL_reco_mom = HNL_Vector.P()                       # sets HNL mom
-                                    mom_diff = pionMotherTrue_mom - HNL_reco_mom
+                                    hnlmass = HNL_Vector.M() # mass without iterating over track fitting
+                                    h['HNL_no_iter'].Fill(hnlmass)
+                                    
+                                    HNLMom_redo = ROOT.TLorentzVector()
+                                    doca,HNLMom_Redo = RedoVertexing(index,index2)
+                                    if HNLMom_Redo == -1: continue
+                                    if doca > 2.: 
+                                        #print('distance of closest approach too large')
+                                        continue
 
+                                    HNL_mass = HNLMom_Redo.M()                           # sets HNL mass
+                                    HNL_reco_mom = HNLMom_Redo.P()                       # sets HNL mom
+                                    mom_diff = pionMotherTrue_mom - HNL_reco_mom
+                                    
                                     h['HNL_true'].Fill(pionMotherTrue_mass)             # fill histograms 
                                     h['HNL_mom'].Fill(pionMotherTrue_mom)
                                     h['HNL_reco'].Fill(HNL_mass)                        
@@ -960,14 +802,8 @@ def finStateMuPi():
                                         h['Time4'].Fill(pi_t2)
 
         print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection')
-        print(str(fiducialcheck) + ' tracks outside fiducial volume')
-        print(str(convergecheck) + ' track fits failed to converge')
-        print(str(HNL_decaycheck) + ' HNL decays outside fiducial volume')
-        print(str(measurecheck) + ' tracks with not enough measurements')
-        print(str(docacheck) + ' with DOCA too large\n')
         
 finStateMuPi()  
-inv_mass()
 makePlots()
 
 # ---------------------------------------------------OUTPUT------------------------------------------------------------
