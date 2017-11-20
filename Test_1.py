@@ -175,8 +175,11 @@ ut.bookHist(h,'HNL_mom','True (red) & Reco. (blue) Momentum',100,0.,300.) # true
 ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300) # reconstructed momentum distribution
 ut.bookHist(h,'HNL_mom_diff','True/Reco Momentum Difference',100,-3.,3) # true/reco momentum difference
 
-ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',500,36.,40.) # muon daughter time of flight
-ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',500,36.,40.) # pion daughter time of flight
+ut.bookHist(h,'Time','Muon Straw-ECAL Time (directly)',500,36.,40.) # muon daughter time of flight
+ut.bookHist(h,'Time2','Pion Straw-ECAL Time (directly)',500,36.,40.) # pion daughter time of flight
+ut.bookHist(h,'Time3','Muon Straw-ECAL Time (indirectly)',500,36.,40.) # muon daughter time of flight
+ut.bookHist(h,'Time4','Pion Straw-ECAL Time (indirectly)',500,36.,40.) # pion daughter time of flight
+
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
 
 ut.bookHist(h,'Muon_mom','Muon (HNL Daughter) Momentum',100,0.,200.) # HNL muon daughter momentum
@@ -343,7 +346,6 @@ def makePlots():
    h['HNL_mom_diff'].SetXTitle('Momentum Difference [GeV/c]')
    h['HNL_mom_diff'].SetYTitle('Frequency')
    h['HNL_mom_diff'].Draw()
-   fitSingleGauss('HNL_mom_diff',-0.2,0.2)
    h['Test_Mass'].Print('HNL_Graphs.png')
    #======================================================================================================================
    ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
@@ -358,14 +360,14 @@ def makePlots():
    h['Time2'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Time_Res'].cd(3)
-   h['Muon_mom'].SetXTitle('Momentum [GeV/c]')
-   h['Muon_mom'].SetYTitle('No. of Particles')
-   h['Muon_mom'].Draw()
+   h['Time3'].SetXTitle('Time [ns]')
+   h['Time3'].SetYTitle('Frequency')
+   h['Time3'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Time_Res'].cd(4)
-   h['Pion_mom'].SetXTitle('Momentum [GeV/c]')
-   h['Pion_mom'].SetYTitle('No. of Particles')
-   h['Pion_mom'].Draw()
+   h['Time4'].SetXTitle('Time [ns]')
+   h['Time4'].SetYTitle('Frequency')
+   h['Time4'].Draw()
    h['Time_Res'].Print('Time_Res.png')
 
 ############################
@@ -695,19 +697,18 @@ def time_res(partkey):
     else: return None,None,None,None,None
 
 # ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
-
 nEvents = min(sTree.GetEntries(),nEvents)
-c = 3*(10**8)
 
 def time_res2(partkey,v):
-    t = None
+    t1 = None
+    t2 = None
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
         z_array = []
         t_array = []
-        straw_time = -1
-        ecal_time = -1
+        straw_time = 0
+        ecal_time = 0
         for k,hits in enumerate(sTree.strawtubesPoint):
             straw_TrackID = hits.GetTrackID()
             if straw_TrackID == partkey:
@@ -723,7 +724,7 @@ def time_res2(partkey,v):
         straw_time = t_array[min_z_index]
 
         if sTree.GetBranch("EcalPoint"):
-            if not straw_time == -1:
+            if not straw_time == 0:
                 for k,hits in enumerate(sTree.EcalPoint):
                     ecal_TrackID = hits.GetTrackID()
                     if ecal_TrackID == partkey:
@@ -731,11 +732,12 @@ def time_res2(partkey,v):
                         ecal_y = 0.01*hits.GetY()
                         ecal_z = 0.01*hits.GetZ()
                         ecal_time = hits.GetTime()
-                        if not ecal_time == -1:
-                            #r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-                            #t = r/v # need to sort out the units
-                            t = abs(straw_time - ecal_time)
-    return t
+                        if not ecal_time == 0:
+                            t1 = abs(straw_time - ecal_time)
+                            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
+                            t2 = (r/v)*(10**9) # need to sort out the units
+                            
+    return t1,t2
 
 def inv_mass():
     if sTree.GetBranch("Particles"):
@@ -816,8 +818,8 @@ def inv_mass():
                     docacheck+=1
                     continue
 
-                mass = HNLMom_Redo.M()
-                h['HNL_example'].Fill(mass)
+                hnlmass = HNLMom_Redo.M()
+                h['HNL_example'].Fill(hnlmass)
 
         print(str(trackcheck) + ' tracks outside fiducial volume')
         print(str(convergecheck) + ' track fits failed to converge')
@@ -843,6 +845,7 @@ def finStateMuPi():
         docacheck = 0                                   # counter for doca too large
         for n in range(nEvents):                            # loop over events
             rc = sTree.GetEntry(n)                              # load tree entry
+
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
@@ -913,6 +916,7 @@ def finStateMuPi():
                                         #print('Too few measurements (pion track)')
                                         measurecheck+=1
                                         continue
+
                                     pi_rchi2 = pi_status.getChi2()                      # chi squared value
                                     pi_chi2 = (pi_rchi2/pi_nmeas)                       # gets chi value
 
@@ -928,8 +932,8 @@ def finStateMuPi():
                                     Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          # inputs 4-vector elements
                                 
                                     #---------------------------------------------------------
-                                    piV = (piP*c) / ROOT.TMath.Sqrt(((pi_M*c)**2) + (piP**2))
-                                    muV = (muP*c) / ROOT.TMath.Sqrt(((mu_M*c)**2) + (muP**2))
+                                    piV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((pi_M**2) + (piP**2))
+                                    muV = (3*(10**8)*muP) / ROOT.TMath.Sqrt((mu_M**2) + (muP**2))
                                     #---------------------------------------------------------
 
                                     HNL_Vector = Muon_Vector + Pion_Vector              # adds the 4-momenta
@@ -947,12 +951,14 @@ def finStateMuPi():
                                     h['Pion_mom'].Fill(piP)
                                     h['Muon_mom'].Fill(muP)
                                 
-                                    mu_t = time_res2(muPartkey,muV)      
-                                    if mu_t != None:                                  
-                                        h['Time'].Fill(mu_t)                                
-                                    pi_t = time_res2(piPartkey,piV)                            
-                                    if pi_t != None:                                    
-                                        h['Time2'].Fill(pi_t)      
+                                    mu_t1,mu_t2 = time_res2(muPartkey,muV)      
+                                    if mu_t1 != None:                                  
+                                        h['Time'].Fill(mu_t1) 
+                                        h['Time3'].Fill(mu_t2)
+                                    pi_t1,pi_t2 = time_res2(piPartkey,piV)                            
+                                    if pi_t1 != None:                                    
+                                        h['Time2'].Fill(pi_t1)  
+                                        h['Time4'].Fill(pi_t2)
 
         print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection')
         print(str(fiducialcheck) + ' tracks outside fiducial volume')
