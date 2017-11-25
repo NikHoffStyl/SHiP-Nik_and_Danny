@@ -167,9 +167,10 @@ def create_Hists():
     ut.bookHist(h,'HNL_reco','Reconstructed Mass',500,0.,2.) # new one for the reconstructed mass
     ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)
     ut.bookHist(h,'HNL_mom','Monte Carlo Momentum',100,0.,300.)
-    ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',200,0.,200.)
-    ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',500,0.,200.)
+    ut.bookHist(h,'Time','Muon - Time Between Straw Tube and ECAL',500,36.,42.)
+    ut.bookHist(h,'Time2','Pion - Time Between Straw Tube and ECAL',500,36.,42.)
     ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300)
+    ut.bookHist(h,'Time_man','Analytical Time',500,36.,42.)
     #
     ut.bookHist(h,'HNLw','Reconstructed Mass with weights',500,0.,2.)
     ut.bookHist(h,'meas','number of measurements',40,-0.5,39.5)##
@@ -588,19 +589,25 @@ def makePlots():
    h['HNL_mom_reco'].Draw()
    h['Test_Mass'].Print('MassAndMom.png')
    #----------------------------------------------------------------------------------------------------------------------
-   ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
-   cv = h['Time_Res'].cd(1)
+   ut.bookCanvas(h,key='Time_Res',title='Time Plots',nx=900,ny=700,cx=1,cy=1)
+   #cv = h['Time_Res'].cd(1)
    h['Time'].SetXTitle('Time [ns]')
    h['Time'].SetYTitle('Frequency')
    h['Time'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
-   cv = h['Time_Res'].cd(2)
+   #cv = h['Time_Res'].cd(2)
+   h['Time2']. SetLineColor(2)
    h['Time2'].SetXTitle('Time [ns]')
    h['Time2'].SetYTitle('Frequency')
-   h['Time2'].Draw()
+   h['Time2'].Draw('same')
+   #h['Time2'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
-   cv = h['Time_Res'].cd(3)
-   h['Chi2'].Draw()
+   #cv = h['Time_Res'].cd(3)
+   h['Time_man'].SetLineColor(1)
+   h['Time_man'].SetXTitle('Time [ns]')
+   h['Time_man'].SetYTitle('Frequency')
+   h['Time_man'].Draw('same')
+   #h['Time_man'].Draw()
    h['Time_Res'].Print('TimeRes.png')
    print ('Made the plots')
 
@@ -1103,15 +1110,17 @@ def finStateMuPi():
                                 #particleDataFile.write('mu: \t' + str(muEcalT) + '\t' + str(muEcalZ) + '\t' + str(muMinStrawZ) + '\t' + str(muStrawT) + '\t' + str(mu_t) + '\n')
                                 if mu_t != None:                                    #
                                     h['Time'].Fill(mu_t)                            #
-
+                                speedOfLight=3*(10**8)
                                 piEcalT, piEcalX, piEcalY, piEcalZ, pistraw_xpos,pistraw_ypos,pistraw_zpos, piStrawT, pi_t  = time_resVrs2(piPartkey)                          #
                                 piDeltaPos=(ROOT.TMath.Sqrt(((piEcalX-pistraw_xpos)**2)+((piEcalY-pistraw_ypos)**2)+((piEcalZ-pistraw_zpos)**2)))/100
                                 piPjoules=piP*1.602*(10**(-13))
                                 piGammaVel=piP/(pi_M/(3*(10**8)))
-                                manualCalTime=piDeltaPos/piGammaVel
+                                Betta=piP/ROOT.TMath.Sqrt((pi_M**2)+(piP**2))
+                                manualCalTime=(piDeltaPos*(10**9))/(Betta*speedOfLight)
                                 #pideltaZz=piEcalZ-piMinStrawZ
                                 #particleDataFile.write('pi: \t' + str(piEcalT) + '\t' + str(piEcalZ) + '\t' + str(piMinStrawZ) + '\t' + str(piStrawT) + '\t' + str(pi_t) + '\t' +  str(piPz) + '\n')
                                 particleDataFile.write('pi: \t'+ str(piDeltaPos)+ '\t'  +  str(piP) + '\t'  +  str(piPjoules) +'\t' +  str(manualCalTime) + '\n')
+                                h['Time_man'].Fill(manualCalTime)
                                 if pi_t != None:                                     #
                                     h['Time2'].Fill(pi_t)                            #
 finStateMuPi()

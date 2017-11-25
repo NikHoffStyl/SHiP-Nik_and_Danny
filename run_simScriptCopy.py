@@ -24,10 +24,10 @@ MCTracksWithEnergyCutOnly = True # copy particles above a certain kin energy cut
 MCTracksWithHitsOrEnergyCut = False # or of above, factor 2 file size increase compared to MCTracksWithEnergyCutOnly
 
 charmonly    = False  # option to be set with -A to enable only charm decays, charm x-sec measurement  
-HNL          = True
+HNL          = False
 DarkPhoton   = False
-RPVSUSY      = False
-RPVSUSYbench = 2
+RPVSUSY      = True
+RPVSUSYbench = 1
 
 eventDisplay = False
 inputFile    = "$SHIPSOFT/Cascade-parp16-MSTP82-1-MSEL4-76Mpot_1.root"
