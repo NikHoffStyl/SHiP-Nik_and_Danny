@@ -165,6 +165,7 @@ else:
 
 import TrackExtrapolateTool
 from array import array
+from ROOT import THStack
 
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
@@ -181,11 +182,17 @@ ut.bookHist(h,'PionDir','Pion Straw-ECAL Time (directly)',500,36.,40.) # pion da
 ut.bookHist(h,'MuonIndir','Muon Straw-ECAL Time (indirectly)',500,36.,40.) # muon daughter time of flight
 ut.bookHist(h,'PionIndir','Pion Straw-ECAL Time (indirectly)',500,36.,40.) # pion daughter time of flight
 ut.bookHist(h,'KaonTime','Kaon-Pion Time Comparison',500,36.,40.)
+h['KaonTime'].SetLineColor(2)
 
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
+ut.bookHist(h,'timediff','Pion-Kaon Time Comparison',1000,-2.,2.)
 
 ut.bookHist(h,'Muon_mom','Muon (HNL Daughter) Momentum',100,0.,200.) # HNL muon daughter momentum
 ut.bookHist(h,'Pion_mom','Pion (HNL Daughter) Momentum',100,0.,200.) # HNL pion daughter momentum
+
+ths1 = THStack("PionKaonTime","Pion and Kaon Time")
+ths1.Add(h["PionIndir"])
+ths1.Add(h["KaonTime"])
 
 # ---------------------------------------------------FUNCTIONS------------------------------------------------------------
 
@@ -367,12 +374,15 @@ def makePlots():
    h['MuonIndir'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Time_Res'].cd(4)
-   h['PionIndir'].SetXTitle('Time [ns]')
-   h['PionIndir'].SetYTitle('Frequency')
-   h['PionIndir'].Draw()
-   h['KaonTime'].SetLineColor(2)
-   h['KaonTime'].Draw("same")
-   h['Time_Res'].Print('Time_Res.png')
+   ths1.Draw("nostack")
+   h['Time_Res'].Print('Stacked.png')
+   
+   #h['PionIndir'].SetXTitle('Time [ns]')
+   #h['PionIndir'].SetYTitle('Frequency')
+   #h['PionIndir'].Draw()
+   #h['KaonTime'].SetLineColor(2)
+   #h['KaonTime'].Draw("same")
+   #h['Time_Res'].Print('Time_Res.png')
 
 ############################
 
@@ -845,6 +855,9 @@ def finStateMuPi():
                                     h['Pion_mom'].Fill(piP)
                                     h['Muon_mom'].Fill(muP)
 
+                                    kaon_M = 0.493677                                                       # kaon mass
+                                    kaonV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((kaon_M**2) + (piP**2))       # kaon velocity
+
                                     mu_t1_dir,mu_t2 = time_res(muPartkey,muV)        
                                     if mu_t1_dir != None:              
                                         h['MuonDir'].Fill(mu_t1_dir) 
@@ -853,13 +866,10 @@ def finStateMuPi():
                                     if pi_t1_dir != None:     
                                         h['PionDir'].Fill(pi_t1_dir)  
                                         h['PionIndir'].Fill(pi_t2)
-
-                                    kaon_M = 0.493677                                                       # kaon mass
-                                    kaonV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((kaon_M**2) + (piP**2))       # kaon velocity
-
-                                    kaon_t1_dir,kaon_t2 = time_res(piPartkey,kaonV)
-                                    if kaon_t1_dir != None:
+                                        kaon_t1_dir,kaon_t2 = time_res(piPartkey,kaonV)
                                         h['KaonTime'].Fill(kaon_t2)
+                                        diff = kaon_t2 - pi_t2
+                                        h['timediff'].Fill(diff)
 
         print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection\n')
         
