@@ -176,10 +176,11 @@ ut.bookHist(h,'HNL_mom','True (red) & Reco. (blue) Momentum',100,0.,300.) # true
 ut.bookHist(h,'HNL_mom_reco','Reconstructed Momentum',100,0.,300) # reconstructed momentum distribution
 ut.bookHist(h,'HNL_mom_diff','True/Reco Momentum Difference',100,-3.,3) # true/reco momentum difference
 
-ut.bookHist(h,'Time','Muon Straw-ECAL Time (directly)',500,36.,40.) # muon daughter time of flight
-ut.bookHist(h,'Time2','Pion Straw-ECAL Time (directly)',500,36.,40.) # pion daughter time of flight
-ut.bookHist(h,'Time3','Muon Straw-ECAL Time (indirectly)',500,36.,40.) # muon daughter time of flight
-ut.bookHist(h,'Time4','Pion Straw-ECAL Time (indirectly)',500,36.,40.) # pion daughter time of flight
+ut.bookHist(h,'MuonDir','Muon Straw-ECAL Time (directly)',500,36.,40.) # muon daughter time of flight
+ut.bookHist(h,'PionDir','Pion Straw-ECAL Time (directly)',500,36.,40.) # pion daughter time of flight
+ut.bookHist(h,'MuonIndir','Muon Straw-ECAL Time (indirectly)',500,36.,40.) # muon daughter time of flight
+ut.bookHist(h,'PionIndir','Pion Straw-ECAL Time (indirectly)',500,36.,40.) # pion daughter time of flight
+ut.bookHist(h,'KaonTime','Kaon-Pion Time Comparison',500,36.,40.)
 
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
 
@@ -351,24 +352,26 @@ def makePlots():
    #======================================================================================================================
    ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['Time_Res'].cd(1)
-   h['Time'].SetXTitle('Time [ns]')
-   h['Time'].SetYTitle('Frequency')
-   h['Time'].Draw()
+   h['MuonDir'].SetXTitle('Time [ns]')
+   h['MuonDir'].SetYTitle('Frequency')
+   h['MuonDir'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Time_Res'].cd(2)
-   h['Time2'].SetXTitle('Time [ns]')
-   h['Time2'].SetYTitle('Frequency')
-   h['Time2'].Draw()
+   h['PionDir'].SetXTitle('Time [ns]')
+   h['PionDir'].SetYTitle('Frequency')
+   h['PionDir'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Time_Res'].cd(3)
-   h['Time3'].SetXTitle('Time [ns]')
-   h['Time3'].SetYTitle('Frequency')
-   h['Time3'].Draw()
+   h['MuonIndir'].SetXTitle('Time [ns]')
+   h['MuonIndir'].SetYTitle('Frequency')
+   h['MuonIndir'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Time_Res'].cd(4)
-   h['Time4'].SetXTitle('Time [ns]')
-   h['Time4'].SetYTitle('Frequency')
-   h['Time4'].Draw()
+   h['PionIndir'].SetXTitle('Time [ns]')
+   h['PionIndir'].SetYTitle('Frequency')
+   h['PionIndir'].Draw()
+   h['KaonTime'].SetLineColor(2)
+   h['KaonTime'].Draw("same")
    h['Time_Res'].Print('Time_Res.png')
 
 ############################
@@ -493,10 +496,10 @@ def finStateMuPi_COPY2():
                                 
                                 mu_t = time_res2(mupartkey[str(muonMotherkey)])      
                                 if mu_t != None:                                  
-                                    h['Time'].Fill(mu_t)                                
+                                    h['MuonDir'].Fill(mu_t)                                
                                 pi_t = time_res2(piPartkey)                            
                                 if pi_t != None:                                    
-                                    h['Time2'].Fill(pi_t)      
+                                    h['PionDir'].Fill(pi_t)      
 
         print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection')
         print(str(fiducialcheck) + ' HNL decays outside fiducial volume')
@@ -811,10 +814,9 @@ def finStateMuPi():
                                     piPy = fittedstate2.getMom().y()                    # momentum in z
                                     piPz = fittedstate2.getMom().z()                    # momentum magnitude
                                     piE = ROOT.TMath.Sqrt((pi_M**2) + (piP**2))         # energy
-
                                     piV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((pi_M**2) + (piP**2))       # pion velocity
                                     muV = (3*(10**8)*muP) / ROOT.TMath.Sqrt((mu_M**2) + (muP**2))       # muon velocity
-
+                                    
                                     Pion_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          # inputs 4-vector elements
                               
@@ -843,14 +845,21 @@ def finStateMuPi():
                                     h['Pion_mom'].Fill(piP)
                                     h['Muon_mom'].Fill(muP)
 
-                                    mu_t1,mu_t2 = time_res(muPartkey,muV)        
-                                    if mu_t1 != None:              
-                                        h['Time'].Fill(mu_t1) 
-                                        h['Time3'].Fill(mu_t2)
-                                    pi_t1,pi_t2 = time_res(piPartkey,piV)                            
-                                    if pi_t1 != None:     
-                                        h['Time2'].Fill(pi_t1)  
-                                        h['Time4'].Fill(pi_t2)
+                                    mu_t1_dir,mu_t2 = time_res(muPartkey,muV)        
+                                    if mu_t1_dir != None:              
+                                        h['MuonDir'].Fill(mu_t1_dir) 
+                                        h['MuonIndir'].Fill(mu_t2)
+                                    pi_t1_dir,pi_t2 = time_res(piPartkey,piV)                            
+                                    if pi_t1_dir != None:     
+                                        h['PionDir'].Fill(pi_t1_dir)  
+                                        h['PionIndir'].Fill(pi_t2)
+
+                                    kaon_M = 0.493677                                                       # kaon mass
+                                    kaonV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((kaon_M**2) + (piP**2))       # kaon velocity
+
+                                    kaon_t1,kaon_t2 = time_res(piPartkey,kaonV)
+                                    if kaon_t1 != None:
+                                        h['KaonTime'].Fill(kaon_t2)
 
         print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection\n')
         
