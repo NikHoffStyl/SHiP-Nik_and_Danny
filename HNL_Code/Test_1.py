@@ -857,8 +857,8 @@ def finStateMuPi():
                                     kaon_M = 0.493677                                                       # kaon mass
                                     kaonV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((kaon_M**2) + (piP**2))       # kaon velocity
 
-                                    kaon_t1,kaon_t2 = time_res(piPartkey,kaonV)
-                                    if kaon_t1 != None:
+                                    kaon_t1_dir,kaon_t2 = time_res(piPartkey,kaonV)
+                                    if kaon_t1_dir != None:
                                         h['KaonTime'].Fill(kaon_t2)
 
         print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection\n')
