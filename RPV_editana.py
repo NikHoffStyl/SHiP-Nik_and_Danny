@@ -13,7 +13,17 @@ import shipRoot_conf
 import shipDet_conf
 import shipVeto
 from inspect import currentframe
+import random
 shipRoot_conf.configure()
+
+
+#print(random.random())#prints in range [0,1)
+#randrange(a,b,step) #chooses an integer in range [a,b)
+#randint(a,b)
+#uniform(a,b) #chooses float in range [a,b)
+#normalvariate(mean,sdev) #samples standard gaussian distribution
+#gauss(mean,sigma) #faster than the above
+
 
 debug = False
 chi2CutOff  = 4.
@@ -451,6 +461,7 @@ def finState2MuPi():
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
+                print(reco_part)
                 if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
