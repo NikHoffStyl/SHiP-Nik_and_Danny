@@ -5,6 +5,7 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 import shipRoot_conf
+import numpy as np
 shipRoot_conf.configure()
 
 debug = False
@@ -185,7 +186,8 @@ ut.bookHist(h,'KaonTime','Kaon-Pion Time Comparison',500,36.,40.)
 h['KaonTime'].SetLineColor(2)
 
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
-ut.bookHist(h,'timediff','Pion-Kaon Time Comparison',1000,-2.,2.)
+ut.bookHist(h,'timediff','Pion-Kaon Time Comparison',1000,-2.,2.) # ad hoc pion-kaon time of flight comparison
+ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.5,0.5)
 
 ut.bookHist(h,'Muon_mom','Muon (HNL Daughter) Momentum',100,0.,200.) # HNL muon daughter momentum
 ut.bookHist(h,'Pion_mom','Pion (HNL Daughter) Momentum',100,0.,200.) # HNL pion daughter momentum
@@ -694,6 +696,7 @@ def time_resVrs2(partkey):
 # ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
 
 nEvents = min(sTree.GetEntries(),nEvents)
+c = 2.99792458*(10**8)
 
 def time_res(partkey,v):
     t1 = None
@@ -732,7 +735,7 @@ def time_res(partkey,v):
         if not ecal_time <= 0:
             t1 = abs(straw_time - ecal_time)
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            t2 = (r/v)*(10**9) # units of nanoseconds
+            t2 = ((r/v)*(10**9)) # units of nanoseconds
                             
     return t1,t2
 
@@ -772,17 +775,16 @@ def finStateMuPi():
 
                         mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
-
                         if not mu_chi2 < 4:
                             #print('Chi squared value too high')
                             continue
 
                         fittedstate1 = reco_part.getFittedState()           # get reconstructed muon fitted state
                         mu_M = true_muon.GetMass()                          # mass of MC muon
+                        muP = fittedstate1.getMomMag()                      # momentum magnitude
                         muPx = fittedstate1.getMom().x()                    # momentum in x
                         muPy = fittedstate1.getMom().y()                    # momentum in y  
                         muPz = fittedstate1.getMom().z()                    # momentum in z
-                        muP = fittedstate1.getMomMag()                      # momentum magnitude
                         muE = ROOT.TMath.Sqrt((mu_M**2) + (muP**2))         # energy
 
                         Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
@@ -812,20 +814,19 @@ def finStateMuPi():
 
                                     pi_rchi2 = pi_status.getChi2()                      # chi squared value
                                     pi_chi2 = (pi_rchi2/pi_nmeas)                       # gets chi value
-
                                     if not pi_chi2 < 4:
                                         #print('Chi squared value too high')
                                         continue
 
                                     fittedstate2 = reco_part.getFittedState()           # get reconstructed pion fitted state
                                     pi_M = true_pion.GetMass()                          # mass of MC pion 
-                                    piP = fittedstate2.getMomMag()                      # momentum in x
-                                    piPx = fittedstate2.getMom().x()                    # momentum in y
-                                    piPy = fittedstate2.getMom().y()                    # momentum in z
-                                    piPz = fittedstate2.getMom().z()                    # momentum magnitude
+                                    piP = fittedstate2.getMomMag()                      # momentum magnitude
+                                    piPx = fittedstate2.getMom().x()                    # momentum in x
+                                    piPy = fittedstate2.getMom().y()                    # momentum in y
+                                    piPz = fittedstate2.getMom().z()                    # momentum in z
                                     piE = ROOT.TMath.Sqrt((pi_M**2) + (piP**2))         # energy
-                                    piV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((pi_M**2) + (piP**2))       # pion velocity
-                                    muV = (3*(10**8)*muP) / ROOT.TMath.Sqrt((mu_M**2) + (muP**2))       # muon velocity
+                                    piV = (c*piP) / ROOT.TMath.Sqrt((pi_M**2) + (piP**2))       # pion velocity
+                                    muV = (c*muP) / ROOT.TMath.Sqrt((mu_M**2) + (muP**2))       # muon velocity
                                     
                                     Pion_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     Pion_Vector.SetPxPyPzE(piPx,piPy,piPz,piE)          # inputs 4-vector elements
@@ -856,14 +857,14 @@ def finStateMuPi():
                                     h['Muon_mom'].Fill(muP)
 
                                     kaon_M = 0.493677                                                       # kaon mass
-                                    kaonV = (3*(10**8)*piP) / ROOT.TMath.Sqrt((kaon_M**2) + (piP**2))       # kaon velocity
+                                    kaonV = (c*piP) / ROOT.TMath.Sqrt((kaon_M**2) + (piP**2))       # kaon velocity
 
                                     mu_t1_dir,mu_t2 = time_res(muPartkey,muV)        
                                     if mu_t1_dir != None:              
                                         h['MuonDir'].Fill(mu_t1_dir) 
                                         h['MuonIndir'].Fill(mu_t2)
                                     pi_t1_dir,pi_t2 = time_res(piPartkey,piV)                            
-                                    if pi_t1_dir != None:     
+                                    if pi_t1_dir != None: 
                                         h['PionDir'].Fill(pi_t1_dir)  
                                         h['PionIndir'].Fill(pi_t2)
                                         kaon_t1_dir,kaon_t2 = time_res(piPartkey,kaonV)
