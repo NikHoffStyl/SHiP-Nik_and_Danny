@@ -13,7 +13,8 @@ import shipRoot_conf
 import shipDet_conf
 import shipVeto
 from inspect import currentframe
-import random
+import numpy as np
+#import random
 shipRoot_conf.configure()
 
 
@@ -32,6 +33,7 @@ fiducialCut = True
 measCutFK = 25
 measCutPR = 22
 docaCut = 2.
+c = 2.99792458*(10**8)
 
 def inputOptsArgs():
     inputFile  = None
@@ -207,19 +209,24 @@ def create_Hists():
     ut.bookHist(h,'nalino_reco','Reconstructed Mass',500,0.,2.)                    # reconstructed mass
     ut.bookHist(h,'nalino_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)
     ut.bookHist(h,'nalino_mom','True (red) & Reco. (blue) Momentum',100,0.,300.)   # true momentum distribution
-    ut.bookHist(h,'nalino_mom_reco','Reconstructed Momentum',100,0.,300)           # reconstructed momentum distribution
+    ut.bookHist(h,'nalino_mom_reco','Reconstructed Momentum',100,0.,300.)           # reconstructed momentum distribution
     ut.bookHist(h,'nalino_mom_diff','True/Reco Momentum Difference',100,-3.,3)     # true/reco momentum difference
 
-    ut.bookHist(h,'Time','Muon Straw-ECAL Time (directly)',500,36.,40.)         # muon daughter time of flight
-    ut.bookHist(h,'Time2','Kaon Straw-ECAL Time (directly)',500,36.,40.)        # Kaon daughter time of flight
-    ut.bookHist(h,'Time3','Muon Straw-ECAL Time (indirectly)',500,36.,40.)      # muon daughter time of flight
-    ut.bookHist(h,'Time4','Kaon Straw-ECAL Time (indirectly)',500,36.,40.)      # Kaon daughter time of flight
+    ut.bookHist(h,'MuonDirTime','Muon Straw-ECAL Time (directly)',500,36.,40.)         # muon daughter time of flight
+    ut.bookHist(h,'KaonDirTime','Kaon Straw-ECAL Time (directly)',500,36.,40.)        # Kaon daughter time of flight
+    ut.bookHist(h,'MuonIndirTime','Muon Straw-ECAL Time (indirectly)',500,36.,40.)      # muon daughter time of flight
+    ut.bookHist(h,'KaonIndirTime','Kaon Straw-ECAL Time (indirectly)',500,36.,40.)      # Kaon daughter time of flight
 
     ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)                 # chi squared track fitting
+    ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.5,0.5)
+    ut.bookHist(h,'smearedmass1','Time Smeared Neutralino Mass',500,0.,2.)
+    ut.bookHist(h,'smearedmass2','Time Smeared Neutralino Mass',500,0.,2.)
+    ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum',500,0.,300.)
+    ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
 
     ut.bookHist(h,'Muon_mom','Muon (nalino Daughter) Momentum',100,0.,200.)        # nalino muon daughter momentum
     ut.bookHist(h,'Kaon_mom','Kaon (nalino Daughter) Momentum',100,0.,200.)        # nalino Kaon daughter momentum
-    print("Created 13 Histograms")
+    print("Created Histograms")
 create_Hists()
 
 def dist2InnerWall(X,Y,Z):
@@ -319,9 +326,9 @@ def RedoVertexing(t1,t2):
          E = ROOT.TMath.Sqrt( mass*mass + mom.Mag2() )
          LV[tr] = ROOT.TLorentzVector()
          LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
-     nalinoMom = LV[t1]+LV[t2]
+     nalinoLV = LV[t1]+LV[t2]
      #return xv,yv,zv,doca,nalinoMom
-     return doca,nalinoMom
+     return nalinoLV,LV[t1],LV[t2],doca,
 
 def fitSingleGauss(x,ba=None,be=None):
     name    = 'myGauss_'+x 
@@ -368,29 +375,49 @@ def makePlots():
    h['nalino_mom_diff'].SetXTitle('Momentum Difference [GeV/c]')
    h['nalino_mom_diff'].SetYTitle('Frequency')
    h['nalino_mom_diff'].Draw()
-   h['Test_Mass'].Print('nalinographs.png')
+   h['Test_Mass'].Print('NeutralinoMandP.png')
    #======================================================================================================================
    ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['Time_Res'].cd(1)
-   h['Time'].SetXTitle('Time [ns]')
-   h['Time'].SetYTitle('Frequency')
-   h['Time'].Draw()
+   h['MuonDirTime'].SetXTitle('Time [ns]')
+   h['MuonDirTime'].SetYTitle('Frequency')
+   h['MuonDirTime'].Draw()
    
    cv = h['Time_Res'].cd(2)
-   h['Time2'].SetXTitle('Time [ns]')
-   h['Time2'].SetYTitle('Frequency')
-   h['Time2'].Draw()
+   h['KaonDirTime'].SetXTitle('Time [ns]')
+   h['KaonDirTime'].SetYTitle('Frequency')
+   h['KaonDirTime'].Draw()
    
    cv = h['Time_Res'].cd(3)
-   h['Time3'].SetXTitle('Time [ns]')
-   h['Time3'].SetYTitle('Frequency')
-   h['Time3'].Draw()
+   h['MuonIndirTime'].SetXTitle('Time [ns]')
+   h['MuonIndirTime'].SetYTitle('Frequency')
+   h['MuonIndirTime'].Draw()
    
    cv = h['Time_Res'].cd(4)
-   h['Time4'].SetXTitle('Time [ns]')
-   h['Time4'].SetYTitle('Frequency')
-   h['Time4'].Draw()
-   h['Time_Res'].Print('TimeRes1.png')
+   h['KaonIndirTime'].SetXTitle('Time [ns]')
+   h['KaonIndirTime'].SetYTitle('Frequency')
+   h['KaonIndirTime'].Draw()
+   h['Time_Res'].Print('MuKaTime.png')
+   #======================================================================================================================
+   ut.bookCanvas(h,key='SmearingInfo',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
+   cv = h['SmearingInfo'].cd(1)
+   h['normdistr'].Draw()
+   
+   cv = h['SmearingInfo'].cd(2)
+   h['smearedmass1'].SetXTitle('Smeared mass [GeV/c2]')
+   h['smearedmass1'].SetYTitle('No. of Particles')
+   h['smearedmass1'].SetLineColor(2)
+   h['smearedmass1'].Draw()
+   h['smearedmass2'].Draw("same")
+
+   cv = h['SmearingInfo'].cd(3)
+   h['smearedP1'].SetXTitle('Smeared mass [GeV/c2]')
+   h['smearedP1'].SetYTitle('No. of Particles')
+   h['smearedP1'].SetLineColor(2)
+   h['smearedP1'].Draw()
+   h['smearedP2'].Draw("same")
+
+   h['SmearingInfo'].Print('SmearingMass.png')
 
 def isInFiducial(X,Y,Z):
    if Z > ShipGeo.TrackStation1.z : return False
@@ -412,9 +439,9 @@ def checkFiducialVolume(sTree,trackkey,dy):
 
 nEvents = min(sTree.GetEntries(),nEvents)
 
-def time_res(partkey,v):
-    t1 = None
-    t2 = None
+def time_res(partkey):
+    v = None
+    deltaTime = None
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
@@ -434,6 +461,9 @@ def time_res(partkey,v):
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
+        smear1 = np.random.normal(loc=0.0,scale=0.01,size=None) # current width of 10 ps
+        h['normdistr'].Fill(smear1)
+        smearStrawTime = straw_time + smear1
 
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
@@ -445,15 +475,18 @@ def time_res(partkey,v):
                         ecal_y = 0.01*hits.GetY()
                         ecal_z = 0.01*hits.GetZ()
                         ecal_time = hits.GetTime()
+                        smear2 = np.random.normal(loc=0.0,scale=0.01,size=None) # current width of 10 ps
+                        h['normdistr'].Fill(smear2)
+                        smearEcalTime = ecal_time + smear2
 
         if not ecal_time <= 0:
-            t1 = abs(straw_time - ecal_time)
+            deltaTime = abs(smearStrawTime - smearEcalTime)
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            t2 = (r/v)*(10**9) # units of nanoseconds
+            v = (r/deltaTime)*(10**9) # units of nanoseconds
                             
-    return t1,t2
+    return deltaTime,v
 
-def finState2MuPi():
+def finState2MuK():
     if sTree.GetBranch("FitTracks"):
         k_decaycheck = 0
         for n in range(nEvents):                            # loop over events
@@ -461,7 +494,7 @@ def finState2MuPi():
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
-                print(reco_part)
+                #print(reco_part)
                 if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
@@ -490,31 +523,34 @@ def finState2MuPi():
 
                         mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
-
                         if not mu_chi2 < 4:
                             #print('Chi squared value too high')
                             continue
 
-                        fittedstate1 = reco_part.getFittedState()           # get reconstructed muon fitted state
-                        mu_M = true_muon.GetMass()                          # mass of MC muon
-                        muPx = fittedstate1.getMom().x()                    # momentum in x
-                        muPy = fittedstate1.getMom().y()                    # momentum in y  
-                        muPz = fittedstate1.getMom().z()                    # momentum in z
-                        muP = fittedstate1.getMomMag()                      # momentum magnitude
-                        muE = ROOT.TMath.Sqrt((mu_M**2) + (muP**2))         # energy
+                        ######################################################
+                        #THIS PART MAY BE REMOVED IF REDOVERTEXING IS USED####
+                        #fittedstate1 = reco_part.getFittedState()           # get reconstructed muon fitted state
+                        #mu_M = true_muon.GetMass()                          # mass of MC muon
+                        #muPx = fittedstate1.getMom().x()                    # momentum in x
+                        #muPy = fittedstate1.getMom().y()                    # momentum in y  
+                        #muPz = fittedstate1.getMom().z()                    # momentum in z
+                        #muP = fittedstate1.getMomMag()                      # momentum magnitude
+                        #muE = ROOT.TMath.Sqrt((mu_M**2) + (muP**2))         # energy
 
-                        Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                        Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE)          # inputs 4-vector elements
+                        #Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                        #Muon_Vector.SetPxPyPzE(muPx,muPy,muPz,muE)          # inputs 4-vector elements
+                        #muV = (3*(10**8)*muP) / ROOT.TMath.Sqrt((mu_M**2) + (muP**2))       # muon velocity
+                        #######################################################
 
                         for index2,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
-                            kPartkey = sTree.fitTrack2MC[index2]                  # matches track to MC particle key
+                            kPartkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
                             true_kaon = sTree.MCTrack[kPartkey]                  # gives MC particle data
-                            if abs(true_kaon.GetPdgCode()) == 321:              # checks particle is kaon
+                            if abs(true_kaon.GetPdgCode()) == 321:               # checks particle is kaon
                                 kaonMotherkey = true_kaon.GetMotherId()             # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
                                 if kaonMotherkey==muonMotherkey:                    # check if keys are the same
-                                    kaonMotherTrue_mass = true_mother.GetMass()         # get nalino/final states mother mass
-                                    kaonMotherTrue_mom = true_mother.GetP()             # get nalino/final states mother mom
+                                    kaonMotherTrue_mass = true_mother.GetMass()        # get nalino/final states mother mass
+                                    kaonMotherTrue_mom = true_mother.GetP()            # get nalino/final states mother mom
 
                                     if not checkFiducialVolume(sTree,index,dy): 
                                         #print('Decay outside fiducial volume')
@@ -528,41 +564,50 @@ def finState2MuPi():
                                         #print('Too few measurements')
                                         continue
 
-                                    k_rchi2 = k_status.getChi2()                      # chi squared value
-                                    k_chi2 = (k_rchi2/k_nmeas)                       # gets chi value
-
+                                    k_rchi2 = k_status.getChi2()                       # chi squared value
+                                    k_chi2 = (k_rchi2/k_nmeas)                         # gets chi value
                                     if not k_chi2 < 4:
                                         #print('Chi squared value too high')
                                         continue
 
-                                    fittedstate2 = reco_part.getFittedState()           # get reconstructed Kaon fitted state
-                                    k_M = true_kaon.GetMass()                          # mass of MC Kaon 
-                                    kP = fittedstate2.getMomMag()                      # momentum in x
-                                    kPx = fittedstate2.getMom().x()                    # momentum in y
-                                    kPy = fittedstate2.getMom().y()                    # momentum in z
-                                    kPz = fittedstate2.getMom().z()                    # momentum magnitude
-                                    kE = ROOT.TMath.Sqrt((k_M**2) + (kP**2))         # energy
-
-                                    kV = (3*(10**8)*kP) / ROOT.TMath.Sqrt((k_M**2) + (kP**2))       # Kaon velocity
-                                    muV = (3*(10**8)*muP) / ROOT.TMath.Sqrt((mu_M**2) + (muP**2))       # muon velocity
-
-                                    Kaon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                                    Kaon_Vector.SetPxPyPzE(kPx,kPy,kPz,kE)          # inputs 4-vector elements
-                              
-                                    nalino_Vector = Muon_Vector + Kaon_Vector              # adds the 4-momenta
-                                    nalinomass = nalino_Vector.M() # mass without iterating over track fitting
-                                    h['nalino_no_iter'].Fill(nalinomass)
+                                    ######################################################
+                                    #THIS PART MAY BE REMOVED IF REDOVERTEXING IS USED####
+                                    #fittedstate2 = reco_part.getFittedState()          # get reconstructed Kaon fitted state
+                                    #k_M = true_kaon.GetMass()                          # mass of MC Kaon 
+                                    #kP = fittedstate2.getMomMag()                      # momentum in x
+                                    #kPx = fittedstate2.getMom().x()                    # momentum in y
+                                    #kPy = fittedstate2.getMom().y()                    # momentum in z
+                                    #kPz = fittedstate2.getMom().z()                    # momentum magnitude
+                                    #kE = ROOT.TMath.Sqrt((k_M**2) + (kP**2))           # energy
                                     
-                                    nalinoMom_redo = ROOT.TLorentzVector()
-                                    doca,nalinoMom_Redo = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
-                                    if nalinoMom_Redo == -1: continue
+                                    #Kaon_Vector = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
+                                    #Kaon_Vector.SetPxPyPzE(kPx,kPy,kPz,kE)             # inputs 4-vector elements
+                                    #kV = (3*(10**8)*kP) / ROOT.TMath.Sqrt((k_M**2) + (kP**2))# Kaon velocity
+                                    
+                                    #nalino_Vector = Muon_Vector + Kaon_Vector          # adds the 4-momenta
+                                    #nalinomass = nalino_Vector.M()                     # mass without iterating over track fitting
+                                    #h['nalino_no_iter'].Fill(nalinomass)
+                                    ######################################################
+                                    
+                                    Muon_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                                    Kaon_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                                    nalino_LVec = ROOT.TLorentzVector()               # declares variable as TLorentzVector class
+                                    nalino_LVec,Muon_LVec,Kaon_LVec,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
+                                    if nalino_LVec == -1: continue
                                     if doca > 2.: 
                                         #print('distance of closest approach too large')
                                         continue
 
-                                    nalino_mass = nalinoMom_Redo.M()                           # sets nalino mass
-                                    nalino_reco_mom = nalinoMom_Redo.P()                       # sets nalino mom
+                                    nalino_mass = nalino_LVec.M()                   # sets nalino mass
+                                    nalino_reco_mom = nalino_LVec.P()               # sets nalino mom
                                     mom_diff = kaonMotherTrue_mom - nalino_reco_mom
+
+                                    kM = Kaon_LVec.M()
+                                    kP = Kaon_LVec.P()
+                                    kE = Kaon_LVec.E()
+                                    muM = Muon_LVec.M()
+                                    muP = Muon_LVec.P()
+                                    muE = Muon_LVec.E()
                                     
                                     h['nalino_true'].Fill(kaonMotherTrue_mass)             # fill histograms 
                                     h['nalino_mom'].Fill(kaonMotherTrue_mom)
@@ -574,21 +619,35 @@ def finState2MuPi():
                                     h['Kaon_mom'].Fill(kP)
                                     h['Muon_mom'].Fill(muP)
 
-                                    mu_t1,mu_t2 = time_res(muPartkey,muV)        
-                                    if mu_t1 != None:              
-                                        h['Time'].Fill(mu_t1) 
-                                        h['Time3'].Fill(mu_t2)
-                                    k_t1,k_t2 = time_res(kPartkey,kV)                            
-                                    if k_t1 != None:     
-                                        h['Time2'].Fill(k_t1)  
-                                        h['Time4'].Fill(k_t2)
+                                    mu_t,mu_v = time_res(muPartkey)        
+                                    if mu_t != None:              
+                                        h['MuonDirTime'].Fill(mu_t) 
+                                        #h['MuonIndirTime'].Fill(mu_t2)
+                                        k_t,k_v = time_res(kPartkey)                            
+                                        if k_t != None:     
+                                            h['KaonDirTime'].Fill(k_t)  
+                                            #h['KaonIndirTime'].Fill(k_t2)
+
+                                            beta = k_v/c
+                                            if beta < 1:
+                                                #I DONT LIKE THIS METHOD IT USES THE kM TO GET kM
+                                                smearedP = (kM*beta)/(ROOT.TMath.Sqrt(1-(beta**2)))
+                                                h['smearedP1'].Fill(smearedP)
+                                                #print(smearedP,kP) # something very incorrect around here, WHY?
+                                                smearedE =   ROOT.TMath.Sqrt((kM**2) + (smearedP**2))
+                                                smearedM = ROOT.TMath.Sqrt(((kE + muE)**2) - ((kP + muP)**2))
+                                                h['smearedmass1'].Fill(smearedM)
+
+                                                #TRYING SOMETHING ELSE
+                                                smearedM = kP*(ROOT.TMath.Sqrt(1-(beta**2)))/beta
+                                                h['smearedmass2'].Fill(smearedM)
 
         print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
 
 #########################################
 
 
-finState2MuPi()          
+finState2MuK()          
 makePlots()
 hfile = inputFile.split(',')[0].replace('_rec','_RPVeditana')#create outputFile
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
