@@ -177,15 +177,13 @@ ut.bookHist(h,'RPV_mom','True (red) & Reco. (blue) Momentum',100,0.,300.) # true
 ut.bookHist(h,'RPV_mom_reco','Reconstructed Momentum',100,0.,300) # reconstructed momentum distribution
 ut.bookHist(h,'RPV_mom_diff','True/Reco Momentum Difference',100,-3.,3) # true/reco momentum difference
 
+ut.bookHist(h,'Muon_mom','Muon (RPV Daughter) Momentum',100,0.,200.) # RPV muon daughter momentum
+ut.bookHist(h,'Kaon_mom','Kaon (RPV Daughter) Momentum',100,0.,200.) # RPV pion daughter momentum
 ut.bookHist(h,'MuonDir','Muon Straw-ECAL Time (directly)',500,36.,40.) # muon daughter time of flight
 ut.bookHist(h,'KaonDir','Kaon Straw-ECAL Time (directly)',500,36.,40.) # kaon daughter time of flight
 
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
-ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.5,0.5)
 ut.bookHist(h,'smearedmass','Time Smeared RPV Mass',500,0.,2.)
-
-ut.bookHist(h,'Muon_mom','Muon (RPV Daughter) Momentum',100,0.,200.) # RPV muon daughter momentum
-ut.bookHist(h,'Kaon_mom','Kaon (RPV Daughter) Momentum',100,0.,200.) # RPV pion daughter momentum
 
 # ---------------------------------------------------FUNCTIONS------------------------------------------------------------
 
@@ -323,6 +321,11 @@ def fitSingleGauss(x,ba=None,be=None):
        myGauss.SetParName(3,'bckgr')
     h[x].Fit(myGauss,'','',ba,be) 
 
+# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
+
+nEvents = min(sTree.GetEntries(),nEvents)
+c = 2.99792458*(10**8)
+
 def makePlots():
    ut.bookCanvas(h,key='Test_Time',title='Fit Results',nx=1000,ny=500,cx=2,cy=1)
    cv = h['Test_Time'].cd(1)
@@ -362,15 +365,9 @@ def makePlots():
    h['RPV_mom_diff'].Draw()
    h['Test_Mass'].Print('RPV_Graphs.png')
 
-# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
-
-nEvents = min(sTree.GetEntries(),nEvents)
-c = 2.99792458*(10**8)
-
-def time_res(partkey):
-    v = None
+def time_res(partkey,sigma):
+    vsmear = None
     tsmear = None
-    t = None
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
@@ -403,14 +400,13 @@ def time_res(partkey):
                         ecal_time = hits.GetTime()
 
         if not ecal_time <= 0:
-            t = abs(straw_time - ecal_time) # stored in units of nanoseconds
-            smear = np.random.normal(loc=0.0,scale=0.01,size=None) # current width of 10 ps
-            tsmear = t + smear
-            h['normdistr'].Fill(smear)
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            v = (r/tsmear) * (10**9) # units of m/s
-                           
-    return tsmear,v
+            smear1 = np.random.normal(loc=0.0,scale=sigma,size=None)
+            smear2 = np.random.normal(loc=0.0,scale=sigma,size=None)
+            tsmear = abs((straw_time + smear1) - (ecal_time + smear2)) # nanoseconds
+            vsmear = (r/tsmear)*(10**9)
+            
+    return tsmear,vsmear
 
 def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
@@ -478,6 +474,7 @@ def finStateMuKa():
                                     
                                     Muon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     Kaon_Vector = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                                    Kaon_Smeared = ROOT.TLorentzVector()
                                     RPV_Vector = ROOT.TLorentzVector()
                                     RPV_Vector,Muon_Vector,Kaon_Vector,doca = RedoVertexing(index,index2)  # uses RedoVertexing to iterate track fitting
                                     
@@ -490,12 +487,11 @@ def finStateMuKa():
                                     RPV_reco_mom = RPV_Vector.P()                       # sets RPV mom
                                     mom_diff = kaonMotherTrue_mom - RPV_reco_mom
 
-                                    kaM = Kaon_Vector.M()
                                     kaP = Kaon_Vector.P()
-                                    kaE = Kaon_Vector.E()
-                                    muM = Muon_Vector.M()
+                                    kaPx = Kaon_Vector.Px()
+                                    kaPy = Kaon_Vector.Py()
+                                    kaPz = Kaon_Vector.Pz()
                                     muP = Muon_Vector.P()
-                                    muE = Muon_Vector.E()
                                     
                                     h['RPV_true'].Fill(kaonMotherTrue_mass)             # fill histograms 
                                     h['RPV_mom'].Fill(kaonMotherTrue_mom)
@@ -506,21 +502,22 @@ def finStateMuKa():
                                     h['RPV_mom_diff'].Fill(mom_diff)
                                     h['Kaon_mom'].Fill(kaP)
                                     h['Muon_mom'].Fill(muP)
-
-                                    mu_t,mu_v = time_res(muPartkey)        
+                                    
+                                    sigma = 0.000001 # nanosecond Gaussian width
+                                    mu_t,mu_v = time_res(muPartkey,sigma)        
                                     if mu_t != None:              
                                         h['MuonDir'].Fill(mu_t) 
-                                        ka_t,ka_v = time_res(kaPartkey)                            
+                                        ka_t,ka_v = time_res(kaPartkey,sigma)                            
                                         if ka_t != None: 
                                             h['KaonDir'].Fill(ka_t)
-
                                             beta = ka_v/c
-                                            if beta < 1:
-                                                smearedP = (kaM*beta)/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                                print(smearedP,kaP) # something very incorrect around here
-                                                smearedE =   ROOT.TMath.Sqrt((kaM**2) + (smearedP**2))
-                                                smearedM = ROOT.TMath.Sqrt(((kaE + muE)**2) - ((kaP + muP)**2))
-                                                h['smearedmass'].Fill(smearedM)
+                                            smeared_kaM = (kaP/beta)*ROOT.TMath.Sqrt(1-(beta**2))
+                                            smeared_kaE = ROOT.TMath.Sqrt((smeared_kaM**2)+(kaP**2))
+
+                                            Kaon_Smeared.SetPxPyPzE(kaPx,kaPy,kaPz,smeared_kaE)
+                                            Smeared_Vector = Kaon_Smeared + Muon_Vector
+                                            RPVsmearedM = Smeared_Vector.M()
+                                            h['smearedmass'].Fill(RPVsmearedM)
         
 finStateMuKa()  
 makePlots()
