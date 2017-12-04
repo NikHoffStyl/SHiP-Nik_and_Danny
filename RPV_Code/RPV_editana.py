@@ -485,7 +485,7 @@ def time_res(partkey):
                                     deltaT=abs(smearStrawTime - smearEcalTime)
                                     deltaTime.append(deltaT)
                                     r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-                                    v.append((r/deltaT)*(10**9) )# units of nanoseconds
+                                    v.append((r/deltaT)*(10**9) ) # units of nanoseconds
                             
     return deltaTime,v
 

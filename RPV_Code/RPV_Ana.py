@@ -503,7 +503,7 @@ def finStateMuKa():
                                     h['Kaon_mom'].Fill(kaP)
                                     h['Muon_mom'].Fill(muP)
                                     
-                                    sigma = 0.000001 # nanosecond Gaussian width
+                                    sigma = 0.01 # nanosecond Gaussian width
                                     mu_t,mu_v = time_res(muPartkey,sigma)        
                                     if mu_t != None:              
                                         h['MuonDir'].Fill(mu_t) 
@@ -511,13 +511,9 @@ def finStateMuKa():
                                         if ka_t != None: 
                                             h['KaonDir'].Fill(ka_t)
                                             beta = ka_v/c
-                                            smeared_kaM = (kaP/beta)*ROOT.TMath.Sqrt(1-(beta**2))
-                                            smeared_kaE = ROOT.TMath.Sqrt((smeared_kaM**2)+(kaP**2))
-
-                                            Kaon_Smeared.SetPxPyPzE(kaPx,kaPy,kaPz,smeared_kaE)
-                                            Smeared_Vector = Kaon_Smeared + Muon_Vector
-                                            RPVsmearedM = Smeared_Vector.M()
-                                            h['smearedmass'].Fill(RPVsmearedM)
+                                            #smeared_kaM = (kaP/beta)*ROOT.TMath.Sqrt(1-(beta**2))
+                                            smearedM = kaP*(ROOT.TMath.Sqrt(1-(beta**2)))/beta
+                                            h['smearedmass'].Fill(smearedM)
         
 finStateMuKa()  
 makePlots()
