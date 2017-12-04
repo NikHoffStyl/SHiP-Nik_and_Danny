@@ -221,7 +221,7 @@ def create_Hists():
     ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.5,0.5)
     ut.bookHist(h,'smearedmass1','Time Smeared Neutralino Mass',500,0.,2.)
     ut.bookHist(h,'smearedmass2','Time Smeared Neutralino Mass',500,0.,2.)
-    ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum',500,0.,300.)
+    ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum P1(red) P2(blue)',500,0.,300.)
     ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
 
     ut.bookHist(h,'Muon_mom','Muon (nalino Daughter) Momentum',100,0.,200.)        # nalino muon daughter momentum
@@ -440,8 +440,8 @@ def checkFiducialVolume(sTree,trackkey,dy):
 nEvents = min(sTree.GetEntries(),nEvents)
 
 def time_res(partkey):
-    v = None
-    deltaTime = None
+    v = []
+    deltaTime = []
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
@@ -461,28 +461,31 @@ def time_res(partkey):
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
-        smear1 = np.random.normal(loc=0.0,scale=0.01,size=None) # current width of 10 ps
-        h['normdistr'].Fill(smear1)
-        smearStrawTime = straw_time + smear1
+        smear1 = np.random.normal(loc=0.0,scale=0.01,size=10) # current width of 10 ps
+        for smear in smear1:
+            h['normdistr'].Fill(smear)
+            smearStrawTime = straw_time + smear
 
-        if sTree.GetBranch("EcalPoint"):
-            ecal_time = 0
-            if not straw_time <= 0:
-                for k,hits in enumerate(sTree.EcalPoint):
-                    ecal_TrackID = hits.GetTrackID()
-                    if ecal_TrackID == partkey:
-                        ecal_x = 0.01*hits.GetX()
-                        ecal_y = 0.01*hits.GetY()
-                        ecal_z = 0.01*hits.GetZ()
-                        ecal_time = hits.GetTime()
-                        smear2 = np.random.normal(loc=0.0,scale=0.01,size=None) # current width of 10 ps
-                        h['normdistr'].Fill(smear2)
-                        smearEcalTime = ecal_time + smear2
+            if sTree.GetBranch("EcalPoint"):
+                ecal_time = 0
+                if not straw_time <= 0:
+                    for k,hits in enumerate(sTree.EcalPoint):
+                        ecal_TrackID = hits.GetTrackID()
+                        if ecal_TrackID == partkey:
+                            ecal_x = 0.01*hits.GetX()
+                            ecal_y = 0.01*hits.GetY()
+                            ecal_z = 0.01*hits.GetZ()
+                            ecal_time = hits.GetTime()
+                            smear2 = np.random.normal(loc=0.0,scale=0.01,size=10) # current width of 10 ps
+                            for smear in smear2:
+                                h['normdistr'].Fill(smear)
+                                smearEcalTime = ecal_time + smear
 
-        if not ecal_time <= 0:
-            deltaTime = abs(smearStrawTime - smearEcalTime)
-            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            v = (r/deltaTime)*(10**9) # units of nanoseconds
+                                if not ecal_time <= 0:
+                                    deltaT=abs(smearStrawTime - smearEcalTime)
+                                    deltaTime.append(deltaT)
+                                    r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
+                                    v.append((r/deltaT)*(10**9) )# units of nanoseconds
                             
     return deltaTime,v
 
@@ -619,28 +622,34 @@ def finState2MuK():
                                     h['Kaon_mom'].Fill(kP)
                                     h['Muon_mom'].Fill(muP)
 
-                                    mu_t,mu_v = time_res(muPartkey)        
-                                    if mu_t != None:              
-                                        h['MuonDirTime'].Fill(mu_t) 
-                                        #h['MuonIndirTime'].Fill(mu_t2)
-                                        k_t,k_v = time_res(kPartkey)                            
-                                        if k_t != None:     
-                                            h['KaonDirTime'].Fill(k_t)  
-                                            #h['KaonIndirTime'].Fill(k_t2)
+                                    mu_time=[]
+                                    mu_v=[]
+                                    k_time=[]
+                                    k_vel=[]
+                                    mu_time,mu_v = time_res(muPartkey) 
+                                    for mu_t in mu_time:
+                                        if mu_t != None:
+                                            h['MuonDirTime'].Fill(mu_t) 
+                                            #h['MuonIndirTime'].Fill(mu_t2)
+                                            k_time,k_vel = time_res(kPartkey)
+                                            for k_t in k_time:
+                                                if k_t != None:     
+                                                    h['KaonDirTime'].Fill(k_t)  
+                                                    #h['KaonIndirTime'].Fill(k_t2)
+                                                    for k_v in k_vel:
+                                                        beta = k_v/c
+                                                        if beta < 1:
+                                                            #I DONT LIKE THIS METHOD IT USES THE kM TO GET kM
+                                                            smearedP = (kM*beta)/(ROOT.TMath.Sqrt(1-(beta**2)))
+                                                            h['smearedP1'].Fill(smearedP)
+                                                            #print(smearedP,kP) # something very incorrect around here, WHY?
+                                                            smearedE =   ROOT.TMath.Sqrt((kM**2) + (smearedP**2))
+                                                            smearedM = ROOT.TMath.Sqrt(((kE + muE)**2) - ((kP + muP)**2))
+                                                            h['smearedmass1'].Fill(smearedM)
 
-                                            beta = k_v/c
-                                            if beta < 1:
-                                                #I DONT LIKE THIS METHOD IT USES THE kM TO GET kM
-                                                smearedP = (kM*beta)/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                                h['smearedP1'].Fill(smearedP)
-                                                #print(smearedP,kP) # something very incorrect around here, WHY?
-                                                smearedE =   ROOT.TMath.Sqrt((kM**2) + (smearedP**2))
-                                                smearedM = ROOT.TMath.Sqrt(((kE + muE)**2) - ((kP + muP)**2))
-                                                h['smearedmass1'].Fill(smearedM)
-
-                                                #TRYING SOMETHING ELSE
-                                                smearedM = kP*(ROOT.TMath.Sqrt(1-(beta**2)))/beta
-                                                h['smearedmass2'].Fill(smearedM)
+                                                            #TRYING SOMETHING ELSE
+                                                            smearedM = kP*(ROOT.TMath.Sqrt(1-(beta**2)))/beta
+                                                            h['smearedmass2'].Fill(smearedM)
 
         print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
 
