@@ -182,17 +182,17 @@ ut.bookHist(h,'MuonDir','Muon Straw-ECAL Time (directly)',500,36.,40.) # muon da
 ut.bookHist(h,'PionDir','Pion Straw-ECAL Time (directly)',500,36.,40.) # pion daughter time of flight
 ut.bookHist(h,'MuonIndir','Muon Straw-ECAL Time (indirectly)',500,36.,40.) # muon daughter time of flight
 ut.bookHist(h,'PionIndir','Pion Straw-ECAL Time (indirectly)',500,36.,40.) # pion daughter time of flight
-ut.bookHist(h,'KaonTime','Kaon-Pion Time Comparison',500,36.,40.)
+ut.bookHist(h,'KaonTime','Pion-Kaon (indirect) Time Comparison',500,36.,40.)
 h['KaonTime'].SetLineColor(2)
 
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
-ut.bookHist(h,'timediff','Pion-Kaon Time Comparison',1000,-2.,2.) # ad hoc pion-kaon time of flight comparison
-ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.5,0.5)
+ut.bookHist(h,'timediff','Pion-Kaon Time Difference',1000,-2.,2.) # ad hoc pion-kaon time of flight comparison
 
-ut.bookHist(h,'Muon_mom','Muon (HNL Daughter) Momentum',100,0.,200.) # HNL muon daughter momentum
-ut.bookHist(h,'Pion_mom','Pion (HNL Daughter) Momentum',100,0.,200.) # HNL pion daughter momentum
+ut.bookHist(h,'Muon_mom','Muon (HNL Daughter) Momentum',100,0.,140.) # HNL muon daughter momentum
+ut.bookHist(h,'Pion_mom','Pion (HNL Daughter) Momentum',100,0.,140.) # HNL pion daughter momentum
+ut.bookHist(h,'smearedmass','Time Smeared Pion Mass',50,0.,2.)
 
-ths1 = THStack("PionKaonTime","Pion and Kaon Time")
+ths1 = THStack("PionKaonTime","Pion-Kaon (indirect) Time Comparison")
 ths1.Add(h["PionIndir"])
 ths1.Add(h["KaonTime"])
 
@@ -599,46 +599,6 @@ def inv_mass_example():
         fitSingleGauss('HNL_example',0.9,1.1)
         h['Example_Mass'].Print('Example_Mass.png')
 
-#-------------delete after sussing-------------
-
-def time_resVrs2(partkey):
-    if sTree.GetBranch("strawtubesPoint"):
-        x_array = []
-        y_array = []
-        z_array = []
-        t_array = []
-        straw_time = 0
-        for k,hits in enumerate(sTree.strawtubesPoint):
-            TrackID = hits.GetTrackID()
-            if TrackID == partkey:
-                x_array.append(hits.GetX())
-                y_array.append(hits.GetY())
-                z_array.append(hits.GetZ())
-                t_array.append(hits.GetTime())
-        min_z = z_array.index(min(z_array))
-        straw_zpos=min(z_array)
-        straw_xpos = x_array[min_z]
-        straw_ypos = y_array[min_z]
-        straw_time = t_array[min_z]
-    else:
-        return None
-
-    if sTree.GetBranch("EcalPoint"):
-            if not straw_time <= 0:
-                for k,hits in enumerate(sTree.EcalPoint):
-                    TrackID = hits.GetTrackID()
-                    ecal_time = hits.GetTime()
-                    ecal_zpos = hits.GetZ()
-                    ecal_xpos = hits.GetX()
-                    ecal_ypos = hits.GetY()
-                    if not ecal_time <= straw_time:
-                        t = abs(straw_time - ecal_time)
-                        return t 
-            else:
-                return None
-    else:
-        return None
-
 # ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
 
 nEvents = min(sTree.GetEntries(),nEvents)
@@ -690,18 +650,40 @@ def makePlots():
    cv = h['Time_Res'].cd(4)
    ths1.Draw("nostack")
    h[30] = ths1
-   h['Time_Res'].Print('Stacked.png')
-   
+   h['Time_Res'].Print('Time_Res.png')
    #h['PionIndir'].SetXTitle('Time [ns]')
    #h['PionIndir'].SetYTitle('Frequency')
    #h['PionIndir'].Draw()
    #h['KaonTime'].SetLineColor(2)
    #h['KaonTime'].Draw("same")
    #h['Time_Res'].Print('Time_Res.png')
+   #======================================================================================================================
+   ut.bookCanvas(h,key='MuPi_Graphs',title='Fit Results 3',nx=1000,ny=1000,cx=2,cy=2)
+   cv = h['MuPi_Graphs'].cd(1)
+   h['Muon_mom'].SetXTitle('Momentum [GeV/c]')
+   h['Muon_mom'].SetYTitle('No. of particles')
+   h['Muon_mom'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['MuPi_Graphs'].cd(2)
+   h['Pion_mom'].SetXTitle('Momentum [GeV/c]')
+   h['Pion_mom'].SetYTitle('No. of particles')
+   h['Pion_mom'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['MuPi_Graphs'].cd(3)
+   h['Chi2'].SetXTitle('Chi squared value')
+   h['Chi2'].SetYTitle('Frequency')
+   h['Chi2'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['MuPi_Graphs'].cd(4)
+   h['timediff'].SetXTitle('Momentum Difference [GeV/c]')
+   h['timediff'].SetYTitle('Frequency')
+   h['timediff'].Draw()
+   h['MuPi_Graphs'].Print('MuPi_Graphs.png')
 
 def time_res(partkey,v):
-    t1 = None
-    t2 = None
+    t1 = -1
+    t2 = -1
+    vsmear = -1
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
@@ -737,8 +719,9 @@ def time_res(partkey,v):
             t1 = abs(straw_time - ecal_time)
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
             t2 = ((r/v)*(10**9)) # units of nanoseconds
+            vsmear = (r/t1)*(10**9)
                             
-    return t1,t2
+    return t1,t2,vsmear
 
 def finStateMuPi():
     if sTree.GetBranch("FitTracks"):
@@ -860,18 +843,25 @@ def finStateMuPi():
                                     kaon_M = 0.493677                                                       # kaon mass
                                     kaonV = (c*piP) / ROOT.TMath.Sqrt((kaon_M**2) + (piP**2))       # kaon velocity
 
-                                    mu_t1_dir,mu_t2 = time_res(muPartkey,muV)        
-                                    if mu_t1_dir != None:              
+                                    true_piP = true_pion.GetP()
+
+                                    mu_t1_dir,mu_t2,mu_vsmear = time_res(muPartkey,muV)        
+                                    if mu_t1_dir != -1:              
                                         h['MuonDir'].Fill(mu_t1_dir) 
                                         h['MuonIndir'].Fill(mu_t2)
-                                    pi_t1_dir,pi_t2 = time_res(piPartkey,piV)                            
-                                    if pi_t1_dir != None: 
+                                    pi_t1_dir,pi_t2,pi_vsmear = time_res(piPartkey,piV)                            
+                                    if pi_t1_dir != -1: 
                                         h['PionDir'].Fill(pi_t1_dir)  
                                         h['PionIndir'].Fill(pi_t2)
-                                        kaon_t1_dir,kaon_t2 = time_res(piPartkey,kaonV)
+                                        kaon_t1_dir,kaon_t2,ka_vsmear = time_res(piPartkey,kaonV)
                                         h['KaonTime'].Fill(kaon_t2)
                                         diff = kaon_t2 - pi_t2
                                         h['timediff'].Fill(diff)
+
+                                        beta = pi_vsmear/c
+                                        gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
+                                        smearedM = true_piP/(beta*gamma)
+                                        h['smearedmass'].Fill(smearedM)
 
         print('\n'+str(pi_decaycheck) + ' pi --> mu decays before detection\n')
         
