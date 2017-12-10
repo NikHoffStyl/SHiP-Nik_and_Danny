@@ -513,7 +513,6 @@ def time_res(partkey):
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
-<<<<<<< HEAD
         if straw_time != None:
             smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps         
 
@@ -534,33 +533,6 @@ def time_res(partkey):
                             deltaT=abs(smearStrawTime - smearEcalTime)
                             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
                             v=((r/deltaT)*(10**9) )# units of nanoseconds
-=======
-        smear1 = np.random.normal(loc=0.0,scale=0.01,size=10) # current width of 10 ps
-        for smear in smear1:
-            h['normdistr'].Fill(smear)
-            smearStrawTime = straw_time + smear
-
-            if sTree.GetBranch("EcalPoint"):
-                ecal_time = 0
-                if not straw_time <= 0:
-                    for k,hits in enumerate(sTree.EcalPoint):
-                        ecal_TrackID = hits.GetTrackID()
-                        if ecal_TrackID == partkey:
-                            ecal_x = 0.01*hits.GetX()
-                            ecal_y = 0.01*hits.GetY()
-                            ecal_z = 0.01*hits.GetZ()
-                            ecal_time = hits.GetTime()
-                            smear2 = np.random.normal(loc=0.0,scale=0.01,size=10) # current width of 10 ps
-                            for smear in smear2:
-                                h['normdistr'].Fill(smear)
-                                smearEcalTime = ecal_time + smear
-
-                                if not ecal_time <= 0:
-                                    deltaT=abs(smearStrawTime - smearEcalTime)
-                                    deltaTime.append(deltaT)
-                                    r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-                                    v.append((r/deltaT)*(10**9) ) # units of nanoseconds
->>>>>>> d88e693df6f79a9df1984e06ea5d1dd4f90ce1ef
                             
     return smearStrawTime,smearEcalTime,deltaT,r,v
 
