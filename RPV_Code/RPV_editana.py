@@ -201,20 +201,20 @@ h = {}
 def create_Hists():
     ###############################
     ####  Daughter Histograms  ####
-    ut.bookHist(h,'MuonStrawTime','Muon Gaussian Straw t measurement',500,310.,340.)
-    ut.bookHist(h,'KaonStrawTime','Kaon Gaussian Straw t measurement',500,310.,340.)
-    ut.bookHist(h,'MuonEcalTime','Muon Gaussian Ecal t measurement',500,340.,385.)
-    ut.bookHist(h,'KaonEcalTime','Kaon Gaussian Ecal t measurement',500,340.,385.)
-    ut.bookHist(h,'MuonDirDeltaTime','Muon Straw-ECAL Time of Flight (directly)',500,37.5,39.1)   # muon time of flight
-    ut.bookHist(h,'KaonDirDeltaTime','Kaon Straw-ECAL Time of Flight (directly)',500,37.5,39.1)   # Kaon time of flight
-    ut.bookHist(h,'MuonFlightLen','Muon Straw-ECAL Flight Lenght',500,11.2,12.)                   # muon flight Length
-    ut.bookHist(h,'KaonFlightLen','Kaon Straw-ECAL Flight Length',500,11.2,12.)                   # Kaon flight Length
-    ut.bookHist(h,'MuonSpeed','Muon beta value',500,0.99,1.)                                   # muon speed
-    ut.bookHist(h,'KaonSpeed','Kaon Beta value',500,0.99,1.)                                   # Kaon speed
-    ut.bookHist(h,'Muon_mom','Muon (neutralino Daughter) Momentum',500,-0.05,200.)                 # muon momentum
-    ut.bookHist(h,'Kaon_mom','Kaon (neutralino Daughter) Momentum',500,-0.05,200.)                 # Kaon momentum
-    ut.bookHist(h,'Muon_mass','Muon (neutralino Daughter) Mass',500,0.,2.)                      # muon momentum
-    ut.bookHist(h,'Kaon_mass','Kaon (neutralino Daughter) Mass',500,0.,2.)                      # Kaon momentum
+    ut.bookHist(h,'MuonStrawTime','Muon Gaussian Straw t measurement',200,310.,340.)
+    ut.bookHist(h,'KaonStrawTime','Kaon Gaussian Straw t measurement',200,310.,340.)
+    ut.bookHist(h,'MuonEcalTime','Muon Gaussian Ecal t measurement',200,340.,385.)
+    ut.bookHist(h,'KaonEcalTime','Kaon Gaussian Ecal t measurement',200,340.,385.)
+    ut.bookHist(h,'MuonDirDeltaTime','Muon Straw-ECAL Time of Flight (directly)',200,37.5,39.1)   # muon time of flight
+    ut.bookHist(h,'KaonDirDeltaTime','Kaon Straw-ECAL Time of Flight (directly)',200,37.5,39.1)   # Kaon time of flight
+    ut.bookHist(h,'MuonFlightLen','Muon Straw-ECAL Flight Lenght',200,11.2,12.)                   # muon flight Length
+    ut.bookHist(h,'KaonFlightLen','Kaon Straw-ECAL Flight Length',200,11.2,12.)                   # Kaon flight Length
+    ut.bookHist(h,'MuonSpeed','Muon beta value',200,0.99,1.)                                   # muon speed
+    ut.bookHist(h,'KaonSpeed','Kaon Beta value',200,0.99,1.)                                   # Kaon speed
+    ut.bookHist(h,'Muon_mom','Muon (neutralino Daughter) Momentum',200,-0.05,200.)                 # muon momentum
+    ut.bookHist(h,'Kaon_mom','Kaon (neutralino Daughter) Momentum',200,-0.05,200.)                 # Kaon momentum
+    ut.bookHist(h,'Muon_mass','Muon (neutralino Daughter) Mass',200,0.,2.)                      # muon momentum
+    ut.bookHist(h,'Kaon_mass','Kaon (neutralino Daughter) Mass',200,0.,2.)                      # Kaon momentum
     ################################
     ut.bookHist(h,'nalino_true','Monte Carlo Mass',500,0.,2.)                                   # true mass
     ut.bookHist(h,'nalino_reco','Reconstructed Mass',500,0.,2.)                                 # reconstructed mass
@@ -401,72 +401,6 @@ def makePlots():
    h['Kaon_mom'].Draw('same')
    h['DAUGHTERS'].Print('DaughterProp'+ currentDate + '.png')
 
-   #ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
-   #cv = h['Test_Mass'].cd(1)
-   #h['nalino_true'].SetXTitle('Invariant mass [GeV/c2]')
-   #h['nalino_true'].SetYTitle('No. of Particles')
-   #h['nalino_true'].Draw()
-   
-   #cv = h['Test_Mass'].cd(2)
-   #h['nalino_reco'].SetXTitle('Invariant mass [GeV/c2]')
-   #h['nalino_reco'].SetYTitle('No. of Particles')
-   #h['nalino_reco'].Draw()
-   #fitSingleGauss('nalino_reco',0.9,1.1)
-   
-   #cv = h['Test_Mass'].cd(3)
-   #h['nalino_mom'].SetXTitle('Momentum [GeV/c]')
-   #h['nalino_mom'].SetYTitle('No. of Particles')
-   #h['nalino_mom'].SetLineColor(2)
-   #h['nalino_mom'].Draw()
-   #h['nalino_mom_reco'].Draw("same")
-   
-   #cv = h['Test_Mass'].cd(4)
-   #h['nalino_mom_diff'].SetXTitle('Momentum Difference [GeV/c]')
-   #h['nalino_mom_diff'].SetYTitle('Frequency')
-   #h['nalino_mom_diff'].Draw()
-   #h['Test_Mass'].Print('NeutralinoMass_Pmag'+ currentDate + '.png')
-   ##======================================================================================================================
-   #ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
-   #cv = h['Time_Res'].cd(1)
-   #h['MuonDirTime'].SetXTitle('Time [ns]')
-   #h['MuonDirTime'].SetYTitle('Frequency')
-   #h['MuonDirTime'].Draw()
-   
-   #cv = h['Time_Res'].cd(2)
-   #h['KaonDirTime'].SetXTitle('Time [ns]')
-   #h['KaonDirTime'].SetYTitle('Frequency')
-   #h['KaonDirTime'].Draw()
-   
-   #cv = h['Time_Res'].cd(3)
-   #h['MuonIndirTime'].SetXTitle('Time [ns]')
-   #h['MuonIndirTime'].SetYTitle('Frequency')
-   #h['MuonIndirTime'].Draw()
-   
-   #cv = h['Time_Res'].cd(4)
-   #h['KaonIndirTime'].SetXTitle('Time [ns]')
-   #h['KaonIndirTime'].SetYTitle('Frequency')
-   #h['KaonIndirTime'].Draw()
-   #h['Time_Res'].Print('MuKaTime'+ currentDate + '.png')
-   ##======================================================================================================================
-   #ut.bookCanvas(h,key='SmearingInfo',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
-   #cv = h['SmearingInfo'].cd(1)
-   #h['normdistr'].Draw()
-   
-   #cv = h['SmearingInfo'].cd(2)
-   #h['smearedmass1'].SetXTitle('Smeared mass [GeV/c2]')
-   #h['smearedmass1'].SetYTitle('No. of Particles')
-   #h['smearedmass1'].SetLineColor(2)
-   #h['smearedmass1'].Draw()
-   ##h['smearedmass2'].Draw("same")
-
-   #cv = h['SmearingInfo'].cd(3)
-   #h['smearedP1'].SetXTitle('Smeared mass [GeV/c2]')
-   #h['smearedP1'].SetYTitle('No. of Particles')
-   #h['smearedP1'].SetLineColor(2)
-   #h['smearedP1'].Draw()
-   #h['smearedP2'].Draw("same")
-
-   #h['SmearingInfo'].Print('SmearingMass'+ currentDate + '.png')
 
 def isInFiducial(X,Y,Z):
    if Z > ShipGeo.TrackStation1.z : return False
@@ -514,7 +448,8 @@ def time_res(partkey):
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
         if straw_time != None:
-            smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps         
+            #smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps
+            smearStrawTime=straw_time         
 
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
@@ -527,7 +462,8 @@ def time_res(partkey):
                         ecal_z = 0.01*hits.GetZ()
                         ecal_time = hits.GetTime()
                         if ecal_time != None:
-                            smearEcalTime = np.random.normal(loc=ecal_time,scale=0.01,size=None) # current width of 10 ps        
+                            #smearEcalTime = np.random.normal(loc=ecal_time,scale=0.01,size=None) # current width of 10 ps
+                            smearEcalTime=ecal_time
 
                         if not ecal_time <= 0:
                             deltaT=abs(smearStrawTime - smearEcalTime)
