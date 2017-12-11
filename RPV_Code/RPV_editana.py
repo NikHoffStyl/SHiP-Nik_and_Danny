@@ -209,10 +209,16 @@ def create_Hists():
     ut.bookHist(h,'KaonDirDeltaTime','Kaon Straw-ECAL Time of Flight (directly)',200,37.5,39.1)   # Kaon time of flight
     ut.bookHist(h,'MuonFlightLen','Muon Straw-ECAL Flight Lenght',200,11.2,12.)                   # muon flight Length
     ut.bookHist(h,'KaonFlightLen','Kaon Straw-ECAL Flight Length',200,11.2,12.)                   # Kaon flight Length
-    ut.bookHist(h,'MuonSpeed','Muon beta value',200,0.99,1.)                                   # muon speed
-    ut.bookHist(h,'KaonSpeed','Kaon Beta value',200,0.99,1.)                                   # Kaon speed
-    ut.bookHist(h,'Muon_mom','Muon (neutralino Daughter) Momentum',200,-0.05,200.)                 # muon momentum
-    ut.bookHist(h,'Kaon_mom','Kaon (neutralino Daughter) Momentum',200,-0.05,200.)                 # Kaon momentum
+    ut.bookHist(h,'MuonSpeed','Muon beta value',200,0.99,1.)                                    # muon speed
+    ut.bookHist(h,'KaonSpeed','Kaon Beta value',200,0.99,1.)                                    # Kaon speed
+    ut.bookHist(h,'MuonStrawMom','Muon Straw Momentum',200,-0.05,10.)          # muon momentum
+    ut.bookHist(h,'KaonStrawMom','Kaon Straw Momentum',200,-0.05,10.)          # Kaon momentum
+    ut.bookHist(h,'MuonEcalMom','Muon Ecal Momentum',200,-0.05,100.)           # muon momentum
+    ut.bookHist(h,'KaonEcalMom','Kaon Ecal Momentum',200,-0.05,100.)           # Kaon momentum
+    ut.bookHist(h,'MuonRecoMom','Muon Reco Momentum',200,-0.05,100.)              # muon momentum
+    ut.bookHist(h,'KaonRecoMom','Kaon Reco Momentum',200,-0.05,100.)              # Kaon momentum
+    ut.bookHist(h,'MuonTrueMom','Muon True Momentum',200,-0.05,100.)              # muon momentum
+    ut.bookHist(h,'KaonTrueMom','Kaon True Momentum',200,-0.05,100.)              # Kaon momentum
     ut.bookHist(h,'Muon_mass','Muon (neutralino Daughter) Mass',200,0.,2.)                      # muon momentum
     ut.bookHist(h,'Kaon_mass','Kaon (neutralino Daughter) Mass',200,0.,2.)                      # Kaon momentum
     ################################
@@ -357,49 +363,73 @@ def fitSingleGauss(x,ba=None,be=None):
     h[x].Fit(myGauss,'','',ba,be) 
 
 def makePlots():
-   ut.bookCanvas(h,key='DAUGHTERS',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=1000,cx=3,cy=2)
-   cv = h['DAUGHTERS'].cd(1)
+   ut.bookCanvas(h,key='DAUGHTERS_TV',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=1000,cx=3,cy=2)
+   cv = h['DAUGHTERS_TV'].cd(1)
    h['MuonStrawTime'].SetXTitle('Time [ns]')
    h['MuonStrawTime'].SetYTitle('No. of Particles')
    h['MuonStrawTime'].Draw()
    h['KaonStrawTime'].SetLineColor(2)
    h['KaonStrawTime'].Draw('same')
 
-   cv = h['DAUGHTERS'].cd(2)
+   cv = h['DAUGHTERS_TV'].cd(2)
    h['MuonEcalTime'].SetXTitle('Time [ns]')
    h['MuonEcalTime'].SetYTitle('No. of Particles')
    h['MuonEcalTime'].Draw()
    h['KaonEcalTime'].SetLineColor(2)
    h['KaonEcalTime'].Draw('same')
 
-   cv = h['DAUGHTERS'].cd(3)
+   cv = h['DAUGHTERS_TV'].cd(3)
    h['MuonDirDeltaTime'].SetXTitle('Time of Flight [ns]')
    h['MuonDirDeltaTime'].SetYTitle('No. of Particles')
    h['MuonDirDeltaTime'].Draw()
    h['KaonDirDeltaTime'].SetLineColor(2)
    h['KaonDirDeltaTime'].Draw('same')
 
-   cv = h['DAUGHTERS'].cd(4)
+   cv = h['DAUGHTERS_TV'].cd(4)
    h['MuonFlightLen'].SetXTitle('Flight Length')
    h['MuonFlightLen'].SetYTitle('No. of Particles')
    h['MuonFlightLen'].Draw()
    h['KaonFlightLen'].SetLineColor(2)
    h['KaonFlightLen'].Draw('same')
 
-   cv = h['DAUGHTERS'].cd(5)
+   cv = h['DAUGHTERS_TV'].cd(5)
    h['MuonSpeed'].SetXTitle('beta')
    h['MuonSpeed'].SetYTitle('No. of Particles')
    h['MuonSpeed'].Draw()
    h['KaonSpeed'].SetLineColor(2)
    h['KaonSpeed'].Draw('same')
 
-   cv = h['DAUGHTERS'].cd(6)
-   h['Muon_mom'].SetXTitle('Momentum [GeV/c]')
-   h['Muon_mom'].SetYTitle('No. of Particles')
-   h['Muon_mom'].Draw()
-   h['Kaon_mom'].SetLineColor(2)
-   h['Kaon_mom'].Draw('same')
-   h['DAUGHTERS'].Print('DaughterProp'+ currentDate + '.png')
+   h['DAUGHTERS_TV'].Print('DaughterTVProp'+ currentDate + '.png')
+
+   ut.bookCanvas(h,key='DAUGHTERS_MOM',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=1000,cx=3,cy=2)
+   cv = h['DAUGHTERS_MOM'].cd(1)
+   h['MuonStrawMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonStrawMom'].SetYTitle('No. of Particles')
+   h['MuonStrawMom'].Draw()
+   h['KaonStrawMom'].SetLineColor(2)
+   h['KaonStrawMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(2)
+   h['MuonEcalMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonEcalMom'].SetYTitle('No. of Particles')
+   h['MuonEcalMom'].Draw()
+   h['KaonEcalMom'].SetLineColor(2)
+   h['KaonEcalMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(3)
+   h['MuonRecoMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonRecoMom'].SetYTitle('No. of Particles')
+   h['MuonRecoMom'].Draw()
+   h['KaonRecoMom'].SetLineColor(2)
+   h['KaonRecoMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(4)
+   h['MuonTrueMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonTrueMom'].SetYTitle('No. of Particles')
+   h['MuonTrueMom'].Draw()
+   h['KaonTrueMom'].SetLineColor(2)
+   h['KaonTrueMom'].Draw('same')
+   h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
 
 
 def isInFiducial(X,Y,Z):
@@ -428,11 +458,16 @@ def time_res(partkey):
     deltaT = None
     r = None
     v = None
+    strawP = None
+    ecalP = None
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
         z_array = []
         t_array = []
+        px_array = []
+        py_array = []
+        pz_array = []
         straw_time = 0
         for k,hits in enumerate(sTree.strawtubesPoint):
             straw_TrackID = hits.GetTrackID()
@@ -440,6 +475,9 @@ def time_res(partkey):
                 x_array.append(hits.GetX())
                 y_array.append(hits.GetY())
                 z_array.append(hits.GetZ())
+                px_array.append(hits.GetPx())
+                py_array.append(hits.GetPy())
+                pz_array.append(hits.GetPz())
                 t_array.append(hits.GetTime())
         
         min_z_index = z_array.index(min(z_array))
@@ -448,8 +486,15 @@ def time_res(partkey):
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
         if straw_time != None:
-            #smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps
-            smearStrawTime=straw_time         
+            smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps
+            #smearStrawTime=straw_time 
+
+        strawPx = px_array[min_z_index]
+        strawPy = px_array[min_z_index]
+        strawPz = px_array[min_z_index]
+        strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) # straw tube momentum
+
+                
 
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
@@ -461,16 +506,21 @@ def time_res(partkey):
                         ecal_y = 0.01*hits.GetY()
                         ecal_z = 0.01*hits.GetZ()
                         ecal_time = hits.GetTime()
-                        if ecal_time != None:
-                            #smearEcalTime = np.random.normal(loc=ecal_time,scale=0.01,size=None) # current width of 10 ps
-                            smearEcalTime=ecal_time
+                        ecal_px = hits.GetPx()
+                        ecal_py = hits.GetPy()
+                        ecal_pz = hits.GetPz()
+                        ecalP = ROOT.TMath.Sqrt((ecal_px**2) + (ecal_py**2) + (ecal_pz**2)) # straw tube momentum
 
-                        if not ecal_time <= 0:
+                        if ecal_time != None:
+                            smearEcalTime = np.random.normal(loc=ecal_time,scale=0.01,size=None) # current width of 10 ps
+                            #smearEcalTime=ecal_time
+
+                        if not ecal_time <= straw_time:
                             deltaT=abs(smearStrawTime - smearEcalTime)
                             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
                             v=((r/deltaT)*(10**9) )# units of nanoseconds
                             
-    return smearStrawTime,smearEcalTime,deltaT,r,v
+    return smearStrawTime,smearEcalTime,deltaT,r,v,strawP,ecalP
 
 def finState2MuK():
     if sTree.GetBranch("FitTracks"):
@@ -484,6 +534,8 @@ def finState2MuK():
                 if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
+                    muonMotherTrue_mass = true_mother.GetMass()        # get nalino/final states mother mass
+                    muonMotherTrue_mom = true_mother.GetP()            # get nalino/final states mother mom
                     if true_mother.GetPdgCode() == 211:
                         #print('Kaon has decayed to a muon')
                         k_decaycheck+=1
@@ -492,11 +544,13 @@ def finState2MuK():
                         Decay_X = true_muon.GetStartX()
                         Decay_Y = true_muon.GetStartY()
                         Decay_Z = true_muon.GetStartZ()
+                        muonTrueMom = true_muon.GetP()
+                        h['MuonTrueMom'].Fill(muonTrueMom)
                         if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
                             #print('nalino decayed outside fiducial volume')
                             continue
                         if not checkFiducialVolume(sTree,index,dy): 
-                            print('Track outside fiducial volume')
+                            #print('Track outside fiducial volume')
                             continue 
                         mu_status = reco_part.getFitStatus()             
                         if not mu_status.isFitConverged():
@@ -522,6 +576,8 @@ def finState2MuK():
                                 if kaonMotherkey==muonMotherkey:                    # check if keys are the same
                                     kaonMotherTrue_mass = true_mother.GetMass()        # get nalino/final states mother mass
                                     kaonMotherTrue_mom = true_mother.GetP()            # get nalino/final states mother mom
+                                    kaonTrueMom = true_kaon.GetP()
+                                    h['KaonTrueMom'].Fill(kaonTrueMom)
 
                                     if not checkFiducialVolume(sTree,index,dy): 
                                         #print('Decay outside fiducial volume')
@@ -568,26 +624,30 @@ def finState2MuK():
                                     h['Chi2'].Fill(mu_chi2)       
                                     h['Chi2'].Fill(k_chi2)                             
                                     h['nalino_mom_diff'].Fill(mom_diff)
-                                    h['Kaon_mom'].Fill(kP)
-                                    h['Muon_mom'].Fill(muP)
+                                    h['KaonRecoMom'].Fill(kP)
+                                    h['MuonRecoMom'].Fill(muP)
 
-                                    mu_strwT,mu_ecalT,mu_Dt,mu_Len,mu_v = time_res(muPartkey) 
-                                    if mu_strwT!= None and mu_ecalT!= None and mu_Dt!= None and mu_Len!= None and mu_v != None:
+                                    mu_strwT,mu_ecalT,mu_Dt,mu_Len,mu_v,mu_strawP,mu_ecalP = time_res(muPartkey) 
+                                    if mu_strwT!= None and mu_ecalT!= None and mu_Dt!= None and mu_Len!= None and mu_v != None and mu_strawP!=None and mu_ecalP!=None:
                                         h['MuonStrawTime'].Fill(mu_strwT)
                                         h['MuonEcalTime'].Fill(mu_ecalT)
                                         h['MuonDirDeltaTime'].Fill(mu_Dt)
                                         h['MuonFlightLen'].Fill(mu_Len)
                                         mu_beta = mu_v/c
                                         h['MuonSpeed'].Fill(mu_beta)
+                                        h['MuonStrawMom'].Fill(mu_strawP)
+                                        h['MuonEcalMom'].Fill(mu_ecalP)
 
-                                        k_strwT,k_ecalT,k_Dt,k_Len,k_v = time_res(kPartkey)
-                                        if k_strwT!= None and k_ecalT!= None and k_Dt!= None and k_Len!= None and k_v != None:     
+                                        k_strwT,k_ecalT,k_Dt,k_Len,k_v,k_strawP,k_ecalP = time_res(kPartkey)
+                                        if k_strwT!= None and k_ecalT!= None and k_Dt!= None and k_Len!= None and k_v != None and k_strawP!=None and k_ecalP!=None:     
                                             h['KaonStrawTime'].Fill(k_strwT)
                                             h['KaonEcalTime'].Fill(k_ecalT)
                                             h['KaonDirDeltaTime'].Fill(k_Dt)
                                             h['KaonFlightLen'].Fill(k_Len)
                                             k_beta = k_v/c
                                             h['KaonSpeed'].Fill(k_beta)
+                                            h['MuonStrawMom'].Fill(mu_strawP)
+                                            h['MuonEcalMom'].Fill(mu_ecalP)
                                               
                                             
                                             if k_beta < 1:
@@ -603,7 +663,7 @@ def finState2MuK():
                                                 smearedM = kP*(ROOT.TMath.Sqrt(1-(k_beta**2)))/k_beta
                                                 h['Kaon_mass'].Fill(smearedM)
 
-        print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
+        #print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
 
 #########################################
 
