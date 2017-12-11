@@ -332,6 +332,60 @@ def fitSingleGauss(x,ba=None,be=None):
        myGauss.SetParName(3,'bckgr')
     h[x].Fit(myGauss,'','',ba,be) 
 
+def makePlots():
+   ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
+   cv = h['Test_Mass'].cd(1)
+   h['HNL_true'].SetXTitle('Invariant mass [GeV/c2]')
+   h['HNL_true'].SetYTitle('No. of Particles')
+   h['HNL_true'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Test_Mass'].cd(2)
+   h['HNL_reco'].SetXTitle('Invariant mass [GeV/c2]')
+   h['HNL_reco'].SetYTitle('No. of Particles')
+   h['HNL_reco'].Draw()
+   fitSingleGauss('HNL_reco',0.9,1.1)
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Test_Mass'].cd(3)
+   h['HNL_mom'].SetXTitle('Momentum [GeV/c]')
+   h['HNL_mom'].SetYTitle('No. of Particles')
+   h['HNL_mom'].SetLineColor(2)
+   h['HNL_mom'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   h['HNL_mom_reco'].Draw("same")
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Test_Mass'].cd(4)
+   h['HNL_mom_diff'].SetXTitle('Momentum Difference [GeV/c]')
+   h['HNL_mom_diff'].SetYTitle('Frequency')
+   h['HNL_mom_diff'].Draw()
+   h['Test_Mass'].Print('HNL_Graphs.png')
+   #======================================================================================================================
+   ut.bookCanvas(h,key='Time_Res',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
+   cv = h['Time_Res'].cd(1)
+   h['MuonDir'].SetXTitle('Time [ns]')
+   h['MuonDir'].SetYTitle('Frequency')
+   h['MuonDir'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Time_Res'].cd(2)
+   h['PionDir'].SetXTitle('Time [ns]')
+   h['PionDir'].SetYTitle('Frequency')
+   h['PionDir'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Time_Res'].cd(3)
+   h['MuonIndir'].SetXTitle('Time [ns]')
+   h['MuonIndir'].SetYTitle('Frequency')
+   h['MuonIndir'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Time_Res'].cd(4)
+   ths1.Draw("nostack")
+   h['Time_Res'].Print('Stacked.png')
+   
+   #h['PionIndir'].SetXTitle('Time [ns]')
+   #h['PionIndir'].SetYTitle('Frequency')
+   #h['PionIndir'].Draw()
+   #h['KaonTime'].SetLineColor(2)
+   #h['KaonTime'].Draw("same")
+   #h['Time_Res'].Print('Time_Res.png')
+
 ############################
 
 def finStateMuPi_COPY2():
