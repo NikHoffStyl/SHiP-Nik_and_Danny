@@ -496,6 +496,9 @@ def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
         for n in range(nEvents):                            # loop over events
             rc = sTree.GetEntry(n)                              # load tree entry
+            for particle in sTree.MCTrack:
+                print(particle)
+            print("============================================================================================================")
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
