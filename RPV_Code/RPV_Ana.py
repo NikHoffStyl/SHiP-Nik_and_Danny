@@ -177,14 +177,18 @@ ut.bookHist(h,'RPV_mom','True (red) & Reco. (blue) Momentum',100,0.,300.) # true
 ut.bookHist(h,'RPV_mom_reco','Reconstructed Momentum',100,0.,300) # reconstructed momentum distribution
 ut.bookHist(h,'RPV_mom_diff','True/Reco Momentum Difference',100,-3.,3) # true/reco momentum difference
 
-ut.bookHist(h,'Muon_mom','Muon (RPV Daughter) Momentum',100,0.,140.) # RPV muon daughter momentum
-ut.bookHist(h,'Kaon_mom','Kaon (RPV Daughter) Momentum',100,0.,140.) # RPV pion daughter momentum
-ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
+ut.bookHist(h,'Muon_mom','Muon (RPV Daughter) Reco. Momentum',100,0.,140.) # RPV muon daughter reco momentum
+ut.bookHist(h,'Kaon_mom','Kaon (RPV Daughter) Reco. Momentum',100,0.,140.) # RPV pion daughter reco momentum
+ut.bookHist(h,'Muon_mom_true','Muon (RPV Daughter) True Momentum',100,0.,140.) # RPV muon daughter true momentum
+ut.bookHist(h,'Kaon_mom_true','Kaon (RPV Daughter) True Momentum',100,0.,140.) # RPV pion daughter true momentum
 
 ut.bookHist(h,'MuonDir','Muon Straw-ECAL Time (directly)',500,36.,40.) # muon daughter time of flight
 ut.bookHist(h,'KaonDir','Kaon Straw-ECAL Time (directly)',500,36.,40.) # kaon daughter time of flight
 ut.bookHist(h,'smearedmass','Time Smeared Kaon Mass',50,0.,2.)
 ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,-0.4,0.4)
+
+ut.bookHist(h,'timemass','Time Calculated Kaon Mass',50,0.,2.)
+ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
 
 # ---------------------------------------------------FUNCTIONS------------------------------------------------------------
 
@@ -387,9 +391,14 @@ def makePlots():
    h['Kaon_mom'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['KaMu_Graphs'].cd(3)
-   h['Chi2'].SetXTitle('Chi squared value')
-   h['Chi2'].SetYTitle('Frequency')
-   h['Chi2'].Draw()
+   h['Muon_mom_true'].SetXTitle('Momentum [GeV/c]')
+   h['Muon_mom_true'].SetYTitle('No. of particles')
+   h['Muon_mom_true'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['KaMu_Graphs'].cd(4)
+   h['Kaon_mom_true'].SetXTitle('Momentum [GeV/c]')
+   h['Kaon_mom_true'].SetYTitle('No. of particles')
+   h['Kaon_mom_true'].Draw()
    h['KaMu_Graphs'].Print('KaMu_Graphs.png')
 
 def ecalstraw_mom(index):
@@ -401,20 +410,34 @@ def ecalstraw_mom(index):
             strawPy = strawpart.GetPy()
             strawPz = strawpart.GetPz()
             strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) # straw tube momentum
+            strawTime = strawpart.GetTime()
+            strawX = 0.01*strawpart.GetX()
+            strawY = 0.01*strawpart.GetY()
+            strawZ = 0.01*strawpart.GetZ()
             for ecalpart in sTree.EcalPoint:
                 if ecalpart.GetTrackID() == code: # checks for muon hits in the ecal
                     ecalPx = ecalpart.GetPx()
                     ecalPy = ecalpart.GetPy()
                     ecalPz = ecalpart.GetPz()
                     ecalP = ROOT.TMath.Sqrt((ecalPx**2) + (ecalPy**2) + (ecalPz**2)) # ecal momentum
-                    diff = strawP - ecalP # difference between muon straw and ecal momentum
-                    return diff
+                    ecalTime = ecalpart.GetTime()
+                    ecalX = 0.01*ecalpart.GetX()
+                    ecalY = 0.01*ecalpart.GetY()
+                    ecalZ = 0.01*ecalpart.GetZ()
 
-def time_res(partkey,sigma):
+                    diff = strawP - ecalP # difference between muon straw and ecal momentum
+                    t = abs(ecalTime-strawTime)
+                    r = ROOT.TMath.Sqrt(((ecalX - strawX)**2) + ((ecalY - strawY)**2) + ((ecalZ - strawZ)**2))
+                    v = (r/t)*(10**9)
+                    beta = v/c
+                    gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
+                    kaonM = strawP/(beta*gamma)
+                    return diff,kaonM
+
+def time_res(partkey):
     vsmear = -1
     tsmear = -1
     ecal_p = -1
-    diff = -1
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
@@ -462,14 +485,10 @@ def time_res(partkey,sigma):
 
         if not ecal_time <= 0:
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            #straw_smear = np.random.normal(loc=straw_time,scale=sigma,size=None)
-            #ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
+            #straw_smear = np.random.normal(loc=straw_time,scale=0.1,size=None)
+            #ecal_smear = np.random.normal(loc=ecal_time,scale=0.1,size=None)
             tsmear = abs(straw_time - ecal_time)            # stored in units of nanoseconds
             vsmear = (r/tsmear)*(10**9)
-            beta = vsmear/c
-            gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-            smearedM1 = strawP/(beta*gamma)
-            smearedM2 = ecalP/(beta*gamma)
             
     return tsmear,vsmear
 
@@ -552,16 +571,17 @@ def finStateMuKa():
                                     RPV_reco_mom = RPV_Vector.P()                       # sets RPV mom
                                     mom_diff = kaonMotherTrue_mom - RPV_reco_mom
 
-                                    mu_diff = ecalstraw_mom(index)
-                                    ka_diff = ecalstraw_mom(index2)
+                                    mu_diff,ignore = ecalstraw_mom(muPartkey)
+                                    ka_diff,smearedM = ecalstraw_mom(kaPartkey)
+                                    h['timemass'].Fill(smearedM)
                                     h['ecalstraw_mom'].Fill(mu_diff)
                                     h['ecalstraw_mom'].Fill(ka_diff)
 
-                                    kaP = Kaon_Vector.P()
                                     true_kaP = true_kaon.GetP()
-                                    muP = Muon_Vector.P()
+                                    reco_kaP = Kaon_Vector.P()
                                     true_muP = true_muon.GetP()
-                                    
+                                    reco_muP = Muon_Vector.P()
+                                                      
                                     h['RPV_true'].Fill(kaonMotherTrue_mass) 
                                     h['RPV_mom'].Fill(kaonMotherTrue_mom)
                                     h['RPV_reco'].Fill(RPV_mass)                        
@@ -569,19 +589,20 @@ def finStateMuKa():
                                     h['Chi2'].Fill(mu_chi2)       
                                     h['Chi2'].Fill(ka_chi2)                             
                                     h['RPV_mom_diff'].Fill(mom_diff)
-                                    h['Kaon_mom'].Fill(kaP)
-                                    h['Muon_mom'].Fill(muP)
+                                    h['Kaon_mom'].Fill(reco_kaP)
+                                    h['Muon_mom'].Fill(reco_muP)
+                                    h['Kaon_mom_true'].Fill(true_kaP)
+                                    h['Muon_mom_true'].Fill(true_muP)
                                     
-                                    sigma = 0.1                                  # nanosecond Gaussian width
-                                    mu_t,mu_v = time_res(muPartkey,sigma)        
+                                    mu_t,mu_v = time_res(muPartkey)        
                                     if mu_t != -1:              
                                         h['MuonDir'].Fill(mu_t) 
-                                        ka_t,ka_v = time_res(kaPartkey,sigma)                            
+                                        ka_t,ka_v = time_res(kaPartkey)                            
                                         if ka_t != -1: 
                                             h['KaonDir'].Fill(ka_t)
                                             beta = ka_v/c
                                             gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                            smearedM = kaP/(beta*gamma)
+                                            smearedM = reco_kaP/(beta*gamma)
                                             h['smearedmass'].Fill(smearedM)
 
 finStateMuKa()  
