@@ -414,11 +414,15 @@ def time_res(partkey,sigma):
     vsmear = -1
     tsmear = -1
     ecal_p = -1
+    diff = -1
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
         z_array = []
         t_array = []
+        px_array = []
+        py_array = []
+        pz_array = []
         straw_time = 0
         for k,hits in enumerate(sTree.strawtubesPoint):
             straw_TrackID = hits.GetTrackID()
@@ -426,6 +430,9 @@ def time_res(partkey,sigma):
                 x_array.append(hits.GetX())
                 y_array.append(hits.GetY())
                 z_array.append(hits.GetZ())
+                px_array.append(hits.GetPx())
+                py_array.append(hits.GetPy())
+                pz_array.append(hits.GetPz())
                 t_array.append(hits.GetTime())
         
         min_z_index = z_array.index(min(z_array))
@@ -433,6 +440,10 @@ def time_res(partkey,sigma):
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
+        strawPx = px_array[min_z_index]
+        strawPy = px_array[min_z_index]
+        strawPz = px_array[min_z_index]
+        strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) # straw tube momentum
 
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
@@ -447,6 +458,7 @@ def time_res(partkey,sigma):
                         ecal_px = hits.GetPx()
                         ecal_py = hits.GetPy()
                         ecal_pz = hits.GetPz()
+                        ecalP = ROOT.TMath.Sqrt((ecalPx**2) + (ecalPy**2) + (ecalPz**2)) # straw tube momentum
 
         if not ecal_time <= 0:
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
@@ -454,9 +466,8 @@ def time_res(partkey,sigma):
             #ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
             tsmear = abs(straw_time - ecal_time)            # stored in units of nanoseconds
             vsmear = (r/tsmear)*(10**9)
-            ecal_p = ROOT.TMath.Sqrt((ecal_px**2) + (ecal_py**2) + (ecal_pz**2))
             
-    return tsmear,vsmear,ecal_p
+    return tsmear,vsmear,diff
 
 def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
@@ -537,10 +548,10 @@ def finStateMuKa():
                                     RPV_reco_mom = RPV_Vector.P()                       # sets RPV mom
                                     mom_diff = kaonMotherTrue_mom - RPV_reco_mom
 
-                                    mu_diff = ecalstraw_mom(index)
-                                    ka_diff = ecalstraw_mom(index2)
-                                    h['ecalstraw_mom'].Fill(mu_diff)
-                                    h['ecalstraw_mom'].Fill(ka_diff)
+                                    #mu_diff = ecalstraw_mom(index)
+                                    #ka_diff = ecalstraw_mom(index2)
+                                    #h['ecalstraw_mom'].Fill(mu_diff)
+                                    #h['ecalstraw_mom'].Fill(ka_diff)
 
                                     kaP = Kaon_Vector.P()
                                     true_kaP = true_kaon.GetP()
@@ -558,16 +569,18 @@ def finStateMuKa():
                                     h['Muon_mom'].Fill(muP)
                                     
                                     sigma = 0.1                                  # nanosecond Gaussian width
-                                    mu_t,mu_v,mu_p = time_res(muPartkey,sigma)        
+                                    mu_t,mu_v,mu_diff = time_res(muPartkey,sigma)        
                                     if mu_t != -1:              
                                         h['MuonDir'].Fill(mu_t) 
-                                        ka_t,ka_v,ka_p = time_res(kaPartkey,sigma)                            
+                                        ka_t,ka_v,ka_diff = time_res(kaPartkey,sigma)                            
                                         if ka_t != -1: 
                                             h['KaonDir'].Fill(ka_t)
                                             beta = ka_v/c
                                             gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
                                             smearedM = ka_p/(beta*gamma)
                                             h['smearedmass'].Fill(smearedM)
+                                            h['ecalstraw_mom'].Fill(mu_diff)
+                                            h['ecalstraw_mom'].Fill(ka_diff)
 
 finStateMuKa()  
 makePlots()
