@@ -898,6 +898,7 @@ def finStateMuPi():
                                     kaonV = (c*piP) / ROOT.TMath.Sqrt((kaon_M**2) + (piP**2))       # kaon velocity
 
                                     true_piP = true_pion.GetP()
+                                    true_muP = true_muon.GetP()
 
                                     mu_t1_dir,mu_t2,mu_vsmear = time_res(muPartkey,muV)        
                                     if mu_t1_dir != -1:              

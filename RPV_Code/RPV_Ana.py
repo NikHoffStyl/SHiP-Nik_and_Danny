@@ -431,7 +431,7 @@ def ecalstraw_mom(index):
                     v = (r/t)*(10**9)
                     beta = v/c
                     gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                    kaonM = strawP/(beta*gamma)
+                    kaonM = (ecalP)/(beta*gamma) # which momentum?
                     return diff,kaonM
 
 def time_res(partkey):
@@ -496,9 +496,6 @@ def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
         for n in range(nEvents):                            # loop over events
             rc = sTree.GetEntry(n)                              # load tree entry
-            for particle in sTree.MCTrack:
-                print(particle)
-            print("============================================================================================================")
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
@@ -573,17 +570,17 @@ def finStateMuKa():
                                     RPV_mass = RPV_Vector.M()                           # sets RPV mass
                                     RPV_reco_mom = RPV_Vector.P()                       # sets RPV mom
                                     mom_diff = kaonMotherTrue_mom - RPV_reco_mom
-
-                                    mu_diff,ignore = ecalstraw_mom(muPartkey)
-                                    ka_diff,smearedM = ecalstraw_mom(kaPartkey)
-                                    h['timemass'].Fill(smearedM)
-                                    h['ecalstraw_mom'].Fill(mu_diff)
-                                    h['ecalstraw_mom'].Fill(ka_diff)
-
                                     true_kaP = true_kaon.GetP()
                                     reco_kaP = Kaon_Vector.P()
                                     true_muP = true_muon.GetP()
                                     reco_muP = Muon_Vector.P()
+
+                                    mu_diff,ignore = ecalstraw_mom(muPartkey)
+                                    ka_diff,smearedM = ecalstraw_mom(kaPartkey)
+                                    
+                                    h['timemass'].Fill(smearedM)
+                                    h['ecalstraw_mom'].Fill(mu_diff)
+                                    h['ecalstraw_mom'].Fill(ka_diff)
                                                       
                                     h['RPV_true'].Fill(kaonMotherTrue_mass) 
                                     h['RPV_mom'].Fill(kaonMotherTrue_mom)
@@ -598,15 +595,19 @@ def finStateMuKa():
                                     h['Muon_mom_true'].Fill(true_muP)
                                     
                                     mu_t,mu_v = time_res(muPartkey)        
-                                    if mu_t != -1:              
+                                    if mu_t != -1:         
                                         h['MuonDir'].Fill(mu_t) 
-                                        ka_t,ka_v = time_res(kaPartkey)                            
+                                        beta = mu_v/c
+                                        gamma = 1/(root.tmath.sqrt(1-(beta**2)))
+                                        smearedm = true_mup/(beta*gamma)
+                                        h['smearedmass'].fill(smearedm)
+                                        ka_t,ka_v = time_res(kaPartkey)      
                                         if ka_t != -1: 
                                             h['KaonDir'].Fill(ka_t)
-                                            beta = ka_v/c
-                                            gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                            smearedM = reco_kaP/(beta*gamma)
-                                            h['smearedmass'].Fill(smearedM)
+                                            #beta = ka_v/c
+                                            #gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
+                                            #smearedM = reco_kaP/(beta*gamma)
+                                            #h['smearedmass'].Fill(smearedM)
 
 finStateMuKa()  
 makePlots()
