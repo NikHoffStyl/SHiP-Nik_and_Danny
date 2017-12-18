@@ -223,6 +223,8 @@ def create_Hists():
     ut.bookHist(h,'KaonRecoMass','Reco Mass',200,0.,2.)                      # Kaon mass
     ut.bookHist(h,'MuonTrueMass','True Mass',200,0.,2.)                      # muon mass
     ut.bookHist(h,'KaonTrueMass','True Mass',200,0.,2.)                      # Kaon mass
+    ut.bookHist(h,'MuonSmearedMass','Smeared Mass',200,0.,2.)                      # muon mass
+    ut.bookHist(h,'KaonSmearedMass','Smeared Mass',200,0.,2.)                      # Kaon mass
     ################################
     ut.bookHist(h,'nalino_true','Monte Carlo Mass',500,0.,2.)                                   # true mass
     ut.bookHist(h,'nalino_reco','Reconstructed Mass',500,0.,2.)                                 # reconstructed mass
@@ -440,11 +442,11 @@ def makePlots():
    h['KaonRecoMass'].Draw('same')
 
    cv = h['DAUGHTERS_MOM'].cd(6)
-   h['MuonTrueMass'].SetXTitle('Mass [GeV/c2]')
-   h['MuonTrueMass'].SetYTitle('No. of Particles')
-   h['MuonTrueMass'].Draw()
-   h['KaonTrueMass'].SetLineColor(2)
-   h['KaonTrueMass'].Draw('same')
+   h['MuonSmearedMass'].SetXTitle('Mass [GeV/c2]')
+   h['MuonSmearedMass'].SetYTitle('No. of Particles')
+   h['MuonSmearedMass'].Draw()
+   h['KaonSmearedMass'].SetLineColor(2)
+   h['KaonSmearedMass'].Draw('same')
    h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
 
 
@@ -560,10 +562,7 @@ def finState2MuK():
                         Decay_X = true_muon.GetStartX()
                         Decay_Y = true_muon.GetStartY()
                         Decay_Z = true_muon.GetStartZ()
-                        muonTrueMom = true_muon.GetP()
-                        muonTrueMass = true_muon.GetMass()
-                        h['MuonTrueMom'].Fill(muonTrueMom)
-                        h['MuonTrueMass'].Fill(muonTrueMass)
+                        
                         if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
                             #print('nalino decayed outside fiducial volume')
                             continue
@@ -594,10 +593,6 @@ def finState2MuK():
                                 if kaonMotherkey==muonMotherkey:                    # check if keys are the same
                                     kaonMotherTrue_mass = true_mother.GetMass()        # get nalino/final states mother mass
                                     kaonMotherTrue_mom = true_mother.GetP()            # get nalino/final states mother mom
-                                    kaonTrueMom = true_kaon.GetP()
-                                    kaonTrueMass = true_kaon.GetMass()
-                                    h['KaonTrueMom'].Fill(kaonTrueMom)
-                                    h['KaonTrueMass'].Fill(kaonTrueMass)
 
                                     if not checkFiducialVolume(sTree,index,dy): 
                                         #print('Decay outside fiducial volume')
@@ -637,6 +632,14 @@ def finState2MuK():
                                     muP = Muon_LVec.P()
                                     muE = Muon_LVec.E()
                                     
+                                    kaonTrueMom = true_kaon.GetP()
+                                    kaonTrueMass = true_kaon.GetMass()
+                                    muonTrueMom = true_muon.GetP()
+                                    muonTrueMass = true_muon.GetMass()
+                                    h['MuonTrueMom'].Fill(muonTrueMom)
+                                    h['MuonTrueMass'].Fill(muonTrueMass)
+                                    h['KaonTrueMom'].Fill(kaonTrueMom)
+                                    h['KaonTrueMass'].Fill(kaonTrueMass)
                                     h['nalino_true'].Fill(kaonMotherTrue_mass)             # fill histograms 
                                     h['nalino_mom'].Fill(kaonMotherTrue_mom)
                                     h['nalino_reco'].Fill(nalino_mass)                        
@@ -668,8 +671,8 @@ def finState2MuK():
                                             h['KaonFlightLen'].Fill(k_Len)
                                             k_beta = k_v/c
                                             h['KaonSpeed'].Fill(k_beta)
-                                            h['MuonStrawMom'].Fill(mu_strawP)
-                                            h['MuonEcalMom'].Fill(mu_ecalP)
+                                            h['KaonStrawMom'].Fill(k_strawP)
+                                            h['KaonEcalMom'].Fill(k_ecalP)
                                               
                                             
                                             if k_beta < 1:
@@ -682,8 +685,10 @@ def finState2MuK():
                                                 #h['smearedmass1'].Fill(smearedM)
 
                                                 #TRYING SOMETHING ELSE
-                                                smearedM = kP*(ROOT.TMath.Sqrt(1-(k_beta**2)))/k_beta
-                                                #h['Kaon_mass'].Fill(smearedM)
+                                                k_smearedM = kP*(ROOT.TMath.Sqrt(1-(k_beta**2)))/k_beta
+                                                h['KaonSmearedMass'].Fill(k_smearedM)
+                                                mu_smearedM = muP*(ROOT.TMath.Sqrt(1-(mu_beta**2)))/mu_beta
+                                                h['MuonSmearedMass'].Fill(mu_smearedM)
 
         #print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
 
