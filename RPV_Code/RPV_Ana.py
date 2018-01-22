@@ -171,25 +171,28 @@ from ROOT import THStack
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
 h = {}
-ut.bookHist(h,'RPV_true','Monte Carlo Mass',500,0.,2.) # true mass
-ut.bookHist(h,'RPV_reco','Reconstructed Mass',500,0.,2.) # reconstructed mass
+ut.bookHist(h,'RPV_true','Monte Carlo Mass',500,0.8,1.2) # true mass
+ut.bookHist(h,'RPV_reco','Reconstructed Mass',500,0.8,1.2) # reconstructed mass
 ut.bookHist(h,'RPV_mom','True (red) & Reco. (blue) Momentum',100,0.,300.) # true momentum distribution
 ut.bookHist(h,'RPV_mom_reco','Reconstructed Momentum',100,0.,300) # reconstructed momentum distribution
 ut.bookHist(h,'RPV_mom_diff','True/Reco Momentum Difference',100,-3.,3) # true/reco momentum difference
 
-ut.bookHist(h,'Muon_mom','Muon (RPV Daughter) Reco. Momentum',100,0.,140.) # RPV muon daughter reco momentum
-ut.bookHist(h,'Kaon_mom','Kaon (RPV Daughter) Reco. Momentum',100,0.,140.) # RPV pion daughter reco momentum
-ut.bookHist(h,'Muon_mom_true','Muon (RPV Daughter) True Momentum',100,0.,140.) # RPV muon daughter true momentum
-ut.bookHist(h,'Kaon_mom_true','Kaon (RPV Daughter) True Momentum',100,0.,140.) # RPV pion daughter true momentum
+ut.bookHist(h,'Muon_mom_true','Muon - True (red) & Reco. (blue) Momentum',100,0.,140.) # RPV muon daughter reco momentum
+ut.bookHist(h,'Kaon_mom_true','Kaon - True (red) & Reco. (blue) Momentum',100,0.,140.) # RPV pion daughter reco momentum
+ut.bookHist(h,'Muon_mom','Muon - True Momentum',100,0.,140.) # RPV muon daughter true momentum
+ut.bookHist(h,'Kaon_mom','Kaon - True Momentum',100,0.,140.) # RPV pion daughter true momentum
 
-ut.bookHist(h,'MuonDir','Muon Straw-ECAL Time (directly)',500,36.,40.) # muon daughter time of flight
-ut.bookHist(h,'KaonDir','Kaon Straw-ECAL Time (directly)',500,36.,40.) # kaon daughter time of flight
-ut.bookHist(h,'smearedmass_muon','Time Smeared Muon Mass',50,0.,2.)
-ut.bookHist(h,'smearedmass_kaon','Time Smeared Kaon(red)-Muon(blue) Mass',50,0.,2.)
-ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,-0.4,0.4)
+ut.bookHist(h,'MuonDir','Muon Straw-ECAL Time (directly)',500,37.5,40.) # muon daughter time of flight
+ut.bookHist(h,'KaonDir','Kaon Straw-ECAL Time (directly)',500,37.5,40.) # kaon daughter time of flight
+ut.bookHist(h,'smearedmass_muon','Time Smeared Muon Mass',100,0.,2.)
+ut.bookHist(h,'smearedmass_kaon','Time Smeared Kaon(red)-Muon(blue) Mass',100,0.,2.)
+ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4)
 
-ut.bookHist(h,'timemass','Time Calculated Kaon Mass',50,0.,2.)
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
+ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
+ut.bookHist(h,'num_kaon','No. of kaon in straw tubes',25,25,50)
+ut.bookHist(h,'track_muon','Muon z-momentum decrease through straw tubes',100,0,100)
+ut.bookHist(h,'track_kaon','Kaon z-momentum decrease through straw tubes',100,0,100)
 
 # ---------------------------------------------------FUNCTIONS------------------------------------------------------------
 
@@ -255,6 +258,27 @@ def myVertex(t1,t2,PosDir):
    Z = c.z()+v.z()*t
    return X,Y,Z,abs(dist) # X,Y,Z are the coordinates of...?
 
+def fitSingleGauss(x,ba=None,be=None):
+    name    = 'myGauss_'+x 
+    myGauss = h[x].GetListOfFunctions().FindObject(name)
+    if not myGauss:
+       if not ba : ba = h[x].GetBinCenter(1) 
+       if not be : be = h[x].GetBinCenter(h[x].GetNbinsX()) 
+       bw    = h[x].GetBinWidth(1) 
+       mean  = h[x].GetMean()
+       sigma = h[x].GetRMS()
+       norm  = h[x].GetEntries()*0.3
+       myGauss = ROOT.TF1(name,'[0]*'+str(bw)+'/([2]*sqrt(2*pi))*exp(-0.5*((x-[1])/[2])**2)+[3]',4)
+       myGauss.SetParameter(0,norm)
+       myGauss.SetParameter(1,mean)
+       myGauss.SetParameter(2,sigma)
+       myGauss.SetParameter(3,1.)
+       myGauss.SetParName(0,'Signal')
+       myGauss.SetParName(1,'Mean')
+       myGauss.SetParName(2,'Sigma')
+       myGauss.SetParName(3,'bckgr')
+    h[x].Fit(myGauss,'','',ba,be) 
+
 def RedoVertexing(t1,t2):
      PosDir = {} 
      for tr in [t1,t2]:
@@ -279,7 +303,7 @@ def RedoVertexing(t1,t2):
        try:
         reps[tr].extrapolateToPoint(states[tr], newPos, False)
        except: 
-        print 'SHiPAna: extrapolation did not work'
+        #print 'SHiPAna: extrapolation did not work'
         rc = False  
         break # breaks if extrapolation doesn't work
 
@@ -292,7 +316,7 @@ def RedoVertexing(t1,t2):
          print 'abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz
          rc = False
          break # ... number of iterations exceeds 10
-     if not rc: return xv,yv,zv,doca,-1 # extrapolation failed, makes no sense to continue
+     if not rc: return -1,-1,-1,doca # extrapolation failed, makes no sense to continue
      LV={}
      for tr in [t1,t2]: # from here on we have reproduced (see inv_mass() function)       
       mom = reps[tr].getMom(states[tr])
@@ -305,32 +329,6 @@ def RedoVertexing(t1,t2):
      RPVMom = LV[t1]+LV[t2]
 
      return RPVMom,LV[t1],LV[t2],doca
-
-def fitSingleGauss(x,ba=None,be=None):
-    name    = 'myGauss_'+x 
-    myGauss = h[x].GetListOfFunctions().FindObject(name)
-    if not myGauss:
-       if not ba : ba = h[x].GetBinCenter(1) 
-       if not be : be = h[x].GetBinCenter(h[x].GetNbinsX()) 
-       bw    = h[x].GetBinWidth(1) 
-       mean  = h[x].GetMean()
-       sigma = h[x].GetRMS()
-       norm  = h[x].GetEntries()*0.3
-       myGauss = ROOT.TF1(name,'[0]*'+str(bw)+'/([2]*sqrt(2*pi))*exp(-0.5*((x-[1])/[2])**2)+[3]',4)
-       myGauss.SetParameter(0,norm)
-       myGauss.SetParameter(1,mean)
-       myGauss.SetParameter(2,sigma)
-       myGauss.SetParameter(3,1.)
-       myGauss.SetParName(0,'Signal')
-       myGauss.SetParName(1,'Mean')
-       myGauss.SetParName(2,'Sigma')
-       myGauss.SetParName(3,'bckgr')
-    h[x].Fit(myGauss,'','',ba,be) 
-
-# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
-
-nEvents = min(sTree.GetEntries(),nEvents)
-c = 2.99792458*(10**8)
 
 def makePlots():
    ut.bookCanvas(h,key='Test_Time',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
@@ -356,6 +354,7 @@ def makePlots():
    h['ecalstraw_mom'].SetXTitle('Momentum Difference [GeV/c2]')
    h['ecalstraw_mom'].SetYTitle('Frequency')
    h['ecalstraw_mom'].Draw()
+   h['ecalstraw_mom'].SetLineColor(1)
    h['Test_Time'].Print('Smeared_Time.png')
    #======================================================================================================================
    ut.bookCanvas(h,key='Test_Mass',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
@@ -381,69 +380,29 @@ def makePlots():
    h['RPV_mom_diff'].SetXTitle('Momentum Difference [GeV/c]')
    h['RPV_mom_diff'].SetYTitle('Frequency')
    h['RPV_mom_diff'].Draw()
+   h['RPV_mom_diff'].SetLineColor(1)
    h['Test_Mass'].Print('RPV_Graphs.png')
    #======================================================================================================================
-   ut.bookCanvas(h,key='KaMu_Graphs',title='Fit Results 3',nx=1000,ny=1000,cx=2,cy=2)
+   ut.bookCanvas(h,key='KaMu_Graphs',title='Fit Results 3',nx=1000,ny=500,cx=2,cy=1)
    cv = h['KaMu_Graphs'].cd(1)
-   h['Muon_mom'].SetXTitle('Momentum [GeV/c]')
-   h['Muon_mom'].SetYTitle('No. of particles')
-   h['Muon_mom'].Draw()
-   #----------------------------------------------------------------------------------------------------------------------
-   cv = h['KaMu_Graphs'].cd(2)
-   h['Kaon_mom'].SetXTitle('Momentum [GeV/c]')
-   h['Kaon_mom'].SetYTitle('No. of particles')
-   h['Kaon_mom'].SetLineColor(2)
-   h['Kaon_mom'].Draw()
-   #----------------------------------------------------------------------------------------------------------------------
-   cv = h['KaMu_Graphs'].cd(3)
-   h['Muon_mom_true'].SetXTitle('Momentum [GeV/c]')
-   h['Muon_mom_true'].SetYTitle('No. of particles')
-   h['Muon_mom_true'].Draw()
-   #----------------------------------------------------------------------------------------------------------------------
-   cv = h['KaMu_Graphs'].cd(4)
    h['Kaon_mom_true'].SetXTitle('Momentum [GeV/c]')
    h['Kaon_mom_true'].SetYTitle('No. of particles')
    h['Kaon_mom_true'].SetLineColor(2)
    h['Kaon_mom_true'].Draw()
+   h['Kaon_mom'].Draw("same")
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['KaMu_Graphs'].cd(2)
+   h['Muon_mom_true'].SetXTitle('Momentum [GeV/c]')
+   h['Muon_mom_true'].SetYTitle('No. of particles')
+   h['Muon_mom_true'].SetLineColor(2)
+   h['Muon_mom_true'].Draw()
+   h['Muon_mom'].Draw("same")
    h['KaMu_Graphs'].Print('KaMu_Graphs.png')
 
-def ecalstraw_mom(index):
-    if sTree.GetBranch("strawtubesPoint"):
-        if sTree.GetBranch("EcalPoint"):
-            strawpart = sTree.strawtubesPoint[index] # checks for muon hits in the straw tubes
-            code = strawpart.GetTrackID()
-            strawPx = strawpart.GetPx()
-            strawPy = strawpart.GetPy()
-            strawPz = strawpart.GetPz()
-            strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) # straw tube momentum
-            strawTime = strawpart.GetTime()
-            strawX = 0.01*strawpart.GetX()
-            strawY = 0.01*strawpart.GetY()
-            strawZ = 0.01*strawpart.GetZ()
-            for ecalpart in sTree.EcalPoint:
-                if ecalpart.GetTrackID() == code: # checks for muon hits in the ecal
-                    ecalPx = ecalpart.GetPx()
-                    ecalPy = ecalpart.GetPy()
-                    ecalPz = ecalpart.GetPz()
-                    ecalP = ROOT.TMath.Sqrt((ecalPx**2) + (ecalPy**2) + (ecalPz**2)) # ecal momentum
-                    ecalTime = ecalpart.GetTime()
-                    ecalX = 0.01*ecalpart.GetX()
-                    ecalY = 0.01*ecalpart.GetY()
-                    ecalZ = 0.01*ecalpart.GetZ()
-
-                    diff = strawP - ecalP # difference between muon straw and ecal momentum
-                    t = abs(ecalTime-strawTime)
-                    r = ROOT.TMath.Sqrt(((ecalX - strawX)**2) + ((ecalY - strawY)**2) + ((ecalZ - strawZ)**2))
-                    v = (r/t)*(10**9)
-                    beta = v/c
-                    gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                    kaonM = (ecalP)/(beta*gamma) # which momentum?
-                    return diff,kaonM
-
-def time_res(partkey):
-    vsmear = -1
+def time_res(partkey,pdg):
     tsmear = -1
-    ecal_p = -1
+    vsmear = -1
+    diff = -1
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
@@ -464,16 +423,26 @@ def time_res(partkey):
                 pz_array.append(hits.GetPz())
                 t_array.append(hits.GetTime())
         
+        num_hits = len(z_array)
+        if pdg==13:
+            h['num_muon'].Fill(num_hits)
+            for hit in pz_array:
+                h['track_muon'].Fill(hit)
+        if pdg==321:
+            h['num_kaon'].Fill(num_hits)
+            for hit in pz_array:
+                h['track_kaon'].Fill(hit)
+
         min_z_index = z_array.index(min(z_array))
-        straw_z = 0.01*min(z_array)
+        straw_z = 0.01*z_array[min_z_index]
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
         strawPx = px_array[min_z_index]
-        strawPy = px_array[min_z_index]
-        strawPz = px_array[min_z_index]
+        strawPy = py_array[min_z_index]
+        strawPz = pz_array[min_z_index]
         strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) # straw tube momentum
-
+  
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
             if not straw_time <= 0:
@@ -490,16 +459,23 @@ def time_res(partkey):
                         ecalP = ROOT.TMath.Sqrt((ecalPx**2) + (ecalPy**2) + (ecalPz**2)) # straw tube momentum
 
         if not ecal_time <= 0:
-            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
             #straw_smear = np.random.normal(loc=straw_time,scale=0.1,size=None)
             #ecal_smear = np.random.normal(loc=ecal_time,scale=0.1,size=None)
+            diff = strawP - ecalP
+            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
             tsmear = abs(straw_time - ecal_time)            # stored in units of nanoseconds
             vsmear = (r/tsmear)*(10**9)
             
-    return tsmear,vsmear
+    return tsmear,vsmear,diff
+
+# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
+
+nEvents = min(sTree.GetEntries(),nEvents)
+c = 2.99792458*(10**8)
 
 def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
+        k_decaycheck = 0
         for n in range(nEvents):                            # loop over events
             rc = sTree.GetEntry(n)                              # load tree entry
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
@@ -508,6 +484,9 @@ def finStateMuKa():
                 if abs(true_muon.GetPdgCode()) == 13:                   # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
+                    if true_mother.GetPdgCode() == 211:
+                        #print('Kaon has decayed to a muon before detection')
+                        k_decaycheck+=1
                     if true_mother.GetPdgCode() == 9900015:             # checks mother is RPV
 
                         Decay_X = true_muon.GetStartX()
@@ -527,7 +506,6 @@ def finStateMuKa():
                         if not mu_nmeas > 25:
                             #print('Too few measurements')
                             continue
-
                         mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
                         mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
                         if not mu_chi2 < 4:
@@ -541,6 +519,7 @@ def finStateMuKa():
                                 kaonMotherkey = true_kaon.GetMotherId()             # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
                                 if kaonMotherkey==muonMotherkey:                    # check if keys are the same
+
                                     kaonMotherTrue_mass = true_mother.GetMass()         # get RPV/final states mother mass
                                     kaonMotherTrue_mom = true_mother.GetP()             # get RPV/final states mother mom
 
@@ -555,7 +534,6 @@ def finStateMuKa():
                                     if not ka_nmeas > 25:
                                         #print('Too few measurements')
                                         continue
-
                                     ka_rchi2 = ka_status.getChi2()                      # chi squared value
                                     ka_chi2 = (ka_rchi2/ka_nmeas)                       # gets chi value
                                     if not ka_chi2 < 4:
@@ -565,7 +543,6 @@ def finStateMuKa():
                                     RPV_Vector = ROOT.TLorentzVector()                  # declares variables as TLorentzVector class
                                     Muon_Vector = ROOT.TLorentzVector()
                                     Kaon_Vector = ROOT.TLorentzVector()
-                                    
                                     RPV_Vector,Muon_Vector,Kaon_Vector,doca = RedoVertexing(index,index2)  # uses RedoVertexing to iterate track fitting
                                     
                                     if RPV_Vector == -1: continue
@@ -576,17 +553,11 @@ def finStateMuKa():
                                     RPV_mass = RPV_Vector.M()                           # sets RPV mass
                                     RPV_reco_mom = RPV_Vector.P()                       # sets RPV mom
                                     mom_diff = kaonMotherTrue_mom - RPV_reco_mom
+
                                     true_kaP = true_kaon.GetP()
                                     reco_kaP = Kaon_Vector.P()
                                     true_muP = true_muon.GetP()
                                     reco_muP = Muon_Vector.P()
-
-                                    mu_diff,ignore = ecalstraw_mom(muPartkey)
-                                    ka_diff,smearedM = ecalstraw_mom(kaPartkey)
-                                    
-                                    h['timemass'].Fill(smearedM)
-                                    h['ecalstraw_mom'].Fill(mu_diff)
-                                    h['ecalstraw_mom'].Fill(ka_diff)
                                                       
                                     h['RPV_true'].Fill(kaonMotherTrue_mass) 
                                     h['RPV_mom'].Fill(kaonMotherTrue_mom)
@@ -597,23 +568,27 @@ def finStateMuKa():
                                     h['RPV_mom_diff'].Fill(mom_diff)
                                     h['Kaon_mom'].Fill(reco_kaP)
                                     h['Muon_mom'].Fill(reco_muP)
-                                    h['Kaon_mom_true'].Fill(true_kaP) # eventually replace with straw tube momentum (actual true mom.)
-                                    h['Muon_mom_true'].Fill(true_muP) # MCTrack momentum is not really what we want, 
-                                    
-                                    mu_t,mu_v = time_res(muPartkey)        
-                                    if mu_t != -1:         
+                                    h['Kaon_mom_true'].Fill(true_kaP)
+                                    h['Muon_mom_true'].Fill(true_muP)
+
+                                    mu_t,mu_v,mu_diff = time_res(muPartkey,13)        
+                                    if mu_t != -1: # and mu_t < 38.08:
                                         h['MuonDir'].Fill(mu_t) 
                                         beta = mu_v/c
                                         gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
                                         smearedM = reco_muP/(beta*gamma)
                                         h['smearedmass_muon'].Fill(smearedM)
-                                        ka_t,ka_v = time_res(kaPartkey)      
-                                        if ka_t != -1: 
+                                        ka_t,ka_v,ka_diff = time_res(kaPartkey,321)      
+                                        if ka_t != -1: # and ka_t < 38.08:
                                             h['KaonDir'].Fill(ka_t)
                                             beta = ka_v/c
                                             gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
                                             smearedM = reco_kaP/(beta*gamma)
                                             h['smearedmass_kaon'].Fill(smearedM)
+                                            h['ecalstraw_mom'].Fill(mu_diff)
+                                            h['ecalstraw_mom'].Fill(ka_diff)
+
+        print('\n'+str(k_decaycheck) + ' muons with K+ mothers\n')
 
 finStateMuKa()  
 makePlots()

@@ -15,7 +15,7 @@ theDPepsilon = 0.00000008
 
 mcEngine     = "TGeant4"
 simEngine    = "Pythia8"  # "Genie" # Ntuple
-nEvents      = 1000
+nEvents      = 10000
 firstEvent   = 0
 inclusive    = "c"    # True = all processes if "c" only ccbar -> HNL, if "b" only bbar -> HNL, and for darkphotons: if meson = production through meson decays, pbrem = proton bremstrahlung, to do: QCD prod.
 deepCopy     = False  # False = copy only stable particles to stack, except for HNL events
