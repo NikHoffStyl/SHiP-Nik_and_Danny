@@ -504,12 +504,12 @@ def time_res(partkey):
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
         if straw_time != None:
-            smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps
-            #smearStrawTime=straw_time 
+            #smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps
+            smearStrawTime=straw_time 
 
         strawPx = px_array[min_z_index]
-        strawPy = px_array[min_z_index]
-        strawPz = px_array[min_z_index]
+        strawPy = py_array[min_z_index]
+        strawPz = pz_array[min_z_index]
         strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) # straw tube momentum
 
                 
@@ -697,7 +697,7 @@ def finState2MuK():
 
 finState2MuK()          
 makePlots()
-hfile = inputFile.split(',')[0].replace('_rec','_RPVeditana'+currentDate)#create outputFile
+hfile = inputFile.split(',')[0].replace('_rec','_RPVeditana')#create outputFile
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
 # do not write to eos, write to local directory 
   tmp = hfile.split('/')
