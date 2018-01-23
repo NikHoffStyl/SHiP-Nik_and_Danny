@@ -81,7 +81,7 @@ else:
   ecalGeoFile = ShipGeo.ecal.File
   dy = ShipGeo.Yheight/u.m
 
-# ------------------------------------------------GEOMETRY--------------------------------------------------
+#-------------------------------------------------GEOMETRY--------------------------------------------------
 
 import shipDet_conf
 run = ROOT.FairRunSim()
@@ -185,20 +185,21 @@ ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4) # incl
 
 ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',500,37.5,40.) # muon daughter time of flight
 ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',500,37.5,40.) # kaon daughter time of flight
-ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',100,0.,2.)
-ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
-ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
-ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
+ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,2.)
+ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.)
+ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.)
+ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.)
 
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
 ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',500,37.5,40.) # muon daughter time of flight
 ut.bookHist(h,'KaonDir_nosmear','True Kaon Straw-ECAL Time (directly)',500,37.5,40.) # kaon daughter time of flight
+ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',500,0.,1.)
 ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
 ut.bookHist(h,'num_kaon','No. of kaon in straw tubes',25,25,50)
 ut.bookHist(h,'track_muon','Muon z-momentum decrease through straw tubes',100,0,100)
 ut.bookHist(h,'track_kaon','Kaon z-momentum decrease through straw tubes',100,0,100)
 
-# ---------------------------------------------------FUNCTIONS------------------------------------------------------------
+#----------------------------------------------------FUNCTIONS------------------------------------------------------------
 
 def dist2InnerWall(X,Y,Z):
   dist = 0
@@ -353,6 +354,7 @@ def makePlots():
    h['tmass_kaon'].SetLineColor(2)
    h['tmass_kaon'].Draw()
    h['tmass_muon'].Draw("same")
+   h['Daughter_masses'].Draw("same")
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Test_Time'].cd(4)
    h['tsmearmass_kaon'].SetXTitle('Mass [GeV/c2]')
@@ -360,17 +362,20 @@ def makePlots():
    h['tsmearmass_kaon'].SetLineColor(2)
    h['tsmearmass_kaon'].Draw()
    h['tsmearmass_muon'].Draw("same")
+   h['Daughter_masses'].Draw("same")
    h['Test_Time'].Print('Smeared_Time.png')
    #======================================================================================================================
    ut.bookCanvas(h,key='Test_Mass',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['Test_Mass'].cd(1)
    h['RPV_true'].SetXTitle('Invariant mass [GeV/c2]')
    h['RPV_true'].SetYTitle('No. of Particles')
+   h['RPV_true'].SetLineColor(1)
    h['RPV_true'].Draw()
    #----------------------------------------------------------------------------------------------------------------------
    cv = h['Test_Mass'].cd(2)
    h['RPV_reco'].SetXTitle('Invariant mass [GeV/c2]')
    h['RPV_reco'].SetYTitle('No. of Particles')
+   h['RPV_reco'].SetLineColor(1)
    h['RPV_reco'].Draw()
    fitSingleGauss('RPV_reco',0.9,1.1)
    #----------------------------------------------------------------------------------------------------------------------
@@ -443,8 +448,10 @@ def time_res(partkey,pdg):
                 h['track_muon'].Fill(hit)
         if pdg==321:
             h['num_kaon'].Fill(num_hits)
+            h['num_kaon'].SetLineColor(2)
             for hit in pz_array:
                 h['track_kaon'].Fill(hit)
+                h['track_kaon'].SetLineColor(2)
 
         min_z_index = z_array.index(min(z_array))
         straw_z = 0.01*z_array[min_z_index]
@@ -486,7 +493,7 @@ def time_res(partkey,pdg):
             
     return tnosmear,vnosmear,tsmear,vsmear,diff
 
-# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
+#----------------------------------------------------EVENT-LOOP--------------------------------------------------------
 
 nEvents = min(sTree.GetEntries(),nEvents)
 c = 2.99792458*(10**8)
@@ -494,8 +501,8 @@ c = 2.99792458*(10**8)
 def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
         k_decaycheck = 0
-        for n in range(nEvents):                            # loop over events
-            rc = sTree.GetEntry(n)                              # load tree entry
+        for n in range(nEvents):                            # loops over events
+            rc = sTree.GetEntry(n)                              # loads tree entry
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
@@ -536,10 +543,7 @@ def finStateMuKa():
                             if abs(true_kaon.GetPdgCode()) == 321:              # checks particle is kaon
                                 kaonMotherkey = true_kaon.GetMotherId()             # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
-                                if kaonMotherkey==muonMotherkey:                    # check if keys are the same
-
-                                    kaonMotherTrue_mass = true_mother.GetMass()         # get RPV/final states mother mass
-                                    kaonMotherTrue_mom = true_mother.GetP()             # get RPV/final states mother mom
+                                if kaonMotherkey == muonMotherkey:                    # check if keys are the same
 
                                     if not checkFiducialVolume(sTree,index,dy): 
                                         #print('Decay outside fiducial volume')
@@ -558,6 +562,9 @@ def finStateMuKa():
                                         #print('Chi squared value too high')
                                         continue
 
+                                    kaonMotherTrue_mass = true_mother.GetMass()    # get RPV/final states mother mass
+                                    kaonMotherTrue_mom = true_mother.GetP()     # get RPV/final states mother mom
+
                                     RPV_Vector = ROOT.TLorentzVector()                  # declares variables as TLorentzVector class
                                     Muon_Vector = ROOT.TLorentzVector()
                                     Kaon_Vector = ROOT.TLorentzVector()
@@ -572,15 +579,20 @@ def finStateMuKa():
                                     RPV_reco_mom = RPV_Vector.P()                       # sets RPV mom
                                     mom_diff = kaonMotherTrue_mom - RPV_reco_mom
 
-                                    true_kaP = true_kaon.GetP()
-                                    reco_kaP = Kaon_Vector.P()
-                                    true_muP = true_muon.GetP()
-                                    reco_muP = Muon_Vector.P()
+                                    true_kaP = true_kaon.GetP()               # true kaon momentum
+                                    reco_kaP = Kaon_Vector.P()            # reconstructed kaon momentum
+                                    true_muP = true_muon.GetP()          # true muon momentum
+                                    reco_muP = Muon_Vector.P()            # reconstructed muon momentum
+                                    kaM = true_kaon.GetMass()           # kaon mass
+                                    muM = true_muon.GetMass()          # muon mass
                                                       
-                                    h['RPV_true'].Fill(kaonMotherTrue_mass) 
+                                    h['RPV_true'].Fill(kaonMotherTrue_mass)     
                                     h['RPV_mom'].Fill(kaonMotherTrue_mom)
                                     h['RPV_reco'].Fill(RPV_mass)                        
-                                    h['RPV_mom_reco'].Fill(RPV_reco_mom)                
+                                    h['RPV_mom_reco'].Fill(RPV_reco_mom)   
+                                    h['Daughter_masses'].Fill(muM)
+                                    h['Daughter_masses'].Fill(kaM)
+                                    h['Daughter_masses'].SetLineColor(1)
                                     h['Chi2'].Fill(mu_chi2)       
                                     h['Chi2'].Fill(ka_chi2)                             
                                     h['RPV_mom_diff'].Fill(mom_diff)
@@ -589,37 +601,39 @@ def finStateMuKa():
                                     h['Kaon_mom_true'].Fill(true_kaP)
                                     h['Muon_mom_true'].Fill(true_muP)
 
-                                    mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff = time_res(muPartkey,13)        
-                                    if mu_t != -1: # and mu_t < 38.08:
-                                        h['MuonDir'].Fill(mu_tsmear) # fills histogram with smeared time
-                                        h['MuonDir_nosmear'].Fill(mu_t)
+                                    #-------------------------------TIME-RESOLUTION-----------------------------------------------
 
-                                        beta = mu_v/c                               # equations for true time deduced mass
+                                    mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff = time_res(muPartkey,13)        
+                                    if mu_t != -1: # and mu_t < 38.05:
+                                        h['MuonDir'].Fill(mu_tsmear) # fills histogram with smeared time
+                                        h['MuonDir_nosmear'].Fill(mu_t) # fills histogram with true time
+
+                                        beta = mu_v/c                            # equations for mass calculated from true time
                                         gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
                                         nosmearM = reco_muP/(beta*gamma)
-                                        beta_smear = mu_vsmear/c                    # equations for smeared time deduced mass
+                                        beta_smear = mu_vsmear/c                 # equations for mass calculated from smeared time
                                         gamma_smear = 1/(ROOT.TMath.Sqrt(1-(beta_smear**2)))
                                         smearM = reco_muP/(beta_smear*gamma_smear)
                                         
-                                        h['tmass_muon'].Fill(nosmearM)
+                                        h['tmass_muon'].Fill(nosmearM) # fills histograms with mass data
                                         h['tsmearmass_muon'].Fill(smearM)
 
                                         ka_t,ka_v,ka_tsmear,ka_vsmear,ka_diff = time_res(kaPartkey,321)      
-                                        if ka_t != -1: # and ka_t < 38.09:
+                                        if ka_t != -1: # and ka_t < 38.06:
                                             h['KaonDir'].Fill(ka_tsmear) # fills histogram with smeared time
-                                            h['KaonDir_nosmear'].Fill(ka_t)
+                                            h['KaonDir_nosmear'].Fill(ka_t) # fills histogram with true time
                                             h['KaonDir_nosmear'].SetLineColor(2)
 
-                                            beta = ka_v/c
+                                            beta = ka_v/c                           # equations for mass calculated from true time
                                             gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
                                             nosmearM = reco_kaP/(beta*gamma)
-                                            beta_smear = ka_vsmear/c
+                                            beta_smear = ka_vsmear/c                # equations for mass calculated from smeared time
                                             gamma_smear = 1/(ROOT.TMath.Sqrt(1-(beta_smear**2)))
                                             smearM = reco_kaP/(beta_smear*gamma_smear)
 
-                                            h['tmass_kaon'].Fill(nosmearM)
+                                            h['tmass_kaon'].Fill(nosmearM) # fills histograms with mass data
                                             h['tsmearmass_kaon'].Fill(smearM)
-                                            h['ecalstraw_mom'].Fill(mu_diff)
+                                            h['ecalstraw_mom'].Fill(mu_diff) # fills histogram for momentum difference
                                             h['ecalstraw_mom'].Fill(ka_diff)
 
         print('\n'+str(k_decaycheck) + ' muons with K+ mothers\n')
@@ -627,7 +641,7 @@ def finStateMuKa():
 finStateMuKa()  
 makePlots()
 
-# ---------------------------------------------------OUTPUT------------------------------------------------------------
+#------------------------------------------------------OUTPUT----------------------------------------------------------
 
 # Outputs histograms and ROOT file
 hfile = inputFile.split(',')[0].replace('_rec','_RPV')
