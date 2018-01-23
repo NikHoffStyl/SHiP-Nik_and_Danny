@@ -185,10 +185,10 @@ ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4) # incl
 
 ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',500,37.5,40.) # muon daughter time of flight
 ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',500,37.5,40.) # kaon daughter time of flight
-ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,2.)
-ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.)
-ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.)
-ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.)
+ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',100,0.,2.)
+ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
+ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
+ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
 
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
 ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',500,37.5,40.) # muon daughter time of flight
@@ -481,7 +481,6 @@ def time_res(partkey,pdg):
         if not ecal_time <= 0:
             diff = strawP - ecalP
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            
             sigma = 0.01
             straw_smear = np.random.normal(loc=straw_time,scale=sigma,size=None)
             ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
@@ -491,7 +490,7 @@ def time_res(partkey,pdg):
             tnosmear = abs(straw_time - ecal_time)            # stored in units of nanoseconds
             vnosmear = (r/tnosmear)*(10**9)
             
-    return tnosmear,vnosmear,tsmear,vsmear,diff
+    return tnosmear,vnosmear,tsmear,vsmear,diff,strawP
 
 #----------------------------------------------------EVENT-LOOP--------------------------------------------------------
 
@@ -593,6 +592,7 @@ def finStateMuKa():
                                     h['Daughter_masses'].Fill(muM)
                                     h['Daughter_masses'].Fill(kaM)
                                     h['Daughter_masses'].SetLineColor(1)
+                                    h['Daughter_masses'].SetFillColor(1)
                                     h['Chi2'].Fill(mu_chi2)       
                                     h['Chi2'].Fill(ka_chi2)                             
                                     h['RPV_mom_diff'].Fill(mom_diff)
@@ -603,14 +603,14 @@ def finStateMuKa():
 
                                     #-------------------------------TIME-RESOLUTION-----------------------------------------------
 
-                                    mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff = time_res(muPartkey,13)        
+                                    mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff,straw_muP = time_res(muPartkey,13)        
                                     if mu_t != -1: # and mu_t < 38.05:
                                         h['MuonDir'].Fill(mu_tsmear) # fills histogram with smeared time
                                         h['MuonDir_nosmear'].Fill(mu_t) # fills histogram with true time
 
                                         beta = mu_v/c                            # equations for mass calculated from true time
                                         gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                        nosmearM = reco_muP/(beta*gamma)
+                                        nosmearM = straw_muP/(beta*gamma) # previously used reco_muP (ask kostas)
                                         beta_smear = mu_vsmear/c                 # equations for mass calculated from smeared time
                                         gamma_smear = 1/(ROOT.TMath.Sqrt(1-(beta_smear**2)))
                                         smearM = reco_muP/(beta_smear*gamma_smear)
@@ -618,7 +618,7 @@ def finStateMuKa():
                                         h['tmass_muon'].Fill(nosmearM) # fills histograms with mass data
                                         h['tsmearmass_muon'].Fill(smearM)
 
-                                        ka_t,ka_v,ka_tsmear,ka_vsmear,ka_diff = time_res(kaPartkey,321)      
+                                        ka_t,ka_v,ka_tsmear,ka_vsmear,ka_diff,straw_kaP = time_res(kaPartkey,321)      
                                         if ka_t != -1: # and ka_t < 38.06:
                                             h['KaonDir'].Fill(ka_tsmear) # fills histogram with smeared time
                                             h['KaonDir_nosmear'].Fill(ka_t) # fills histogram with true time
@@ -626,7 +626,7 @@ def finStateMuKa():
 
                                             beta = ka_v/c                           # equations for mass calculated from true time
                                             gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                            nosmearM = reco_kaP/(beta*gamma)
+                                            nosmearM = straw_kaP/(beta*gamma) # previously used reco_kaP (ask kostas)
                                             beta_smear = ka_vsmear/c                # equations for mass calculated from smeared time
                                             gamma_smear = 1/(ROOT.TMath.Sqrt(1-(beta_smear**2)))
                                             smearM = reco_kaP/(beta_smear*gamma_smear)
