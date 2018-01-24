@@ -182,22 +182,23 @@ ut.bookHist(h,'Kaon_mom_true','Kaon - True (red) & Reco. (blue) Momentum',100,0.
 ut.bookHist(h,'Muon_mom','Muon - True Momentum',100,0.,140.) # RPV muon daughter true momentum
 ut.bookHist(h,'Kaon_mom','Kaon - True Momentum',100,0.,140.) # RPV pion daughter true momentum
 ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4) # includes both kaon and muon
-
-ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',500,37.5,40.) # muon daughter time of flight
-ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',500,37.5,40.) # kaon daughter time of flight
-ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',100,0.,2.)
-ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
-ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
-ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
-
 ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
-ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',500,37.5,40.) # muon daughter time of flight
-ut.bookHist(h,'KaonDir_nosmear','True Kaon Straw-ECAL Time (directly)',500,37.5,40.) # kaon daughter time of flight
+
+ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight (Gaussian blurred)
+ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight (Gaussian blurred)
+ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,2.5)
+ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.5)
+ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.5)
+ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.5)
 ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',500,0.,1.)
+
 ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
 ut.bookHist(h,'num_kaon','No. of kaon in straw tubes',25,25,50)
-ut.bookHist(h,'track_muon','Muon z-momentum decrease through straw tubes',100,0,100)
-ut.bookHist(h,'track_kaon','Kaon z-momentum decrease through straw tubes',100,0,100)
+ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
+ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular event)',500,44,45)
+
+ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight
+ut.bookHist(h,'KaonDir_nosmear','True Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight
 
 #----------------------------------------------------FUNCTIONS------------------------------------------------------------
 
@@ -260,8 +261,8 @@ def myVertex(t1,t2,PosDir):
    t = -(C*E-A*F)/(B*C-A*D)
    X = c.x()+v.x()*t 
    Y = c.y()+v.y()*t
-   Z = c.z()+v.z()*t
-   return X,Y,Z,abs(dist) # X,Y,Z are the coordinates of...?
+   Z = c.z()+v.z()*t        # X,Y,Z are the coordinates of...?
+   return X,Y,Z,abs(dist) 
 
 def fitSingleGauss(x,ba=None,be=None):
     name    = 'myGauss_'+x 
@@ -336,7 +337,7 @@ def RedoVertexing(t1,t2):
      return RPVMom,LV[t1],LV[t2],doca
 
 def makePlots():
-   ut.bookCanvas(h,key='Test_Time',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
+   ut.bookCanvas(h,key='Test_Time',title='Results 1',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['Test_Time'].cd(1)
    h['MuonDir'].SetXTitle('Time [ns]')
    h['MuonDir'].SetYTitle('Frequency')
@@ -365,7 +366,7 @@ def makePlots():
    h['Daughter_masses'].Draw("same")
    h['Test_Time'].Print('Smeared_Time.png')
    #======================================================================================================================
-   ut.bookCanvas(h,key='Test_Mass',title='Fit Results 2',nx=1000,ny=1000,cx=2,cy=2)
+   ut.bookCanvas(h,key='Test_Mass',title='Results 2',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['Test_Mass'].cd(1)
    h['RPV_true'].SetXTitle('Invariant mass [GeV/c2]')
    h['RPV_true'].SetYTitle('No. of Particles')
@@ -393,7 +394,7 @@ def makePlots():
    h['RPV_mom_diff'].SetLineColor(1)
    h['Test_Mass'].Print('RPV_Graphs.png')
    #======================================================================================================================
-   ut.bookCanvas(h,key='KaMu_Graphs',title='Fit Results 3',nx=1000,ny=1000,cx=2,cy=2)
+   ut.bookCanvas(h,key='KaMu_Graphs',title='Results 3',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['KaMu_Graphs'].cd(1)
    h['Kaon_mom_true'].SetXTitle('Momentum [GeV/c]')
    h['Kaon_mom_true'].SetYTitle('No. of particles')
@@ -412,10 +413,39 @@ def makePlots():
    h['ecalstraw_mom'].SetXTitle('Momentum Difference [GeV/c2]')
    h['ecalstraw_mom'].SetYTitle('Frequency')
    h['ecalstraw_mom'].Draw()
-   h['ecalstraw_mom'].SetLineColor(1)
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['KaMu_Graphs'].cd(4)
+   h['Chi2'].SetXTitle('Chi Squared Value')
+   h['Chi2'].SetYTitle('Frequency')
+   h['Chi2'].SetLineColor(1)
+   h['Chi2'].Draw()
    h['KaMu_Graphs'].Print('KaMu_Graphs.png')
+   #======================================================================================================================
+   ut.bookCanvas(h,key='Straw_tubes',title='Results 4',nx=1000,ny=1000,cx=2,cy=2)
+   cv = h['Straw_tubes'].cd(1)
+   h['num_muon'].SetXTitle('No. of hits')
+   h['num_muon'].SetYTitle('Frequency')
+   h['num_muon'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Straw_tubes'].cd(2)
+   h['num_kaon'].SetXTitle('No. of hits')
+   h['num_kaon'].SetYTitle('Frequency')
+   h['num_kaon'].SetLineColor(2)
+   h['num_kaon'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Straw_tubes'].cd(3)
+   h['track_muon'].SetXTitle('Momentum in z-direction [GeV/c]')
+   h['track_muon'].SetYTitle('No. of muons')
+   h['track_muon'].Draw()
+   #----------------------------------------------------------------------------------------------------------------------
+   cv = h['Straw_tubes'].cd(4)
+   h['track_kaon'].SetXTitle('Momentum in z-direction [GeV/c]')
+   h['track_kaon'].SetYTitle('No. of kaons')
+   h['track_kaon'].SetLineColor(2)
+   h['track_kaon'].Draw()
+   h['Straw_tubes'].Print('Straw_tubes.png')
 
-def time_res(partkey,pdg):
+def time_res(partkey,pdg,n,m):
     tnosmear = -1
     vnosmear = -1
     tsmear = -1
@@ -445,13 +475,15 @@ def time_res(partkey,pdg):
         if pdg==13:
             h['num_muon'].Fill(num_hits)
             for hit in pz_array:
-                h['track_muon'].Fill(hit)
+                if n == m:
+                    h['track_muon'].Fill(hit)
         if pdg==321:
             h['num_kaon'].Fill(num_hits)
             h['num_kaon'].SetLineColor(2)
             for hit in pz_array:
-                h['track_kaon'].Fill(hit)
-                h['track_kaon'].SetLineColor(2)
+                if n == m:
+                    h['track_kaon'].Fill(hit)
+                    h['track_kaon'].SetLineColor(2)
 
         min_z_index = z_array.index(min(z_array))
         straw_z = 0.01*z_array[min_z_index]
@@ -500,6 +532,7 @@ c = 2.99792458*(10**8)
 def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
         k_decaycheck = 0
+        successful_events = []          # creates list of event numbers of desired decays
         for n in range(nEvents):                            # loops over events
             rc = sTree.GetEntry(n)                              # loads tree entry
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
@@ -585,7 +618,7 @@ def finStateMuKa():
                                     kaM = true_kaon.GetMass()           # kaon mass
                                     muM = true_muon.GetMass()          # muon mass
                                                       
-                                    h['RPV_true'].Fill(kaonMotherTrue_mass)     
+                                    h['RPV_true'].Fill(kaonMotherTrue_mass)     # fills histograms
                                     h['RPV_mom'].Fill(kaonMotherTrue_mom)
                                     h['RPV_reco'].Fill(RPV_mass)                        
                                     h['RPV_mom_reco'].Fill(RPV_reco_mom)   
@@ -600,10 +633,13 @@ def finStateMuKa():
                                     h['Muon_mom'].Fill(reco_muP)
                                     h['Kaon_mom_true'].Fill(true_kaP)
                                     h['Muon_mom_true'].Fill(true_muP)
+                                    
+                                    successful_events.append(n)     # adds entries to the list
+                                    m = min(successful_events)      # arbitrarily picks the first one as an example
 
                                     #-------------------------------TIME-RESOLUTION-----------------------------------------------
 
-                                    mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff,straw_muP = time_res(muPartkey,13)        
+                                    mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff,straw_muP = time_res(muPartkey,13,n,m)        
                                     if mu_t != -1: # and mu_t < 38.05:
                                         h['MuonDir'].Fill(mu_tsmear) # fills histogram with smeared time
                                         h['MuonDir_nosmear'].Fill(mu_t) # fills histogram with true time
@@ -618,7 +654,7 @@ def finStateMuKa():
                                         h['tmass_muon'].Fill(nosmearM) # fills histograms with mass data
                                         h['tsmearmass_muon'].Fill(smearM)
 
-                                        ka_t,ka_v,ka_tsmear,ka_vsmear,ka_diff,straw_kaP = time_res(kaPartkey,321)      
+                                        ka_t,ka_v,ka_tsmear,ka_vsmear,ka_diff,straw_kaP = time_res(kaPartkey,321,n,m)      
                                         if ka_t != -1: # and ka_t < 38.06:
                                             h['KaonDir'].Fill(ka_tsmear) # fills histogram with smeared time
                                             h['KaonDir_nosmear'].Fill(ka_t) # fills histogram with true time
@@ -635,8 +671,9 @@ def finStateMuKa():
                                             h['tsmearmass_kaon'].Fill(smearM)
                                             h['ecalstraw_mom'].Fill(mu_diff) # fills histogram for momentum difference
                                             h['ecalstraw_mom'].Fill(ka_diff)
+                                            h['ecalstraw_mom'].SetLineColor(1)
 
-        print('\n'+str(k_decaycheck) + ' muons with K+ mothers\n')
+        print('\n'+str(k_decaycheck) + ' kaons decayed to muons before detection\n') # including rejected for other reasons tracks
 
 finStateMuKa()  
 makePlots()
