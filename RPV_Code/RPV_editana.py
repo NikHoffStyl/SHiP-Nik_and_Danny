@@ -1,7 +1,6 @@
 # #########################################
 #         RPV_EDITA Test Code             #
 ###########################################
-
 import ROOT,os,sys,getopt
 import rootUtils as ut
 import shipunit as u
@@ -211,10 +210,12 @@ def create_Hists():
     ut.bookHist(h,'KaonFlightLen','Straw-ECAL Flight Length',200,11.2,12.)                   # Kaon flight Length
     ut.bookHist(h,'MuonSpeed','Beta value',200,0.99,1.01)                                    # muon speed
     ut.bookHist(h,'KaonSpeed','Beta value',200,0.99,1.)                                    # Kaon speed
-    ut.bookHist(h,'MuonStrawMom','Straw Momentum',200,-0.05,10.)          # muon momentum
-    ut.bookHist(h,'KaonStrawMom','Straw Momentum',200,-0.05,10.)          # Kaon momentum
+    ut.bookHist(h,'MuonStrawMom','Straw Momentum',200,-0.05,100.)          # muon momentum
+    ut.bookHist(h,'KaonStrawMom','Straw Momentum',200,-0.05,100.)          # Kaon momentum
     ut.bookHist(h,'MuonEcalMom','Ecal Momentum',200,-0.05,100.)           # muon momentum
     ut.bookHist(h,'KaonEcalMom','Ecal Momentum',200,-0.05,100.)           # Kaon momentum
+    ut.bookHist(h,'KaonDeltaMom','Straw-Ecal Momentum',200,-10.,100.)       # Kaon momentum
+    ut.bookHist(h,'MuonDeltaMom','Straw-Ecal Momentum',200,-10.,100.)       # Kaon momentum
     ut.bookHist(h,'MuonRecoMom','Reco Momentum',200,-0.05,100.)              # muon momentum
     ut.bookHist(h,'KaonRecoMom','Reco Momentum',200,-0.05,100.)              # Kaon momentum
     ut.bookHist(h,'MuonTrueMom','True Momentum',200,-0.05,100.)              # muon momentum
@@ -331,7 +332,7 @@ def RedoVertexing(t1,t2):
              print 'abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz
              rc = False
              break 
-     if not rc: return xv,yv,zv,doca,-1 # extrapolation failed, makes no sense to continue
+     if not rc: return -1,-1,-1,doca # extrapolation failed, makes no sense to continue
      LV={}
      for tr in [t1,t2]: # from here on we have reproduced (see inv_mass()) 
          mom = reps[tr].getMom(states[tr])
@@ -343,7 +344,7 @@ def RedoVertexing(t1,t2):
          LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
      nalinoLV = LV[t1]+LV[t2]
      #return xv,yv,zv,doca,nalinoMom
-     return nalinoLV,LV[t1],LV[t2],doca,
+     return nalinoLV,LV[t1],LV[t2],doca
 
 def fitSingleGauss(x,ba=None,be=None):
     name    = 'myGauss_'+x 
@@ -390,7 +391,7 @@ def makePlots():
    h['KaonDirDeltaTime'].Draw('same')
 
    cv = h['DAUGHTERS_TV'].cd(4)
-   h['MuonFlightLen'].SetXTitle('Flight Length')
+   h['MuonFlightLen'].SetXTitle('Flight Length (cm)')
    h['MuonFlightLen'].SetYTitle('No. of Particles')
    h['MuonFlightLen'].Draw()
    h['KaonFlightLen'].SetLineColor(2)
@@ -427,12 +428,19 @@ def makePlots():
    h['KaonRecoMom'].SetLineColor(2)
    h['KaonRecoMom'].Draw('same')
 
+   #cv = h['DAUGHTERS_MOM'].cd(4)
+   #h['MuonTrueMom'].SetXTitle('Momentum [GeV/c]')
+   #h['MuonTrueMom'].SetYTitle('No. of Particles')
+   #h['MuonTrueMom'].Draw()
+   #h['KaonTrueMom'].SetLineColor(2)
+   #h['KaonTrueMom'].Draw('same')
+
    cv = h['DAUGHTERS_MOM'].cd(4)
-   h['MuonTrueMom'].SetXTitle('Momentum [GeV/c]')
-   h['MuonTrueMom'].SetYTitle('No. of Particles')
-   h['MuonTrueMom'].Draw()
-   h['KaonTrueMom'].SetLineColor(2)
-   h['KaonTrueMom'].Draw('same')
+   h['MuonDeltaMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonDeltaMom'].SetYTitle('No. of Particles')
+   h['MuonDeltaMom'].Draw()
+   h['KaonDeltaMom'].SetLineColor(2)
+   h['KaonDeltaMom'].Draw('same')
 
    cv = h['DAUGHTERS_MOM'].cd(5)
    h['MuonRecoMass'].SetXTitle('Mass [GeV/c2]')
@@ -499,13 +507,13 @@ def time_res(partkey):
                 t_array.append(hits.GetTime())
         
         min_z_index = z_array.index(min(z_array))
-        straw_z = 0.01*min(z_array)
+        straw_z = 0.01*z_array[min_z_index]
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
         if straw_time != None:
-            #smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps
-            smearStrawTime=straw_time 
+            smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps
+            #smearStrawTime=straw_time 
 
         strawPx = px_array[min_z_index]
         strawPy = py_array[min_z_index]
@@ -621,8 +629,8 @@ def finState2MuK():
                                         #print('distance of closest approach too large')
                                         continue
 
-                                    nalino_mass = nalino_LVec.M()                   # sets nalino mass
-                                    nalino_reco_mom = nalino_LVec.P()               # sets nalino mom
+                                    nalino_mass = nalino_LVec.M()
+                                    nalino_reco_mom = nalino_LVec.P()
                                     mom_diff = kaonMotherTrue_mom - nalino_reco_mom
 
                                     kM = Kaon_LVec.M()
@@ -640,7 +648,7 @@ def finState2MuK():
                                     h['MuonTrueMass'].Fill(muonTrueMass)
                                     h['KaonTrueMom'].Fill(kaonTrueMom)
                                     h['KaonTrueMass'].Fill(kaonTrueMass)
-                                    h['nalino_true'].Fill(kaonMotherTrue_mass)             # fill histograms 
+                                    h['nalino_true'].Fill(kaonMotherTrue_mass)            
                                     h['nalino_mom'].Fill(kaonMotherTrue_mom)
                                     h['nalino_reco'].Fill(nalino_mass)                        
                                     h['nalino_mom_reco'].Fill(nalino_reco_mom)                
@@ -662,6 +670,8 @@ def finState2MuK():
                                         h['MuonSpeed'].Fill(mu_beta)
                                         h['MuonStrawMom'].Fill(mu_strawP)
                                         h['MuonEcalMom'].Fill(mu_ecalP)
+                                        mu_Dp = mu_strawP-mu_ecalP
+                                        h['MuonDeltaMom'].Fill(mu_Dp)
 
                                         k_strwT,k_ecalT,k_Dt,k_Len,k_v,k_strawP,k_ecalP = time_res(kPartkey)
                                         if k_strwT!= None and k_ecalT!= None and k_Dt!= None and k_Len!= None and k_v != None and k_strawP!=None and k_ecalP!=None:     
@@ -673,17 +683,11 @@ def finState2MuK():
                                             h['KaonSpeed'].Fill(k_beta)
                                             h['KaonStrawMom'].Fill(k_strawP)
                                             h['KaonEcalMom'].Fill(k_ecalP)
+                                            k_Dp = k_strawP-k_ecalP
+                                            h['KaonDeltaMom'].Fill(k_Dp)
                                               
                                             
                                             if k_beta < 1:
-                                                #I DONT LIKE THIS METHOD IT USES THE kM TO GET kM
-                                                smearedP = (kM*k_beta)/(ROOT.TMath.Sqrt(1-(k_beta**2)))
-                                                #h['smearedP1'].Fill(smearedP)
-                                                #print(smearedP,kP) # needs debugging somewhere here
-                                                smearedE =   ROOT.TMath.Sqrt((kM**2) + (smearedP**2))
-                                                smearedM = ROOT.TMath.Sqrt(((kE + muE)**2) - ((kP + muP)**2))
-                                                #h['smearedmass1'].Fill(smearedM)
-
                                                 #TRYING SOMETHING ELSE
                                                 k_smearedM = kP*(ROOT.TMath.Sqrt(1-(k_beta**2)))/k_beta
                                                 h['KaonSmearedMass'].Fill(k_smearedM)
