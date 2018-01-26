@@ -186,11 +186,11 @@ ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track 
 
 ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight (Gaussian blurred)
 ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight (Gaussian blurred)
-ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,2.5)
-ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.5)
-ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.5)
-ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,2.5)
-ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',500,0.,1.)
+ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',200,0.,2.5) # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
+ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.5)
+ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.5) # same as above but using smeared time
+ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.5)
+ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',500,0.,1.) # kaon and muon mass
 
 ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
 ut.bookHist(h,'num_kaon','No. of kaon in straw tubes',25,25,50)
@@ -324,10 +324,10 @@ def RedoVertexing(t1,t2):
          break # ... number of iterations exceeds 10
      if not rc: return -1,-1,-1,doca # extrapolation failed, makes no sense to continue
      LV={}
-     for tr in [t1,t2]: # from here on we have reproduced (see inv_mass() function)       
+     for tr in [t1,t2]: # from here on we have reproduced (see inv_mass() function in Test_1.py)     
       mom = reps[tr].getMom(states[tr])
       pid = abs(states[tr].getPDG()) 
-      if pid == 2212: pid = 211 # why
+      if pid == 2212: pid = 211 # why?
       mass = PDG.GetParticle(pid).Mass()
       E = ROOT.TMath.Sqrt(mass*mass + mom.Mag2())
       LV[tr] = ROOT.TLorentzVector()
@@ -445,14 +445,14 @@ def makePlots():
    h['track_kaon'].Draw()
    h['Straw_tubes'].Print('Straw_tubes.png')
 
-def time_res(partkey,pdg,n,m):
-    tnosmear = -1
+def time_res_RPV(partkey,pdg,n,m):
+    tnosmear = -1 # declares variables
     vnosmear = -1
     tsmear = -1
     vsmear = -1
     diff = -1
     if sTree.GetBranch("strawtubesPoint"):
-        x_array = []
+        x_array = [] # declares lists
         y_array = []
         z_array = []
         t_array = []
@@ -463,7 +463,7 @@ def time_res(partkey,pdg,n,m):
         for k,hits in enumerate(sTree.strawtubesPoint):
             straw_TrackID = hits.GetTrackID()
             if straw_TrackID == partkey:
-                x_array.append(hits.GetX())
+                x_array.append(hits.GetX()) # adds data to the lists
                 y_array.append(hits.GetY())
                 z_array.append(hits.GetZ())
                 px_array.append(hits.GetPx())
@@ -471,22 +471,22 @@ def time_res(partkey,pdg,n,m):
                 pz_array.append(hits.GetPz())
                 t_array.append(hits.GetTime())
         
-        num_hits = len(z_array)
-        if pdg==13:
+        num_hits = len(z_array) # number of elements in the list
+        if pdg==13: # muon
             h['num_muon'].Fill(num_hits)
             for hit in pz_array:
                 if n == m:
-                    h['track_muon'].Fill(hit)
-        if pdg==321:
-            h['num_kaon'].Fill(num_hits)
+                    h['track_muon'].Fill(hit) # muon z-momentum through straw tubes for particular event
+        if pdg==321: # kaon
+            h['num_kaon'].Fill(num_hits) 
             h['num_kaon'].SetLineColor(2)
             for hit in pz_array:
                 if n == m:
-                    h['track_kaon'].Fill(hit)
+                    h['track_kaon'].Fill(hit) # kaon z-momentum through straw tubes for particular event
                     h['track_kaon'].SetLineColor(2)
 
-        min_z_index = z_array.index(min(z_array))
-        straw_z = 0.01*z_array[min_z_index]
+        min_z_index = z_array.index(min(z_array)) # gives index of the smallest element in the list
+        straw_z = 0.01*z_array[min_z_index] # positions, time and momenta for this straw tube hit
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
@@ -501,26 +501,26 @@ def time_res(partkey,pdg,n,m):
                 for k,hits in enumerate(sTree.EcalPoint):
                     ecal_TrackID = hits.GetTrackID()
                     if ecal_TrackID == partkey:
-                        ecal_x = 0.01*hits.GetX()           # stored in units of cm 
-                        ecal_y = 0.01*hits.GetY()
+                        ecal_x = 0.01*hits.GetX()           # positions, time and momenta of ECAL hit
+                        ecal_y = 0.01*hits.GetY()           # stored in units of cm 
                         ecal_z = 0.01*hits.GetZ()
                         ecal_time = hits.GetTime()
                         ecalPx = hits.GetPx()
                         ecalPy = hits.GetPy()
                         ecalPz = hits.GetPz()
-                        ecalP = ROOT.TMath.Sqrt((ecalPx**2) + (ecalPy**2) + (ecalPz**2)) # straw tube momentum
+                        ecalP = ROOT.TMath.Sqrt((ecalPx**2) + (ecalPy**2) + (ecalPz**2)) # ECAL momentum
 
         if not ecal_time <= 0:
-            diff = strawP - ecalP
+            diff = strawP - ecalP                           # between 1st straw tube hit and ECAL
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            sigma = 0.01
+            sigma = 0.01 
             straw_smear = np.random.normal(loc=straw_time,scale=sigma,size=None)
             ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
-            tsmear = abs(straw_smear - ecal_smear)
-            vsmear = (r/tsmear)*(10**9)
+            tsmear = abs(straw_smear - ecal_smear)          # smeared time of flight
+            vsmear = (r/tsmear)*(10**9)                     # smeared velocity of flight
 
-            tnosmear = abs(straw_time - ecal_time)            # stored in units of nanoseconds
-            vnosmear = (r/tnosmear)*(10**9)
+            tnosmear = abs(straw_time - ecal_time)          # stored in units of nanoseconds
+            vnosmear = (r/tnosmear)*(10**9)                 # velocity of flight 
             
     return tnosmear,vnosmear,tsmear,vsmear,diff,strawP
 
@@ -575,7 +575,7 @@ def finStateMuKa():
                             if abs(true_kaon.GetPdgCode()) == 321:              # checks particle is kaon
                                 kaonMotherkey = true_kaon.GetMotherId()             # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
-                                if kaonMotherkey == muonMotherkey:                    # check if keys are the same
+                                if kaonMotherkey == muonMotherkey:                    # check if mother keys are the same
 
                                     if not checkFiducialVolume(sTree,index,dy): 
                                         #print('Decay outside fiducial volume')
@@ -639,12 +639,12 @@ def finStateMuKa():
 
                                     #-------------------------------TIME-RESOLUTION-----------------------------------------------
 
-                                    mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff,straw_muP = time_res(muPartkey,13,n,m)        
+                                    mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff,straw_muP = time_res_RPV(muPartkey,13,n,m)        
                                     if mu_t != -1: # and mu_t < 38.05:
                                         h['MuonDir'].Fill(mu_tsmear) # fills histogram with smeared time
                                         h['MuonDir_nosmear'].Fill(mu_t) # fills histogram with true time
 
-                                        beta = mu_v/c                            # equations for mass calculated from true time
+                                        beta = mu_v/c                     # equations for mass calculated from true time
                                         gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
                                         nosmearM = straw_muP/(beta*gamma) # previously used reco_muP (ask kostas)
                                         beta_smear = mu_vsmear/c                 # equations for mass calculated from smeared time
@@ -654,13 +654,13 @@ def finStateMuKa():
                                         h['tmass_muon'].Fill(nosmearM) # fills histograms with mass data
                                         h['tsmearmass_muon'].Fill(smearM)
 
-                                        ka_t,ka_v,ka_tsmear,ka_vsmear,ka_diff,straw_kaP = time_res(kaPartkey,321,n,m)      
+                                        ka_t,ka_v,ka_tsmear,ka_vsmear,ka_diff,straw_kaP = time_res_RPV(kaPartkey,321,n,m)      
                                         if ka_t != -1: # and ka_t < 38.06:
                                             h['KaonDir'].Fill(ka_tsmear) # fills histogram with smeared time
                                             h['KaonDir_nosmear'].Fill(ka_t) # fills histogram with true time
                                             h['KaonDir_nosmear'].SetLineColor(2)
 
-                                            beta = ka_v/c                           # equations for mass calculated from true time
+                                            beta = ka_v/c                     # equations for mass calculated from true time
                                             gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
                                             nosmearM = straw_kaP/(beta*gamma) # previously used reco_kaP (ask kostas)
                                             beta_smear = ka_vsmear/c                # equations for mass calculated from smeared time
@@ -673,7 +673,7 @@ def finStateMuKa():
                                             h['ecalstraw_mom'].Fill(ka_diff)
                                             h['ecalstraw_mom'].SetLineColor(1)
 
-        print('\n'+str(k_decaycheck) + ' kaons decayed to muons before detection\n') # including rejected for other reasons tracks
+        print('\n'+str(k_decaycheck) + ' kaons decayed to muons before detection\n') # including rejected (for other reasons) tracks
 
 finStateMuKa()  
 makePlots()
