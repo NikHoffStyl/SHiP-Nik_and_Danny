@@ -332,7 +332,9 @@ def fitSingleGauss(x,ba=None,be=None):
        myGauss.SetParName(3,'bckgr')
     h[x].Fit(myGauss,'','',ba,be) 
 
-def makePlots():
+############################ old copies of functions
+
+def makePlots_old():
    ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
    cv = h['Test_Mass'].cd(1)
    h['HNL_true'].SetXTitle('Invariant mass [GeV/c2]')
@@ -378,15 +380,12 @@ def makePlots():
    cv = h['Time_Res'].cd(4)
    ths1.Draw("nostack")
    h['Time_Res'].Print('Stacked.png')
-   
-   #h['PionIndir'].SetXTitle('Time [ns]')
-   #h['PionIndir'].SetYTitle('Frequency')
-   #h['PionIndir'].Draw()
-   #h['KaonTime'].SetLineColor(2)
-   #h['KaonTime'].Draw("same")
-   #h['Time_Res'].Print('Time_Res.png')
-
-############################
+   h['PionIndir'].SetXTitle('Time [ns]')
+   h['PionIndir'].SetYTitle('Frequency')
+   h['PionIndir'].Draw()
+   h['KaonTime'].SetLineColor(2)
+   h['KaonTime'].Draw("same")
+   h['Time_Res'].Print('Time_Res.png')
 
 def finStateMuPi_COPY2():
     if sTree.GetBranch("FitTracks"):
@@ -653,10 +652,7 @@ def inv_mass_example():
         fitSingleGauss('HNL_example',0.9,1.1)
         h['Example_Mass'].Print('Example_Mass.png')
 
-# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
-
-nEvents = min(sTree.GetEntries(),nEvents)
-c = 2.99792458*(10**8)
+############################ try to ignore them
 
 def makePlots():
    ut.bookCanvas(h,key='Test_Mass',title='Fit Results',nx=1000,ny=1000,cx=2,cy=2)
@@ -734,7 +730,7 @@ def makePlots():
    h['timediff'].Draw()
    h['MuPi_Graphs'].Print('MuPi_Graphs.png')
 
-def time_res(partkey,v):
+def time_res_HNL(partkey,v):
     t1 = -1
     t2 = -1
     vsmear = -1
@@ -776,6 +772,11 @@ def time_res(partkey,v):
             vsmear = (r/t1)*(10**9)
                             
     return t1,t2,vsmear
+
+# ---------------------------------------------------EVENT-LOOP-----------------------------------------------------------
+
+nEvents = min(sTree.GetEntries(),nEvents)
+c = 2.99792458*(10**8)
 
 def finStateMuPi():
     if sTree.GetBranch("FitTracks"):
@@ -900,11 +901,11 @@ def finStateMuPi():
                                     true_piP = true_pion.GetP()
                                     true_muP = true_muon.GetP()
 
-                                    mu_t1_dir,mu_t2,mu_vsmear = time_res(muPartkey,muV)        
+                                    mu_t1_dir,mu_t2,mu_vsmear = time_res_HNL(muPartkey,muV)        
                                     if mu_t1_dir != -1:              
                                         h['MuonDir'].Fill(mu_t1_dir) 
                                         h['MuonIndir'].Fill(mu_t2)
-                                    pi_t1_dir,pi_t2,pi_vsmear = time_res(piPartkey,piV)                            
+                                    pi_t1_dir,pi_t2,pi_vsmear = time_res_HNL(piPartkey,piV)                            
                                     if pi_t1_dir != -1: 
                                         h['PionDir'].Fill(pi_t1_dir)  
                                         h['PionIndir'].Fill(pi_t2)
@@ -923,7 +924,7 @@ def finStateMuPi():
 finStateMuPi()  
 makePlots()
 
-# ---------------------------------------------------OUTPUT------------------------------------------------------------
+# -----------------------------------------------------OUTPUT-------------------------------------------------------------
 
 # Outputs histograms and ROOT file
 hfile = inputFile.split(',')[0].replace('_rec','_HNL')
