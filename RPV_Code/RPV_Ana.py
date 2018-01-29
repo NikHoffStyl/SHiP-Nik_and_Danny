@@ -20,6 +20,8 @@ measCutFK = 25
 measCutPR = 22
 docaCut = 2.
 
+#--------------------------------------------------INPUT----------------------------------------------------
+
 try:
         opts, args = getopt.getopt(sys.argv[1:], "n:f:g:A:Y:i", ["nEvents=","geoFile="])
 except getopt.GetoptError:
@@ -49,6 +51,8 @@ elif inputFile[0:4] == "/eos":
 else:
   f = ROOT.TFile(inputFile)
   sTree = f.cbmsim
+
+#-------------------------------------------------GEOMETRY--------------------------------------------------
 
 # try to figure out which ecal geo to load
 if not geoFile:
@@ -80,8 +84,6 @@ else:
   ShipGeo = upkl.load('ShipGeo')
   ecalGeoFile = ShipGeo.ecal.File
   dy = ShipGeo.Yheight/u.m
-
-#-------------------------------------------------GEOMETRY--------------------------------------------------
 
 import shipDet_conf
 run = ROOT.FairRunSim()
@@ -186,10 +188,10 @@ ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track 
 
 ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight (Gaussian blurred)
 ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight (Gaussian blurred)
-ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',200,0.,2.5) # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
-ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.5)
-ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.5) # same as above but using smeared time
-ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.5)
+ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',200,0.,2.) # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
+ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.)
+ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.) # same as above but using smeared time
+ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.)
 ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',500,0.,1.) # kaon and muon mass
 
 ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
@@ -445,6 +447,33 @@ def makePlots():
    h['track_kaon'].Draw()
    h['Straw_tubes'].Print('Straw_tubes.png')
 
+def track_checks(index,true_part,reco_part):
+    check = 0
+    Decay_X = true_part.GetStartX()
+    Decay_Y = true_part.GetStartY()
+    Decay_Z = true_part.GetStartZ()
+    if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
+        #print('RPV decayed outside fiducial volume')
+        check = -1
+    if not checkFiducialVolume(sTree,index,dy): 
+        #print('Track outside fiducial volume')
+        check = -1
+    fit_status = reco_part.getFitStatus()             
+    if not fit_status.isFitConverged():
+        #print('Fit did not converge')
+        check = -1
+    fit_nmeas = fit_status.getNdf()                      
+    if not fit_nmeas > 25:
+        #print('Too few measurements')
+        check = -1
+    fit_rchi2 = fit_status.getChi2()                      
+    fit_chi2 = (fit_rchi2/fit_nmeas)                       # gets chi squared value
+    if not fit_chi2 < 4:
+        #print('Chi squared value too high')
+        check = -1
+
+    return check
+
 def time_res_RPV(partkey,pdg,n,m):
     tnosmear = -1 # declares variables
     vnosmear = -1
@@ -535,6 +564,13 @@ def finStateMuKa():
         successful_events = []          # creates list of event numbers of desired decays
         for n in range(nEvents):                            # loops over events
             rc = sTree.GetEntry(n)                              # loads tree entry
+            if n < 50:
+                for particle in sTree.MCTrack:
+                    if particle.GetMotherId() <= 10:
+                        print(particle)
+            
+            #-----------------------------------------------TRACK-LOOPS------------------------------------------------
+
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
@@ -546,30 +582,15 @@ def finStateMuKa():
                         k_decaycheck+=1
                     if true_mother.GetPdgCode() == 9900015:             # checks mother is RPV
 
-                        Decay_X = true_muon.GetStartX()
-                        Decay_Y = true_muon.GetStartY()
-                        Decay_Z = true_muon.GetStartZ()
-                        if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
-                            #print('RPV decayed outside fiducial volume')
-                            continue
-                        if not checkFiducialVolume(sTree,index,dy): 
-                            #print('Track outside fiducial volume')
-                            continue 
-                        mu_status = reco_part.getFitStatus()             
-                        if not mu_status.isFitConverged():
-                            #print('Fit did not converge')
-                            continue
-                        mu_nmeas = mu_status.getNdf()                      
-                        if not mu_nmeas > 25:
-                            #print('Too few measurements')
-                            continue
-                        mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
-                        mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
-                        if not mu_chi2 < 4:
-                            #print('Chi squared value too high')
+                        if track_checks(index,true_muon,reco_part) == -1:  # performs various checks (i.e. vertex position, fiducial volume,...)
                             continue
 
-                        for index2,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
+                        mu_status = reco_part.getFitStatus()    
+                        mu_rchi2 = mu_status.getChi2()                      
+                        mu_nmeas = mu_status.getNdf() 
+                        mu_chi2 = (mu_rchi2/mu_nmeas)                   # gets chi squared value
+
+                        for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
                             kaPartkey = sTree.fitTrack2MC[index2]                  # matches track to MC particle key
                             true_kaon = sTree.MCTrack[kaPartkey]                  # gives MC particle data
                             if abs(true_kaon.GetPdgCode()) == 321:              # checks particle is kaon
@@ -577,22 +598,15 @@ def finStateMuKa():
                                 true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
                                 if kaonMotherkey == muonMotherkey:                    # check if mother keys are the same
 
-                                    if not checkFiducialVolume(sTree,index,dy): 
-                                        #print('Decay outside fiducial volume')
-                                        continue 
-                                    ka_status = reco_part.getFitStatus()                
-                                    if not ka_status.isFitConverged():
-                                        #print('Fit did not converge')
+                                    if track_checks(index2,true_kaon,reco_part2) == -1:  # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
+
+                                    ka_status = reco_part2.getFitStatus()    
+                                    ka_rchi2 = ka_status.getChi2()                      
                                     ka_nmeas = ka_status.getNdf() 
-                                    if not ka_nmeas > 25:
-                                        #print('Too few measurements')
-                                        continue
-                                    ka_rchi2 = ka_status.getChi2()                      # chi squared value
-                                    ka_chi2 = (ka_rchi2/ka_nmeas)                       # gets chi value
-                                    if not ka_chi2 < 4:
-                                        #print('Chi squared value too high')
-                                        continue
+                                    ka_chi2 = (ka_rchi2/ka_nmeas)                    # gets chi squared value
+
+                                    #-------------------------------------------------PARTICLE-DATA-----------------------------------------------------
 
                                     kaonMotherTrue_mass = true_mother.GetMass()    # get RPV/final states mother mass
                                     kaonMotherTrue_mom = true_mother.GetP()     # get RPV/final states mother mom
@@ -635,9 +649,9 @@ def finStateMuKa():
                                     h['Muon_mom_true'].Fill(true_muP)
                                     
                                     successful_events.append(n)     # adds entries to the list
-                                    m = min(successful_events)      # arbitrarily picks the first one as an example
+                                    m = successful_events[0]      # arbitrarily picks the first one as an example
 
-                                    #-------------------------------TIME-RESOLUTION-----------------------------------------------
+                                    #------------------------------------TIME-RESOLUTION------------------------------------------
 
                                     mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff,straw_muP = time_res_RPV(muPartkey,13,n,m)        
                                     if mu_t != -1: # and mu_t < 38.05:
@@ -673,15 +687,15 @@ def finStateMuKa():
                                             h['ecalstraw_mom'].Fill(ka_diff)
                                             h['ecalstraw_mom'].SetLineColor(1)
 
-        print('\n'+str(k_decaycheck) + ' kaons decayed to muons before detection\n') # including rejected (for other reasons) tracks
+        # including rejected (for other reasons) tracks
+        print('\n'+str(k_decaycheck) + ' kaons decayed to muons before detection\n')
 
 finStateMuKa()  
 makePlots()
 
-#------------------------------------------------------OUTPUT----------------------------------------------------------
+#-------------------------------------------------OUTPUT----------------------------------------------------
 
-# Outputs histograms and ROOT file
-hfile = inputFile.split(',')[0].replace('_rec','_RPV')
+hfile = inputFile.split(',')[0].replace('_rec','_RPV')  # Outputs histograms and ROOT file
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
 # do not write to eos, write to local directory 
   tmp = hfile.split('/')
