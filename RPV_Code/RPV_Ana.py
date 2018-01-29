@@ -542,7 +542,7 @@ def time_res_RPV(partkey,pdg,n,m):
         if not ecal_time <= 0:
             diff = strawP - ecalP                           # between 1st straw tube hit and ECAL
             r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            sigma = 0.01 
+            sigma = 0.1 
             straw_smear = np.random.normal(loc=straw_time,scale=sigma,size=None)
             ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
             tsmear = abs(straw_smear - ecal_smear)          # smeared time of flight
@@ -564,10 +564,6 @@ def finStateMuKa():
         successful_events = []          # creates list of event numbers of desired decays
         for n in range(nEvents):                            # loops over events
             rc = sTree.GetEntry(n)                              # loads tree entry
-            if n < 50:
-                for particle in sTree.MCTrack:
-                    if particle.GetMotherId() <= 10:
-                        print(particle)
             
             #-----------------------------------------------TRACK-LOOPS------------------------------------------------
 
