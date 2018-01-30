@@ -1,12 +1,16 @@
 # #########################################
 #         RPV_EDITA Test Code             #
 ###########################################
+#from __future__ import print_function
 import ROOT,os,sys,getopt
 import rootUtils as ut
 import shipunit as u
 from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
+from array import array
+from ROOT import TCanvas, TGraph
+from ROOT import gROOT
 from array import array
 import shipRoot_conf
 import shipDet_conf
@@ -37,7 +41,7 @@ def inputOptsArgs():
             opts, args = getopt.getopt(sys.argv[1:], "n:f:g:Y", ["nEvents=","geoFile="])#command line options
     except getopt.GetoptError:
             # print help information and exit:
-            print ' enter file name'
+            print (' enter file name')
             sys.exit()
     for o, a in opts:
             if o in ("-f",):
@@ -85,7 +89,7 @@ if not fgeo.FindKey('ShipGeo'):                 #doesnt do this
      ecalGeoFile = "ecal_ellipse6x12m2.geo"     #doesnt do this
  else: 
      ecalGeoFile = "ecal_ellipse5x10m2.geo"     #doesnt do this
- print 'found ecal geo for ',ecalGeoFile
+ print ('found ecal geo for ',ecalGeoFile)
  # re-create geometry and mag. field
  if not dy:
   # try to extract from input file name
@@ -153,7 +157,7 @@ if sTree.GetBranch("EcalReconstructed"):
  ecalReconstructed = sTree.EcalReconstructed
 else:
  calReco = True
- print "setup calo reconstruction of ecalReconstructed objects"
+ print ("setup calo reconstruction of ecalReconstructed objects")
 # Calorimeter reconstruction
  #GeV -> ADC conversion
  ecalDigi=ROOT.ecalDigi("ecalDigi",0)
@@ -197,35 +201,38 @@ import TrackExtrapolateTool
 ########################################
 ############  DEFINITIONS  #############
 h = {}
+#c1 = TCanvas( 'c1', 'Probability of correct mass', 200, 10, 700, 500 )
 def create_Hists():
     ###############################
     ####  Daughter Histograms  ####
-    ut.bookHist(h,'MuonStrawTime','Gaussian Straw t measurement',200,310.,340.)
-    ut.bookHist(h,'KaonStrawTime','Gaussian Straw t measurement',200,310.,340.)
-    ut.bookHist(h,'MuonEcalTime','Gaussian Ecal t measurement',200,340.,385.)
-    ut.bookHist(h,'KaonEcalTime','Gaussian Ecal t measurement',200,340.,385.)
-    ut.bookHist(h,'MuonDirDeltaTime','Straw-ECAL Time of Flight (directly)',200,37.5,39.1)   # muon time of flight
-    ut.bookHist(h,'KaonDirDeltaTime','Straw-ECAL Time of Flight (directly)',200,37.5,39.1)   # Kaon time of flight
-    ut.bookHist(h,'MuonFlightLen','Straw-ECAL Flight Lenght',200,11.2,12.)                   # muon flight Length
-    ut.bookHist(h,'KaonFlightLen','Straw-ECAL Flight Length',200,11.2,12.)                   # Kaon flight Length
-    ut.bookHist(h,'MuonSpeed','Beta value',200,0.99,1.01)                                    # muon speed
-    ut.bookHist(h,'KaonSpeed','Beta value',200,0.99,1.)                                    # Kaon speed
-    ut.bookHist(h,'MuonStrawMom','Straw Momentum',200,-0.05,100.)          # muon momentum
-    ut.bookHist(h,'KaonStrawMom','Straw Momentum',200,-0.05,100.)          # Kaon momentum
-    ut.bookHist(h,'MuonEcalMom','Ecal Momentum',200,-0.05,100.)           # muon momentum
-    ut.bookHist(h,'KaonEcalMom','Ecal Momentum',200,-0.05,100.)           # Kaon momentum
-    ut.bookHist(h,'KaonDeltaMom','Straw-Ecal Momentum',200,-10.,100.)       # Kaon momentum
-    ut.bookHist(h,'MuonDeltaMom','Straw-Ecal Momentum',200,-10.,100.)       # Kaon momentum
-    ut.bookHist(h,'MuonRecoMom','Reco Momentum',200,-0.05,100.)              # muon momentum
-    ut.bookHist(h,'KaonRecoMom','Reco Momentum',200,-0.05,100.)              # Kaon momentum
-    ut.bookHist(h,'MuonTrueMom','True Momentum',200,-0.05,100.)              # muon momentum
-    ut.bookHist(h,'KaonTrueMom','True Momentum',200,-0.05,100.)              # Kaon momentum
-    ut.bookHist(h,'MuonRecoMass','Reco Mass',200,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonRecoMass','Reco Mass',200,0.,2.)                      # Kaon mass
-    ut.bookHist(h,'MuonTrueMass','True Mass',200,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonTrueMass','True Mass',200,0.,2.)                      # Kaon mass
-    ut.bookHist(h,'MuonSmearedMass','Smeared Mass',200,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonSmearedMass','Smeared Mass',200,0.,2.)                      # Kaon mass
+    ut.bookHist(h,'MuonStrawTime','Gaussian Straw t measurement',600,315.,330.)
+    ut.bookHist(h,'KaonStrawTime','Gaussian Straw t measurement',600,315.,330.)
+    ut.bookHist(h,'MuonEcalTime','Gaussian Ecal t measurement',600,355.,365.)
+    ut.bookHist(h,'KaonEcalTime','Gaussian Ecal t measurement',600,355.,365.)
+    ut.bookHist(h,'MuonDirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,39.1)   # muon time of flight
+    ut.bookHist(h,'KaonDirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,39.1)   # Kaon time of flight
+    ut.bookHist(h,'MuonFlightLen','Straw-ECAL Flight Lenght',400,11.2,12.)                   # muon flight Length
+    ut.bookHist(h,'KaonFlightLen','Straw-ECAL Flight Length',400,11.2,12.)                   # Kaon flight Length
+    ut.bookHist(h,'MuonSpeed','Beta value',400,0.99,1.01)                                    # muon speed
+    ut.bookHist(h,'KaonSpeed','Beta value',400,0.99,1.)                                    # Kaon speed
+    ut.bookHist(h,'MuonStrawMom','Straw Momentum',400,-0.05,100.)          # muon momentum
+    ut.bookHist(h,'KaonStrawMom','Straw Momentum',400,-0.05,100.)          # Kaon momentum
+    ut.bookHist(h,'MuonEcalMom','Ecal Momentum',400,-0.05,100.)           # muon momentum
+    ut.bookHist(h,'KaonEcalMom','Ecal Momentum',400,-0.05,100.)           # Kaon momentum
+    ut.bookHist(h,'KaonDeltaMom','Straw-Ecal Momentum',400,-10.,100.)       # Kaon momentum
+    ut.bookHist(h,'MuonDeltaMom','Straw-Ecal Momentum',400,-10.,100.)       # Kaon momentum
+    ut.bookHist(h,'MuonRecoMom','Reco Momentum',400,-0.05,100.)              # muon momentum
+    ut.bookHist(h,'KaonRecoMom','Reco Momentum',400,-0.05,100.)              # Kaon momentum
+    ut.bookHist(h,'MuonTrueMom','True Momentum',400,-0.05,100.)              # muon momentum
+    ut.bookHist(h,'KaonTrueMom','True Momentum',400,-0.05,100.)              # Kaon momentum
+    ut.bookHist(h,'MuonRecoMass','Reco Mass',400,0.,2.)                      # muon mass
+    ut.bookHist(h,'KaonRecoMass','Reco Mass',400,0.,2.)                      # Kaon mass
+    ut.bookHist(h,'MuonTrueMass','True Mass',400,0.,2.)                      # muon mass
+    ut.bookHist(h,'KaonTrueMass','True Mass',400,0.,2.)                      # Kaon mass
+    ut.bookHist(h,'MuonSmearedMass','Smeared Mass',400,0.,2.)                      # muon mass
+    ut.bookHist(h,'KaonSmearedMass','Smeared Mass',400,0.,2.)                      # Kaon mass
+    ut.bookHist(h,'MuonProbMeasr','Smeared Mass',400,0.,1.)                      # muon Prob
+    ut.bookHist(h,'KaonProbMeasr','Smeared Mass',400,0.,1.)                      # Kaon Prob
     ################################
     ut.bookHist(h,'nalino_true','Monte Carlo Mass',500,0.,2.)                                   # true mass
     ut.bookHist(h,'nalino_reco','Reconstructed Mass',500,0.,2.)                                 # reconstructed mass
@@ -320,7 +327,7 @@ def RedoVertexing(t1,t2):
              try:
                  reps[tr].extrapolateToPoint(states[tr], newPos, False)
              except:
-                 print 'SHiPAna: extrapolation did not work'
+                 print ('SHiPAna: extrapolation did not work')
                  rc = False
                  break
              newPosDir[tr] = [reps[tr].getPos(states[tr]),reps[tr].getDir(states[tr])]
@@ -329,7 +336,7 @@ def RedoVertexing(t1,t2):
          dz = abs(zBefore-zv)
          step+=1
          if step > 10:
-             print 'abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz
+             print ('abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz)
              rc = False
              break 
      if not rc: return -1,-1,-1,doca # extrapolation failed, makes no sense to continue
@@ -457,6 +464,17 @@ def makePlots():
    h['KaonSmearedMass'].Draw('same')
    h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
 
+   ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=500,ny=500,cx=1,cy=1)
+   cv = h['DAUGHTERS_PROB'].cd(1)
+   h['MuonProbMeasr'].SetXTitle('Mass [GeV/c2]')
+   h['MuonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
+   h['MuonProbMeasr'].Draw()
+   h['KaonProbMeasr'].SetLineColor(2)
+   h['KaonProbMeasr'].Draw('same')
+   h['DAUGHTERS_PROB'].Print('DaughterProb'+ currentDate + '.png')
+
+
+
 
 def isInFiducial(X,Y,Z):
    if Z > ShipGeo.TrackStation1.z : return False
@@ -549,6 +567,9 @@ def time_res(partkey):
     return smearStrawTime,smearEcalTime,deltaT,r,v,strawP,ecalP
 
 def finState2MuK():
+    #n = 20
+    #x, y = array( 'd' ), array( 'd' )
+    #i=0
     if sTree.GetBranch("FitTracks"):
         k_decaycheck = 0
         for n in range(nEvents):                            # loop over events
@@ -693,8 +714,35 @@ def finState2MuK():
                                                 h['KaonSmearedMass'].Fill(k_smearedM)
                                                 mu_smearedM = muP*(ROOT.TMath.Sqrt(1-(mu_beta**2)))/mu_beta
                                                 h['MuonSmearedMass'].Fill(mu_smearedM)
+                                                prob_k_measr = k_smearedM/(k_smearedM+mu_smearedM)
+                                                prob_mu_measr = mu_smearedM/(k_smearedM+mu_smearedM)
+                                                if abs(k_smearedM-kM)<=0.01:
+                                                    h['KaonProbMeasr'].Fill(prob_k_measr)
+                                                    #if i in range( n ):
+                                                    #    x.append( k_smearedM )
+                                                    #    y.append( prob_k_measr )
+                                                    #i=i+1
+                                                    
+                                                if abs(mu_smearedM-muM)<=0.01:
+                                                    h['MuonProbMeasr'].Fill(prob_mu_measr)
+                                                if abs(k_smearedM-kM)<=0.0001:
+                                                    print('probability of it being a Kaon at true mass:'+str(prob_k_measr))
+                                                if abs(mu_smearedM-muM)<=0.0001:
+                                                    print('probability of it being a Muon at true mass:'+str(prob_mu_measr))
+
 
         #print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
+        #gr = TGraph( n, x, y )
+        #gr.SetLineColor( 2 )
+        #gr.SetLineWidth( 4 )
+        #gr.SetMarkerColor( 4 )
+        #gr.SetMarkerStyle( 21 )
+        #gr.SetTitle( 'Probs' )
+        #gr.GetXaxis().SetTitle( 'Mass [GeV/c2]' )
+        #gr.GetYaxis().SetTitle( 'Prob(particle=(kaon or muon))' )
+        #gr.Draw( 'ACP' )
+ 
+
 
 #########################################
 
