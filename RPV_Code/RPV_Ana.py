@@ -202,8 +202,6 @@ ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular 
 ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight
 ut.bookHist(h,'KaonDir_nosmear','True Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight
 
-#kaonmass = TH1F("kaonmass","kaonmass",200,0.,2.)
-
 #----------------------------------------------------FUNCTIONS------------------------------------------------------------
 
 def dist2InnerWall(X,Y,Z):
@@ -357,9 +355,8 @@ def makePlots():
     h['tmass_kaon'].SetXTitle('Mass [GeV/c2]')
     h['tmass_kaon'].SetYTitle('Frequency')
     h['tmass_kaon'].SetLineColor(2)
-    h['tmass_kaon'].Fit("landau")
+    h['tmass_kaon'].Draw()
     h['tmass_muon'].Draw("same")
-    h['tmass_muon'].Fit("landau")
     h['Daughter_masses'].Draw("same")
    #----------------------------------------------------------------------------------------------------------------------
     cv = h['Test_Time'].cd(4)
@@ -368,8 +365,15 @@ def makePlots():
     h['tsmearmass_kaon'].SetLineColor(2)
     h['tsmearmass_kaon'].Draw()
     h['tsmearmass_kaon'].Fit("landau")
+    h['tsmearmass_kaon'].GetFunction("landau").SetLineColor(1)
+    #par0 = h['tsmearmass_kaon'].GetFunction("landau").GetParameter(0)
+    #par1 = h['tsmearmass_kaon'].GetFunction("landau").GetParameter(1)
+    #par2 = h['tsmearmass_kaon'].GetFunction("landau").GetParameter(2)
     h['tsmearmass_muon'].Draw("same")
     h['tsmearmass_muon'].Fit("landau")
+    h['tsmearmass_muon'].GetFunction("landau").SetLineColor(1)
+    h['Daughter_masses'].SetLineColor(1)
+    h['Daughter_masses'].SetLineStyle(2)
     h['Daughter_masses'].Draw("same")
     h['Test_Time'].Print('Smeared_Time.png')
     #======================================================================================================================
@@ -478,7 +482,7 @@ def track_checks(index,true_part,reco_part):
         #print('Chi squared value too high')
         check = -1
 
-    return check
+    return check,fit_chi2
 
 def time_res_RPV(partkey,pdg,n,m):
     tnosmear = -1 # declares variables
@@ -519,7 +523,7 @@ def time_res_RPV(partkey,pdg,n,m):
                     h['track_kaon'].Fill(hit) # kaon z-momentum through straw tubes for particular event
 
         min_z_index = z_array.index(min(z_array)) # gives index of the smallest element in the list
-        straw_z = 0.01*z_array[min_z_index] # positions, time and momenta for this straw tube hit
+        straw_z = 0.01*z_array[min_z_index] # positions, time and momenta the first straw tube hit
         straw_x = 0.01*x_array[min_z_index]
         straw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
@@ -564,11 +568,12 @@ c = 2.99792458*(10**8)
 
 def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
+        print("\nRunning final state K+ Mu-:")
         k_decaycheck = 0
         successful_events = []          # creates list of event numbers of desired decays
         for n in range(nEvents):                            # loops over events
             rc = sTree.GetEntry(n)                              # loads tree entry
-            
+
             #-----------------------------------------------TRACK-LOOPS------------------------------------------------
 
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
@@ -577,19 +582,16 @@ def finStateMuKa():
                 if abs(true_muon.GetPdgCode()) == 13:                   # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
-                    if true_mother.GetPdgCode() == 211:
-                        #print('Kaon has decayed to a muon before detection')
+
+                    check,mu_chi2 = track_checks(index,true_muon,reco_part) # performs various checks (i.e. vertex position, fiducial volume,...)
+                    if not check == 0:  
+                        continue
+
+                    if true_mother.GetPdgCode() == 321:
+                        # print('Kaon has decayed to a muon before detection')
                         k_decaycheck+=1
-                    if true_mother.GetPdgCode() == 9900015:             # checks mother is RPV
 
-                        if not track_checks(index,true_muon,reco_part) == 0:  # performs various checks (i.e. vertex position, fiducial volume,...)
-                            continue
-
-                        mu_status = reco_part.getFitStatus()    
-                        mu_rchi2 = mu_status.getChi2()                      
-                        mu_nmeas = mu_status.getNdf() 
-                        mu_chi2 = (mu_rchi2/mu_nmeas)                   # gets chi squared value
-
+                    if true_mother.GetPdgCode() == 9900015:    # checks mother is RPV
                         for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
                             kaPartkey = sTree.fitTrack2MC[index2]                  # matches track to MC particle key
                             true_kaon = sTree.MCTrack[kaPartkey]                  # gives MC particle data
@@ -598,15 +600,11 @@ def finStateMuKa():
                                 true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
                                 if kaonMotherkey == muonMotherkey:                    # check if mother keys are the same
 
-                                    if not track_checks(index2,true_kaon,reco_part2) == 0:  # performs various checks (i.e. vertex position, fiducial volume,...)
+                                    check2,ka_chi2 = track_checks(index2,true_kaon,reco_part2)
+                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
 
-                                    ka_status = reco_part2.getFitStatus()    
-                                    ka_rchi2 = ka_status.getChi2()                      
-                                    ka_nmeas = ka_status.getNdf() 
-                                    ka_chi2 = (ka_rchi2/ka_nmeas)                    # gets chi squared value
-
-                                    #-------------------------------------------------PARTICLE-DATA-----------------------------------------------------
+                            #-------------------------------------------------PARTICLE-DATA-----------------------------------------------------
 
                                     kaonMotherTrue_mass = true_mother.GetMass()    # get RPV/final states mother mass
                                     kaonMotherTrue_mom = true_mother.GetP()     # get RPV/final states mother mom
@@ -614,7 +612,7 @@ def finStateMuKa():
                                     RPV_Vector = ROOT.TLorentzVector()                  # declares variables as TLorentzVector class
                                     Muon_Vector = ROOT.TLorentzVector()
                                     Kaon_Vector = ROOT.TLorentzVector()
-                                    RPV_Vector,Muon_Vector,Kaon_Vector,doca = RedoVertexing(index,index2)  # uses RedoVertexing to iterate track fitting
+                                    RPV_Vector,Muon_Vector,Kaon_Vector,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
                                     
                                     if RPV_Vector == -1: continue
                                     if doca > 2.: 
@@ -638,8 +636,6 @@ def finStateMuKa():
                                     h['RPV_mom_reco'].Fill(RPV_reco_mom)   
                                     h['Daughter_masses'].Fill(muM)
                                     h['Daughter_masses'].Fill(kaM)
-                                    h['Daughter_masses'].SetLineColor(1)
-                                    h['Daughter_masses'].SetFillColor(1)
                                     h['Chi2'].Fill(mu_chi2)       
                                     h['Chi2'].Fill(ka_chi2)                             
                                     h['RPV_mom_diff'].Fill(mom_diff)
@@ -650,6 +646,7 @@ def finStateMuKa():
                                     
                                     successful_events.append(n)     # adds entries to the list
                                     m = successful_events[0]      # arbitrarily picks the first one as an example
+                                    count = len(successful_events)
 
                                     #------------------------------------TIME-RESOLUTION------------------------------------------
 
@@ -660,7 +657,7 @@ def finStateMuKa():
 
                                         beta = mu_v/c                     # equations for mass calculated from true time
                                         gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                        nosmearM = straw_muP/(beta*gamma) # previously used reco_muP (ask kostas)
+                                        nosmearM = straw_muP/(beta*gamma) # previously used reco_muP
                                         beta_smear = mu_vsmear/c                 # equations for mass calculated from smeared time
                                         gamma_smear = 1/(ROOT.TMath.Sqrt(1-(beta_smear**2)))
                                         smearM = reco_muP/(beta_smear*gamma_smear)
@@ -676,30 +673,107 @@ def finStateMuKa():
 
                                             beta = ka_v/c                     # equations for mass calculated from true time
                                             gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                            nosmearM = straw_kaP/(beta*gamma) # previously used reco_kaP (ask kostas)
+                                            nosmearM = straw_kaP/(beta*gamma) # previously used reco_kaP
                                             beta_smear = ka_vsmear/c                # equations for mass calculated from smeared time
                                             gamma_smear = 1/(ROOT.TMath.Sqrt(1-(beta_smear**2)))
                                             smearM = reco_kaP/(beta_smear*gamma_smear)
 
                                             h['tmass_kaon'].Fill(nosmearM) # fills histograms with mass data
                                             h['tsmearmass_kaon'].Fill(smearM)
-                                            #kaonmass.Fill(smearM)
                                             h['ecalstraw_mom'].Fill(mu_diff) # fills histogram for momentum difference
                                             h['ecalstraw_mom'].Fill(ka_diff)
 
-        # including rejected (for other reasons) tracks
-        print('\n'+str(k_decaycheck) + ' kaons decayed to muons before detection\n')
+        print(str(count) + ' successful events for this decay channel')
+        print(str(k_decaycheck) + ' kaons decayed to muons before detection\n')
+        
+def finStateMuKa_exc():
+    if sTree.GetBranch("FitTracks"):
+        print('Running final state K*+ Mu-:')
+        decay1count_kaon = 0    # decay 1: N --> K*+ mu- --> K+ pi0 mu-
+        decay1count_pion0 = 0
+        decay2count_kaon0 = 0   # decay 2: N --> K*+ mu- --> K0 pi+ mu-
+        decay2count_pion = 0
+        for n in range(nEvents):                            # loops over events
+            rc = sTree.GetEntry(n)                              # loads tree entry
 
-finStateMuKa()  
+            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
+                muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
+                true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
+                
+                if abs(true_muon.GetPdgCode()) == 13:                   # checks particle is muon
+                    muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
+                    true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
+                    check,mu_chi2 = track_checks(index,true_muon,reco_part) # performs various checks (i.e. vertex position, fiducial volume,...)
+                    if not check == 0:  
+                        continue
+
+                    for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
+                        Partkey = sTree.fitTrack2MC[index2]                  # matches track to MC particle key
+                        true_daughter = sTree.MCTrack[Partkey]                  # gives MC particle data
+                        
+                        #-----------------------------------------------DECAY-1--------------------------------------------------------
+
+                        if abs(true_daughter.GetPdgCode()) == 321:              # checks particle is kaon
+                            kaonMotherkey = true_daughter.GetMotherId()             # stores a number index of MC track of mother
+                            true_kaonEx = sTree.MCTrack[kaonMotherkey]          # obtains mother excited kaon data
+                            if abs(true_kaonEx.GetPdgCode()) == 323:
+                                kaonExMotherkey = true_kaonEx.GetMotherId()           
+                                true_mother_N = sTree.MCTrack[kaonExMotherkey]
+                                if kaonExMotherkey == muonMotherkey:                    # checks if mother keys are the same
+                                    check2,ka_chi2 = track_checks(index2,true_daughter,reco_part2)
+                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                        continue
+                                    if true_mother_N.GetPdgCode() == 9900015:    # checks mother is RPV
+                                        decay1count_kaon += 1
+
+                        if abs(true_daughter.GetPdgCode()) == 111:              # checks particle is pion
+                            pionMotherkey = true_daughter.GetMotherId()             # stores a number index of MC track of mother
+                            true_kaonEx = sTree.MCTrack[pionMotherkey]          # obtains mother excited kaon data
+                            if abs(true_kaonEx.GetPdgCode()) == 323:
+                                kaonExMotherkey = true_kaonEx.GetMotherId()           
+                                true_mother_N = sTree.MCTrack[kaonExMotherkey]
+                                if kaonExMotherkey == muonMotherkey:                    # checks if mother keys are the same
+                                    check2,chi2 = track_checks(index2,true_daughter,reco_part2)
+                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                        continue
+                                    if true_mother_N.GetPdgCode() == 9900015:    # checks mother is RPV
+                                        decay1count_pion0 += 1
+
+                        #-----------------------------------------------DECAY-2--------------------------------------------------------
+
+                        if abs(true_daughter.GetPdgCode()) == 310 or abs(true_daughter.GetPdgCode()) == 130:
+                            kaon0Motherkey = true_daughter.GetMotherId()
+                            true_kaonEx = sTree.MCTrack[kaon0Motherkey]
+                            if abs(true_kaonEx.GetPdgCode()) == 323:
+                                kaonExMotherkey = true_kaonEx.GetMotherId()           
+                                true_mother_N = sTree.MCTrack[kaonExMotherkey]
+                                if kaonExMotherkey == muonMotherkey:                    # checks if mother keys are the same
+                                    check2,chi2 = track_checks(index2,true_daughter,reco_part2)
+                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                        continue
+                                    if true_mother_N.GetPdgCode() == 9900015:    # checks mother is RPV
+                                        decay2count_kaon0 += 1
+
+                        if abs(true_daughter.GetPdgCode()) == 211:
+                            pionMotherkey = true_daughter.GetMotherId()
+                            true_kaonEx = sTree.MCTrack[pionMotherkey]
+                            if abs(true_kaonEx.GetPdgCode()) == 323:
+                                kaonExMotherkey = true_kaonEx.GetMotherId()           
+                                true_mother_N = sTree.MCTrack[kaonExMotherkey]
+                                if kaonExMotherkey == muonMotherkey:                    # checks if mother keys are the same
+                                    check2,chi2 = track_checks(index2,true_daughter,reco_part2)
+                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                        continue
+                                    if true_mother_N.GetPdgCode() == 9900015:    # checks mother is RPV
+                                        decay2count_pion += 1
+      
+        print(decay1count_kaon,decay1count_pion0)
+        print(decay2count_pion,decay2count_kaon0)
+        print('\n')
+
+finStateMuKa()
+finStateMuKa_exc()
 makePlots()
-
-#kaonmass.SetTitle("Smeared Kaon Mass")
-#kaonmass.GetXaxis().SetRangeUser(0.,2.)
-#kaonmass.GetXaxis().SetTitle("Mass / [GeV/c2]")
-#kaonmass.GetYaxis().SetTitle("No. of particles")
-#kaonmass.SetLineColor(2)
-#kaonmass.Draw()
-#kaonmass.Fit("landau")
 
 #-------------------------------------------------OUTPUT----------------------------------------------------
 
