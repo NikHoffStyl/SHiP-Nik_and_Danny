@@ -30,7 +30,7 @@ measCutFK = 25
 measCutPR = 22
 docaCut = 2.
 c = 2.99792458*(10**8)
-currentDate = datetime.datetime.now().strftime("_%H%M_%d_%m_%y")
+currentDate = datetime.datetime.now().strftime("%y_%m_%d_%H%M")
 
 
 def inputOptsArgs():
@@ -212,8 +212,8 @@ def create_Hists():
     ut.bookHist(h,'KaonEcalTime','Gaussian Ecal t measurement',600,359.7,361.7)
     ut.bookHist(h,'MuonDirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,38.9)   # muon time of flight
     ut.bookHist(h,'KaonDirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,38.9)   # Kaon time of flight
-    ut.bookHist(h,'MuonFlightLen','Straw-ECAL Flight Lenght',600,11.36,11.4)                   # muon flight Length
-    ut.bookHist(h,'KaonFlightLen','Straw-ECAL Flight Length',600,11.36,11.4)                   # Kaon flight Length
+    ut.bookHist(h,'MuonFlightLen','Straw-ECAL Flight Lenght',600,11.36,11.47)                   # muon flight Length
+    ut.bookHist(h,'KaonFlightLen','Straw-ECAL Flight Length',600,11.36,11.47)                   # Kaon flight Length
     ut.bookHist(h,'MuonSpeed','Beta value',600,0.993,1.0014)                                    # muon speed
     ut.bookHist(h,'KaonSpeed','Beta value',600,0.993,1.0014)                                    # Kaon speed
     ut.bookHist(h,'MuonStrawMom','Straw Momentum',600,-0.05,120.)           # muon momentum
@@ -226,15 +226,15 @@ def create_Hists():
     ut.bookHist(h,'KaonRecoMom','Reco Momentum',600,-0.05,120.)              # Kaon momentum
     ut.bookHist(h,'MuonTrueMom','True Momentum',600,-0.05,120.)              # muon momentum
     ut.bookHist(h,'KaonTrueMom','True Momentum',600,-0.05,120.)              # Kaon momentum
-    ut.bookHist(h,'MuonRecoMass','Reco Mass',600,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonRecoMass','Reco Mass',600,0.,2.)                      # Kaon mass
-    ut.bookHist(h,'MuonTrueMass','True Mass',600,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonTrueMass','True Mass',600,0.,2.)                      # Kaon mass
-    ut.bookHist(h,'MuonSmearedMass','Smeared Mass',600,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonSmearedMass','Smeared Mass',600,0.,2.)                      # Kaon mass
-    ut.bookHist(h,'TotalSmearedMass','Smeared Mass',600,0.,2.)                      # total mass
-    ut.bookHist(h,'MuonProbMeasr','Probs identifying Muon',600,0.,2.)                      # muon Prob
-    ut.bookHist(h,'KaonProbMeasr','Prob identifying Kaon',600,0.,2.)                      # Kaon Prob
+    ut.bookHist(h,'MuonRecoMass','Reco Mass',400,0.,2.)                      # muon mass
+    ut.bookHist(h,'KaonRecoMass','Reco Mass',400,0.,2.)                      # Kaon mass
+    ut.bookHist(h,'MuonTrueMass','True Mass',400,0.,2.)                      # muon mass
+    ut.bookHist(h,'KaonTrueMass','True Mass',400,0.,2.)                      # Kaon mass
+    ut.bookHist(h,'MuonSmearedMass','Smeared Mass',400,0.,2.)                      # muon mass
+    ut.bookHist(h,'KaonSmearedMass','Smeared Mass',400,0.,2.)                      # Kaon mass
+    ut.bookHist(h,'TotalSmearedMass','Smeared Mass',400,0.,2.)                      # total mass
+    ut.bookHist(h,'MuonProbMeasr','Probs identifying Muon',400,0.,2.)                      # muon Prob
+    ut.bookHist(h,'KaonProbMeasr','Prob identifying Kaon',400,0.,2.)                      # Kaon Prob
     ################################
     ut.bookHist(h,'nalino_true','Monte Carlo Mass',500,0.,2.)                                   # true mass
     ut.bookHist(h,'nalino_reco','Reconstructed Mass',500,0.,2.)                                 # reconstructed mass
@@ -570,7 +570,7 @@ def time_res(partkey):
 
 def createRatio(h1, h2):
     h3 = h1.Clone("h3")
-    h3.SetLineColor(kBlack)
+    #h3.SetLineColor(kBlack)
     #h3.SetMarkerStyle(21)
     h3.SetTitle("")
     #h3.SetMinimum(0.8)
