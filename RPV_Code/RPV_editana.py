@@ -19,7 +19,6 @@ import shipVeto
 from inspect import currentframe
 import numpy as np
 import datetime
-#import random
 shipRoot_conf.configure()
 
 debug = False
@@ -204,44 +203,48 @@ import TrackExtrapolateTool
 h = {}
 #c1 = TCanvas( 'c1', 'Probability of correct mass', 200, 10, 700, 500 )
 def create_Hists():
-    ###############################
-    ####  Daughter Histograms  ####
+    ###########################
+    ####  Muon Histograms  ####
     ut.bookHist(h,'MuonStrawTime','Gaussian Straw t measurement',600,321.7,324.7)
-    ut.bookHist(h,'KaonStrawTime','Gaussian Straw t measurement',600,321.7,324.7)
     ut.bookHist(h,'MuonEcalTime','Gaussian Ecal t measurement',600,359.7,361.7)
-    ut.bookHist(h,'KaonEcalTime','Gaussian Ecal t measurement',600,359.7,361.7)
-    ut.bookHist(h,'MuonDirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,38.9)   # muon time of flight
-    ut.bookHist(h,'KaonDirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,38.9)   # Kaon time of flight
-    ut.bookHist(h,'MuonFlightLen','Straw-ECAL Flight Lenght',600,11.36,11.47)                   # muon flight Length
-    ut.bookHist(h,'KaonFlightLen','Straw-ECAL Flight Length',600,11.36,11.47)                   # Kaon flight Length
-    ut.bookHist(h,'MuonSpeed','Beta value',600,0.993,1.0014)                                    # muon speed
-    ut.bookHist(h,'KaonSpeed','Beta value',600,0.993,1.0014)                                    # Kaon speed
-    ut.bookHist(h,'MuonStrawMom','Straw Momentum',600,-0.05,120.)           # muon momentum
-    ut.bookHist(h,'KaonStrawMom','Straw Momentum',600,-0.05,120.)           # Kaon momentum
-    ut.bookHist(h,'MuonEcalMom','Ecal Momentum',600,-0.05,120.)             # muon momentum
-    ut.bookHist(h,'KaonEcalMom','Ecal Momentum',600,-0.05,120.)             # Kaon momentum
-    ut.bookHist(h,'KaonDeltaMom','Straw-Ecal Momentum',600,-0.1,1.7)        # Kaon momentum
-    ut.bookHist(h,'MuonDeltaMom','Straw-Ecal Momentum',600,-0.1,1.7)        # Kaon momentum
-    ut.bookHist(h,'MuonRecoMom','Reco Momentum',600,-0.05,120.)              # muon momentum
-    ut.bookHist(h,'KaonRecoMom','Reco Momentum',600,-0.05,120.)              # Kaon momentum
-    ut.bookHist(h,'MuonTrueMom','True Momentum',600,-0.05,120.)              # muon momentum
-    ut.bookHist(h,'KaonTrueMom','True Momentum',600,-0.05,120.)              # Kaon momentum
-    ut.bookHist(h,'MuonRecoMass','Reco Mass',400,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonRecoMass','Reco Mass',400,0.,2.)                      # Kaon mass
-    ut.bookHist(h,'MuonTrueMass','True Mass',400,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonTrueMass','True Mass',400,0.,2.)                      # Kaon mass
-    ut.bookHist(h,'MuonSmearedMass','Smeared Mass',400,0.,2.)                      # muon mass
-    ut.bookHist(h,'KaonSmearedMass','Smeared Mass',400,0.,2.)                      # Kaon mass
-    ut.bookHist(h,'TotalSmearedMass','Smeared Mass',400,0.,2.)                      # total mass
-    ut.bookHist(h,'MuonProbMeasr','Probs identifying Muon',400,0.,2.)                      # muon Prob
-    ut.bookHist(h,'KaonProbMeasr','Prob identifying Kaon',400,0.,2.)                      # Kaon Prob
-    ################################
-    ut.bookHist(h,'nalino_true','Monte Carlo Mass',500,0.,2.)                                   # true mass
-    ut.bookHist(h,'nalino_reco','Reconstructed Mass',500,0.,2.)                                 # reconstructed mass
-    ut.bookHist(h,'nalino_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)
-    ut.bookHist(h,'nalino_mom','True (red) & Reco. (blue) Momentum',100,0.,300.)                # true momentum distribution
-    ut.bookHist(h,'nalino_mom_reco','Reconstructed Momentum',100,0.,300.)                       # reconstructed momentum distribution
-    ut.bookHist(h,'nalino_mom_diff','True/Reco Momentum Difference',100,-3.,3)                  # true/reco momentum difference
+    ut.bookHist(h,'MuonDirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,38.9)      # time of flight
+    ut.bookHist(h,'MuonFlightLen','Straw-ECAL Flight Lenght',600,11.36,11.47)                   # flight Length
+    ut.bookHist(h,'MuonSpeed','Beta value',600,0.993,1.0014)                                    # speed
+    ut.bookHist(h,'MuonStrawMom','Straw Momentum',600,-0.05,120.)                               # straw momentum
+    ut.bookHist(h,'MuonEcalMom','Ecal Momentum',600,-0.05,120.)                                 # ecal  momentum
+    ut.bookHist(h,'MuonDeltaMom','Straw-Ecal Momentum',600,-0.1,0.21)                           # delta momentum
+    ut.bookHist(h,'MuonRecoMom','Reco Momentum',600,-0.05,120.)                                 # reco  momentum
+    ut.bookHist(h,'MuonTrueMom','True Momentum',600,-0.05,120.)                                 # true  momentum
+    ut.bookHist(h,'MuonRecoMass','Reco Mass',400,0.,2.)                                         # reco  mass
+    ut.bookHist(h,'MuonTrueMass','True Mass',400,0.,2.)                                         # true  mass
+    ut.bookHist(h,'MuonSmearedMass','Smeared Mass',400,0.,2.)                                   # smrd  mass
+    ut.bookHist(h,'MuonProbMeasr','Probs identifying Muon',400,0.,2.)                           # ID Prob
+    ###########################
+    ####  Kaon Histograms  ####
+    ut.bookHist(h,'KaonStrawTime','Gaussian Straw t measurement',600,321.7,324.7)    
+    ut.bookHist(h,'KaonEcalTime','Gaussian Ecal t measurement',600,359.7,361.7)    
+    ut.bookHist(h,'KaonDirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,38.9)      # time of flight
+    ut.bookHist(h,'KaonFlightLen','Straw-ECAL Flight Length',600,11.36,11.47)                   # flight Length
+    ut.bookHist(h,'KaonSpeed','Beta value',600,0.993,1.0014)                                    # speed
+    ut.bookHist(h,'KaonStrawMom','Straw Momentum',600,-0.05,120.)                               # straw momentum
+    ut.bookHist(h,'KaonEcalMom','Ecal Momentum',600,-0.05,120.)                                 # ecal  momentum
+    ut.bookHist(h,'KaonDeltaMom','Straw-Ecal Momentum',600,-0.1,0.21)                           # delta momentum
+    ut.bookHist(h,'KaonRecoMom','Reco Momentum',600,-0.05,120.)                                 # reco  momentum
+    ut.bookHist(h,'KaonTrueMom','True Momentum',600,-0.05,120.)                                 # true  momentum
+    ut.bookHist(h,'KaonRecoMass','Reco Mass',400,0.,2.)                                         # reco  mass
+    ut.bookHist(h,'KaonTrueMass','True Mass',400,0.,2.)                                         # true  mass
+    ut.bookHist(h,'KaonSmearedMass','Smeared Mass',400,0.,2.)                                   # smrd  mass
+    ut.bookHist(h,'KaonProbMeasr','Prob identifying Kaon',400,0.,2.)                            # ID Prob
+    ###########################
+    ut.bookHist(h,'TotalSmearedMass','Smeared Mass',400,0.,2.)                                  # Total mass
+    #################################
+    ####  Neutralino Histograms  ####
+    ut.bookHist(h,'Neutralino_true','Monte Carlo Mass',500,0.,2.)                                   # true mass
+    ut.bookHist(h,'Neutralino_reco','Reconstructed Mass',500,0.,2.)                                 # reco mass
+    ut.bookHist(h,'Neutralino_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
+    ut.bookHist(h,'Neutralino_mom','True (red) & Reco. (blue) Momentum',100,0.,300.)                # true momentum 
+    ut.bookHist(h,'Neutralino_mom_reco','Reconstructed Momentum',100,0.,300.)                       # reco momentum
+    ut.bookHist(h,'Neutralino_mom_diff','True/Reco Momentum Difference',100,-3.,3)                  # true-reco momentum difference
 
     ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)                                 # chi squared track fitting
     ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)
@@ -262,7 +265,7 @@ def dist2InnerWall(X,Y,Z):
      if not 'cave' in node.GetName():
          return dist  # TP 
   else:
-     if not 'decayVol' in node.GetName():#does this
+     if not 'decayVol' in node.GetName():
         return dist
   start = array('d',[X,Y,Z])
   nsteps = 8
@@ -275,10 +278,9 @@ def dist2InnerWall(X,Y,Z):
     node = sGeo.InitTrack(start, sdir)
     nxt = sGeo.FindNextBoundary()
     if ShipGeo.tankDesign < 5 and nxt.GetName().find('I')<0:
-        #doesnt do this
         return 0    
     distance = sGeo.GetStep()
-    if distance < minDistance  :    #does this
+    if distance < minDistance  :
        minDistance = distance
   return minDistance
 
@@ -351,9 +353,9 @@ def RedoVertexing(t1,t2):
          E = ROOT.TMath.Sqrt( mass*mass + mom.Mag2() )
          LV[tr] = ROOT.TLorentzVector()
          LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
-     nalinoLV = LV[t1]+LV[t2]
-     #return xv,yv,zv,doca,nalinoMom
-     return nalinoLV,LV[t1],LV[t2],doca
+     NeutralinoLV = LV[t1]+LV[t2]
+     #return xv,yv,zv,doca,NeutralinoMom
+     return NeutralinoLV,LV[t1],LV[t2],doca
 
 def fitSingleGauss(x,ba=None,be=None):
     name    = 'myGauss_'+x 
@@ -462,15 +464,20 @@ def makePlots():
    h['MuonSmearedMass'].SetXTitle('Mass [GeV/c2]')
    h['MuonSmearedMass'].SetYTitle('No. of Particles')
    h['MuonSmearedMass'].Draw()
+   h['MuonSmearedMass'].Fit("landau")
+   h['MuonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
    h['KaonSmearedMass'].SetLineColor(2)
    h['KaonSmearedMass'].Draw('same')
+   h['KaonSmearedMass'].Fit("landau")
+   h['KaonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
    h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
 
    ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=500,ny=500,cx=1,cy=1)
    cv = h['DAUGHTERS_PROB'].cd(1)
    h['MuonProbMeasr'].SetXTitle('Mass [GeV/c2]')
    h['MuonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
-   h['MuonProbMeasr'].Draw()
+   h['MuonProbMeasr'].Fit('pol9')
+   h['MuonProbMeasr'].Draw('E2')
    #h['KaonProbMeasr'].SetLineColor(2)
    #h['KaonProbMeasr'].Draw('same')
    h['DAUGHTERS_PROB'].Print('DaughterProb'+ currentDate + '.png')
@@ -481,7 +488,7 @@ def makePlots():
 def isInFiducial(X,Y,Z):
    if Z > ShipGeo.TrackStation1.z : return False
    if Z < ShipGeo.vetoStation.z+100.*u.cm : return False
-   # typical x,y Vx resolution for exclusive nalino decays 0.3cm,0.15cm (gaussian width)
+   # typical x,y Vx resolution for exclusive Neutralino decays 0.3cm,0.15cm (gaussian width)
    if dist2InnerWall(X,Y,Z)<5*u.cm: return False
    return True 
 
@@ -570,26 +577,28 @@ def time_res(partkey):
 
 def createRatio(h1, h2):
     h3 = h1.Clone("h3")
-    #h3.SetLineColor(kBlack)
-    #h3.SetMarkerStyle(21)
+    h3.SetMarkerStyle(20)
+    h3.SetMarkerSize(0.7)
     h3.SetTitle("")
     #h3.SetMinimum(0.8)
     #h3.SetMaximum(1.35)
     # Set up plot for markers and errors
-    #h3.Sumw2()
-    #h3.SetStats(0)
+    h3.Sumw2()
+    h3.SetStats(0)
     h3.Divide(h2)
     # Adjust y-axis settings
-    #y = h3.GetYaxis()
+    y = h3.GetYaxis()
+    y.SetRangeUser(-0.1,1.2)
     #y.SetTitle("ratio h1/h2 ")
     #y.SetNdivisions(505)
     #y.SetTitleSize(20)
     #y.SetTitleFont(43)
-    #y.SetTitleOffset(1.)
+    y.SetTitleOffset(1.)
     #y.SetLabelFont(43)
     #y.SetLabelSize(15)
     ## Adjust x-axis settings
-    #x = h3.GetXaxis()
+    x = h3.GetXaxis()
+    x.SetRangeUser(0,1.5)
     #x.SetTitleSize(20)
     #x.SetTitleFont(43)
     #x.SetTitleOffset(1.)
@@ -612,19 +621,19 @@ def finState2MuK():
                 if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
-                    muonMotherTrue_mass = true_mother.GetMass()        # get nalino/final states mother mass
-                    muonMotherTrue_mom = true_mother.GetP()            # get nalino/final states mother mom
+                    muonMotherTrue_mass = true_mother.GetMass()        # get Neutralino/final states mother mass
+                    muonMotherTrue_mom = true_mother.GetP()            # get Neutralino/final states mother mom
                     if true_mother.GetPdgCode() == 321:
                         #print('Kaon has decayed to a muon')
                         k_decaycheck+=1
-                    if true_mother.GetPdgCode() == 9900015:             # checks mother is nalino
+                    if true_mother.GetPdgCode() == 9900015:             # checks mother is Neutralino
 
                         Decay_X = true_muon.GetStartX()
                         Decay_Y = true_muon.GetStartY()
                         Decay_Z = true_muon.GetStartZ()
                         
                         if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
-                            #print('nalino decayed outside fiducial volume')
+                            #print('Neutralino decayed outside fiducial volume')
                             continue
                         if not checkFiducialVolume(sTree,index,dy): 
                             #print('Track outside fiducial volume')
@@ -651,8 +660,8 @@ def finState2MuK():
                                 kaonMotherkey = true_kaon.GetMotherId()             # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
                                 if kaonMotherkey==muonMotherkey:                    # check if keys are the same
-                                    kaonMotherTrue_mass = true_mother.GetMass()        # get nalino/final states mother mass
-                                    kaonMotherTrue_mom = true_mother.GetP()            # get nalino/final states mother mom
+                                    kaonMotherTrue_mass = true_mother.GetMass()        # get Neutralino/final states mother mass
+                                    kaonMotherTrue_mom = true_mother.GetP()            # get Neutralino/final states mother mom
 
                                     if not checkFiducialVolume(sTree,index,dy): 
                                         #print('Decay outside fiducial volume')
@@ -674,16 +683,16 @@ def finState2MuK():
                                     
                                     Muon_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     Kaon_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                                    nalino_LVec = ROOT.TLorentzVector()               # declares variable as TLorentzVector class
-                                    nalino_LVec,Muon_LVec,Kaon_LVec,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
-                                    if nalino_LVec == -1: continue
+                                    Neutralino_LVec = ROOT.TLorentzVector()               # declares variable as TLorentzVector class
+                                    Neutralino_LVec,Muon_LVec,Kaon_LVec,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
+                                    if Neutralino_LVec == -1: continue
                                     if doca > 2.: 
                                         #print('distance of closest approach too large')
                                         continue
 
-                                    nalino_mass = nalino_LVec.M()
-                                    nalino_reco_mom = nalino_LVec.P()
-                                    mom_diff = kaonMotherTrue_mom - nalino_reco_mom
+                                    Neutralino_mass = Neutralino_LVec.M()
+                                    Neutralino_reco_mom = Neutralino_LVec.P()
+                                    mom_diff = kaonMotherTrue_mom - Neutralino_reco_mom
 
                                     kM = Kaon_LVec.M()
                                     kP = Kaon_LVec.P()
@@ -700,13 +709,13 @@ def finState2MuK():
                                     h['MuonTrueMass'].Fill(muonTrueMass)
                                     h['KaonTrueMom'].Fill(kaonTrueMom)
                                     h['KaonTrueMass'].Fill(kaonTrueMass)
-                                    h['nalino_true'].Fill(kaonMotherTrue_mass)            
-                                    h['nalino_mom'].Fill(kaonMotherTrue_mom)
-                                    h['nalino_reco'].Fill(nalino_mass)                        
-                                    h['nalino_mom_reco'].Fill(nalino_reco_mom)                
+                                    h['Neutralino_true'].Fill(kaonMotherTrue_mass)            
+                                    h['Neutralino_mom'].Fill(kaonMotherTrue_mom)
+                                    h['Neutralino_reco'].Fill(Neutralino_mass)                        
+                                    h['Neutralino_mom_reco'].Fill(Neutralino_reco_mom)                
                                     h['Chi2'].Fill(mu_chi2)       
                                     h['Chi2'].Fill(k_chi2)                             
-                                    h['nalino_mom_diff'].Fill(mom_diff)
+                                    h['Neutralino_mom_diff'].Fill(mom_diff)
                                     h['KaonRecoMom'].Fill(kP)
                                     h['MuonRecoMom'].Fill(muP)
                                     h['KaonRecoMass'].Fill(kM)
