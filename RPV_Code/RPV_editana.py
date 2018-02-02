@@ -9,7 +9,7 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 from array import array
-from ROOT import TCanvas, TColor, TGaxis, TH1F, TPad, TGraph
+from ROOT import TCanvas, TColor, TGaxis, TH1F, TPad, TGraph, TF1
 from ROOT import kBlack, kBlue, kRed
 from ROOT import gROOT
 from array import array
@@ -30,7 +30,8 @@ measCutPR = 22
 docaCut = 2.
 c = 2.99792458*(10**8)
 currentDate = datetime.datetime.now().strftime("%y_%m_%d_%H%M")
-
+polyFit1 = TF1("polyFit1","pol9")
+polyFit2 = TF1("polyFit2","pol9")
 
 def inputOptsArgs():
     inputFile  = None
@@ -379,7 +380,7 @@ def fitSingleGauss(x,ba=None,be=None):
     h[x].Fit(myGauss,'','',ba,be) 
 
 def makePlots():
-   ut.bookCanvas(h,key='DAUGHTERS_TV',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=1000,cx=3,cy=2)
+   ut.bookCanvas(h,key='DAUGHTERS_TV',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=800,cx=3,cy=2)
    cv = h['DAUGHTERS_TV'].cd(1)
    h['MuonStrawTime'].SetXTitle('Time [ns]')
    h['MuonStrawTime'].SetYTitle('No. of Particles')
@@ -417,7 +418,7 @@ def makePlots():
 
    h['DAUGHTERS_TV'].Print('DaughterTVProp'+ currentDate + '.png')
 
-   ut.bookCanvas(h,key='DAUGHTERS_MOM',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=1000,cx=3,cy=2)
+   ut.bookCanvas(h,key='DAUGHTERS_MOM',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=800,cx=3,cy=2)
    cv = h['DAUGHTERS_MOM'].cd(1)
    h['MuonStrawMom'].SetXTitle('Momentum [GeV/c]')
    h['MuonStrawMom'].SetYTitle('No. of Particles')
@@ -472,14 +473,26 @@ def makePlots():
    h['KaonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
    h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
 
-   ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=500,ny=500,cx=1,cy=1)
+   ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=800,ny=500,cx=2,cy=1)
    cv = h['DAUGHTERS_PROB'].cd(1)
    h['MuonProbMeasr'].SetXTitle('Mass [GeV/c2]')
    h['MuonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
-   h['MuonProbMeasr'].Fit('pol9')
+   #h['MuonProbMeasr'].SetMarkerColorAlpha(kBlue, 0.35)
+   h['MuonProbMeasr'].SetMarkerColor(38)
+   polyFit1.SetLineColor(4)
+   h['MuonProbMeasr'].Fit('polyFit1')
    h['MuonProbMeasr'].Draw('E2')
-   #h['KaonProbMeasr'].SetLineColor(2)
-   #h['KaonProbMeasr'].Draw('same')
+   #polyFit1.Draw('same')
+   #cv = h['DAUGHTERS_PROB'].cd(2)
+   #h['KaonProbMeasr'].SetXTitle('Mass [GeV/c2]')
+   #h['KaonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
+   #h['KaonProbMeasr'].SetMarkerColorAlpha(kRed, 0.35)
+   h['KaonProbMeasr'].SetMarkerColor(46)
+   polyFit2.SetLineColor(2)
+   h['KaonProbMeasr'].Fit('polyFit2')
+   h['KaonProbMeasr'].Draw('E2,same')
+   #polyFit2.Draw('same')
+  
    h['DAUGHTERS_PROB'].Print('DaughterProb'+ currentDate + '.png')
 
 
@@ -580,8 +593,8 @@ def createRatio(h1, h2):
     h3.SetMarkerStyle(20)
     h3.SetMarkerSize(0.7)
     h3.SetTitle("")
-    #h3.SetMinimum(0.8)
-    #h3.SetMaximum(1.35)
+    h3.SetMinimum(0.8)
+    h3.SetMaximum(1.35)
     # Set up plot for markers and errors
     h3.Sumw2()
     h3.SetStats(0)
@@ -758,6 +771,7 @@ def finState2MuK():
                                                 h['TotalSmearedMass'].Fill(mu_smearedM)
 
                                                 h['MuonProbMeasr'] = createRatio(h['MuonSmearedMass'],h['TotalSmearedMass'])
+                                                h['KaonProbMeasr'] = createRatio(h['KaonSmearedMass'],h['TotalSmearedMass'])
 
 
                                                 #prob_k_measr = k_smearedM/(k_smearedM+mu_smearedM)
