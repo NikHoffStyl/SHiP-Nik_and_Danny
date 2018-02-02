@@ -173,29 +173,29 @@ from ROOT import TGraph,TCanvas,TF1,THStack,TH1
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
 h = {}
-ut.bookHist(h,'RPV_true','Monte Carlo Mass',500,0.8,1.2) # true mass
-ut.bookHist(h,'RPV_reco','Reconstructed Mass',500,0.8,1.2) # reconstructed mass
-ut.bookHist(h,'RPV_mom','True (red) & Reco. (blue) Momentum',100,0.,300.) # true momentum distribution
-ut.bookHist(h,'RPV_mom_reco','Reconstructed Momentum',100,0.,300) # reconstructed momentum distribution
-ut.bookHist(h,'RPV_mom_diff','True/Reco Momentum Difference',100,-3.,3) # true/reco momentum difference
+ut.bookHist(h,'RPV_true','Monte Carlo Mass',500,0.8,1.2)   # true mass
+ut.bookHist(h,'RPV_reco','Reconstructed Mass',500,0.8,1.2)   # reconstructed mass
+ut.bookHist(h,'RPV_mom','True (red) & Reco. (blue) Momentum',100,0.,300.)   # true momentum distribution
+ut.bookHist(h,'RPV_mom_reco','Reconstructed Momentum',100,0.,300)   # reconstructed momentum distribution
+ut.bookHist(h,'RPV_mom_diff','True/Reco Momentum Difference',100,-3.,3)   # true/reco momentum difference
 
-ut.bookHist(h,'Muon_mom_true','Muon - True (red) & Reco. (blue) Momentum',100,0.,140.) # RPV muon daughter reco momentum
-ut.bookHist(h,'Kaon_mom_true','Kaon - True (red) & Reco. (blue) Momentum',100,0.,140.) # RPV pion daughter reco momentum
-ut.bookHist(h,'Muon_mom','Muon - True Momentum',100,0.,140.) # RPV muon daughter true momentum
-ut.bookHist(h,'Kaon_mom','Kaon - True Momentum',100,0.,140.) # RPV pion daughter true momentum
-ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4) # includes both kaon and muon
-ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track fitting
+ut.bookHist(h,'Muon_mom_true','Muon - True (red) & Reco. (blue) Momentum',100,0.,140.)   # RPV muon daughter reco momentum
+ut.bookHist(h,'Kaon_mom_true','Kaon - True (red) & Reco. (blue) Momentum',100,0.,140.)   # RPV pion daughter reco momentum
+ut.bookHist(h,'Muon_mom','Muon - True Momentum',100,0.,140.)   # RPV muon daughter true momentum
+ut.bookHist(h,'Kaon_mom','Kaon - True Momentum',100,0.,140.)   # RPV pion daughter true momentum
+ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4)   # includes both kaon and muon
+ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)   # chi squared track fitting
 
-ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight (Gaussian blurred)
-ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight (Gaussian blurred)
-ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',100,0.,2.) # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
+ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',250,37.5,40.)   # daughter muon time of flight (Gaussian blurred)
+ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight (Gaussian blurred)
+ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',100,0.,2.)   # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
 ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
-ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.) # same as above but using smeared time
+ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)   # same as above but using smeared time
 ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
-ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',100,0.,1.) # kaon and muon true mass
+ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',100,0.,1.)   # kaon and muon true mass
 
-ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight
-ut.bookHist(h,'KaonDir_nosmear','True Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight
+ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',100,37.5,40.)   # daughter muon time of flight
+ut.bookHist(h,'KaonDir_nosmear','True Kaon Straw-ECAL Time (directly)',50,37.5,40.)   # daughter kaon time of flight
 ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
 ut.bookHist(h,'num_kaon','No. of kaon in straw tubes',25,25,50)
 ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
@@ -568,20 +568,20 @@ def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
         print('\nRunning final state K+ Mu-:\n')
         ka_decaycheck = 0
-        successful_events = []          # creates list of event numbers of desired decays
-        for n in range(nEvents):                            # loops over events
-            rc = sTree.GetEntry(n)                              # loads tree entry
+        successful_events = []   # creates list of event numbers of desired decays
+        for n in range(nEvents):   # loops over events
+            rc = sTree.GetEntry(n)   # loads tree entry
 
             #-----------------------------------------------TRACK-LOOPS------------------------------------------------
 
-            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
-                muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
-                true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
-                if abs(true_muon.GetPdgCode()) == 13:                   # checks particle is muon
-                    muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
-                    true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
+            for index,reco_part in enumerate(sTree.FitTracks):   # loops over index and data of track particles                                   
+                muPartkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
+                true_muon = sTree.MCTrack[muPartkey]   # gives MC particle data
+                if abs(true_muon.GetPdgCode()) == 13:   # checks particle is muon
+                    muonMotherkey = true_muon.GetMotherId()   # stores a number index of MC track of mother
+                    true_mother = sTree.MCTrack[muonMotherkey]   # obtains mother particle data
 
-                    check,mu_chi2 = track_checks(index,true_muon,reco_part) # performs various checks (i.e. vertex position, fiducial volume,...)
+                    check,mu_chi2 = track_checks(index,true_muon,reco_part)   # performs various checks (i.e. vertex position, fiducial volume,...)
                     if not check == 0:  
                         continue
 
@@ -589,46 +589,46 @@ def finStateMuKa():
                         # print('Kaon has decayed to a muon before detection')
                         ka_decaycheck+=1
 
-                    if true_mother.GetPdgCode() == 9900015:    # checks mother is RPV
-                        for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
-                            kaPartkey = sTree.fitTrack2MC[index2]                  # matches track to MC particle key
-                            true_kaon = sTree.MCTrack[kaPartkey]                  # gives MC particle data
-                            if abs(true_kaon.GetPdgCode()) == 321:              # checks particle is kaon
-                                kaonMotherkey = true_kaon.GetMotherId()             # stores a number index of MC track of mother
-                                true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
-                                if kaonMotherkey == muonMotherkey:                    # check if mother keys are the same
+                    if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV
+                        for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
+                            kaPartkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
+                            true_kaon = sTree.MCTrack[kaPartkey]   # gives MC particle data
+                            if abs(true_kaon.GetPdgCode()) == 321:   # checks particle is kaon
+                                kaonMotherkey = true_kaon.GetMotherId()   # stores a number index of MC track of mother
+                                true_mother = sTree.MCTrack[kaonMotherkey]   # obtains mother particle data
+                                if kaonMotherkey == muonMotherkey:   # check if mother keys are the same
 
                                     check2,ka_chi2 = track_checks(index2,true_kaon,reco_part2)
-                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                    if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
 
                                     #---------------------------------------------PARTICLE-DATA-----------------------------------------------------
 
-                                    kaonMotherTrue_mass = true_mother.GetMass()    # get RPV/final states mother mass
-                                    kaonMotherTrue_mom = true_mother.GetP()     # get RPV/final states mother mom
+                                    kaonMotherTrue_mass = true_mother.GetMass()   # get RPV/final states mother mass
+                                    kaonMotherTrue_mom = true_mother.GetP()   # get RPV/final states mother mom
 
-                                    RPV_Vector = ROOT.TLorentzVector()      # declares variables as TLorentzVector class
+                                    RPV_Vector = ROOT.TLorentzVector()   # declares variables as TLorentzVector class
                                     Muon_Vector = ROOT.TLorentzVector()
                                     Kaon_Vector = ROOT.TLorentzVector()
-                                    RPV_Vector,Muon_Vector,Kaon_Vector,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
+                                    RPV_Vector,Muon_Vector,Kaon_Vector,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
                                     
                                     if RPV_Vector == -1: continue
                                     if doca > 2.: 
                                         #print('distance of closest approach too large')
                                         continue
 
-                                    RPV_mass = RPV_Vector.M()                           # sets RPV mass
-                                    RPV_reco_mom = RPV_Vector.P()                       # sets RPV mom
+                                    RPV_mass = RPV_Vector.M()   # sets RPV mass
+                                    RPV_reco_mom = RPV_Vector.P()   # sets RPV mom
                                     mom_diff = kaonMotherTrue_mom - RPV_reco_mom
 
-                                    true_kaP = true_kaon.GetP()               # true kaon momentum
-                                    reco_kaP = Kaon_Vector.P()            # reconstructed kaon momentum
-                                    true_muP = true_muon.GetP()          # true muon momentum
-                                    reco_muP = Muon_Vector.P()            # reconstructed muon momentum
-                                    kaM = true_kaon.GetMass()           # kaon mass
-                                    muM = true_muon.GetMass()          # muon mass
+                                    true_kaP = true_kaon.GetP()   # true kaon momentum
+                                    reco_kaP = Kaon_Vector.P()   # reconstructed kaon momentum
+                                    true_muP = true_muon.GetP()   # true muon momentum
+                                    reco_muP = Muon_Vector.P()   # reconstructed muon momentum
+                                    kaM = true_kaon.GetMass()   # kaon mass
+                                    muM = true_muon.GetMass()   # muon mass
                                                       
-                                    h['RPV_true'].Fill(kaonMotherTrue_mass)     # fills histograms
+                                    h['RPV_true'].Fill(kaonMotherTrue_mass)   # fills histograms
                                     h['RPV_mom'].Fill(kaonMotherTrue_mom)
                                     h['RPV_reco'].Fill(RPV_mass)                        
                                     h['RPV_mom_reco'].Fill(RPV_reco_mom)   
@@ -642,43 +642,43 @@ def finStateMuKa():
                                     h['Kaon_mom_true'].Fill(true_kaP)
                                     h['Muon_mom_true'].Fill(true_muP)
                                     
-                                    successful_events.append(n)     # adds entries to the list
-                                    m = successful_events[0]      # arbitrarily picks the first one as an example
+                                    successful_events.append(n)   # adds entries to the list
+                                    m = successful_events[0]   # arbitrarily picks the first one as an example
                                     count = len(successful_events)
 
                                     #------------------------------------TIME-RESOLUTION------------------------------------------
 
                                     mu_t,mu_v,mu_tsmear,mu_vsmear,mu_diff,straw_muP = time_res_RPV(muPartkey,13,n,m)        
-                                    if mu_t != -1: # and mu_t < 38.05:
-                                        h['MuonDir'].Fill(mu_tsmear) # fills histogram with smeared time
-                                        h['MuonDir_nosmear'].Fill(mu_t) # fills histogram with true time
+                                    if mu_t != -1:   # and mu_t < 38.05:
+                                        h['MuonDir'].Fill(mu_tsmear)   # fills histogram with smeared time
+                                        h['MuonDir_nosmear'].Fill(mu_t)   # fills histogram with true time
 
-                                        beta = mu_v/c                     # equations for mass calculated from true time
+                                        beta = mu_v/c   # equations for mass calculated from true time
                                         gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                        nosmearM = straw_muP/(beta*gamma) # previously used reco_muP
-                                        beta_smear = mu_vsmear/c            # equations for mass calculated from smeared time
+                                        nosmearM = straw_muP/(beta*gamma)   # previously used reco_muP
+                                        beta_smear = mu_vsmear/c   # equations for mass calculated from smeared time
                                         gamma_smear = 1/(ROOT.TMath.Sqrt(1-(beta_smear**2)))
                                         smearM = straw_muP/(beta_smear*gamma_smear)
                                         
-                                        h['tmass_muon'].Fill(nosmearM) # fills histograms with mass data
+                                        h['tmass_muon'].Fill(nosmearM)   # fills histograms with mass data
                                         h['tsmearmass_muon'].Fill(smearM)
 
                                         ka_t,ka_v,ka_tsmear,ka_vsmear,ka_diff,straw_kaP = time_res_RPV(kaPartkey,321,n,m)      
-                                        if ka_t != -1: # and ka_t < 38.06:
-                                            h['KaonDir'].Fill(ka_tsmear) # fills histogram with smeared time
-                                            h['KaonDir_nosmear'].Fill(ka_t) # fills histogram with true time
+                                        if ka_t != -1:   # and ka_t < 38.06:
+                                            h['KaonDir'].Fill(ka_tsmear)   # fills histogram with smeared time
+                                            h['KaonDir_nosmear'].Fill(ka_t)   # fills histogram with true time
                                             h['KaonDir_nosmear'].SetLineColor(2)
 
-                                            beta = ka_v/c                     # equations for mass calculated from true time
+                                            beta = ka_v/c   # equations for mass calculated from true time
                                             gamma = 1/(ROOT.TMath.Sqrt(1-(beta**2)))
-                                            nosmearM = straw_kaP/(beta*gamma) # previously used reco_kaP
-                                            beta_smear = ka_vsmear/c            # equations for mass calculated from smeared time
+                                            nosmearM = straw_kaP/(beta*gamma)   # previously used reco_kaP
+                                            beta_smear = ka_vsmear/c   # equations for mass calculated from smeared time
                                             gamma_smear = 1/(ROOT.TMath.Sqrt(1-(beta_smear**2)))
                                             smearM = straw_kaP/(beta_smear*gamma_smear)
 
-                                            h['tmass_kaon'].Fill(nosmearM) # fills histograms with mass data
+                                            h['tmass_kaon'].Fill(nosmearM)   # fills histograms with mass data
                                             h['tsmearmass_kaon'].Fill(smearM)
-                                            h['ecalstraw_mom'].Fill(mu_diff) # fills histogram for momentum difference
+                                            h['ecalstraw_mom'].Fill(mu_diff)   # fills histogram for momentum difference
                                             h['ecalstraw_mom'].Fill(ka_diff)
 
         print('\t' + str(count) + ' detected events for this decay mode')
@@ -687,7 +687,7 @@ def finStateMuKa():
 def finStateMuKa_exc():
     if sTree.GetBranch("FitTracks"):
         print('\nRunning final state K*+ Mu-:\n')
-        decay1count_kaon = 0    # decay 1: N --> K*+ mu- --> K+ pi0 mu-
+        decay1count_kaon = 0   # decay 1: N --> K*+ mu- --> K+ pi0 mu-
         decay1count_pion0 = 0
         decay2count_kaon0 = 0   # decay 2: N --> K*+ mu- --> K0 pi+ mu-
         decay2count_pion = 0
@@ -719,7 +719,7 @@ def finStateMuKa_exc():
                                 true_mother_N = sTree.MCTrack[kaonExMotherkey]
                                 if kaonExMotherkey == muonMotherkey:   # checks if mother keys are the same
                                     check2,ka_chi2 = track_checks(index2,true_muon,reco_part2)
-                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                    if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
                                     if true_mother_N.GetPdgCode() == 9900015:   # checks mother is RPV
                                         decay1count_kaon += 1
