@@ -168,7 +168,7 @@ else:
 
 import TrackExtrapolateTool
 from array import array
-from ROOT import THStack,TH1F,TCanvas,TGraph,TPad,TColor
+from ROOT import TGraph,TCanvas,TF1,THStack,TH1
 
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
@@ -188,11 +188,11 @@ ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.) # chi squared track 
 
 ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight (Gaussian blurred)
 ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight (Gaussian blurred)
-ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',200,0.,2.) # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
-ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.)
-ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.) # same as above but using smeared time
-ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',200,0.,2.)
-ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',100,0.,1.) # kaon and muon mass
+ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',100,0.,2.) # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
+ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
+ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.) # same as above but using smeared time
+ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
+ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',100,0.,1.) # kaon and muon true mass
 
 ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',500,37.5,40.) # daughter muon time of flight
 ut.bookHist(h,'KaonDir_nosmear','True Kaon Straw-ECAL Time (directly)',500,37.5,40.) # daughter kaon time of flight
@@ -200,6 +200,9 @@ ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
 ut.bookHist(h,'num_kaon','No. of kaon in straw tubes',25,25,50)
 ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
 ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular event)',500,44,45)
+ut.bookHist(h,'straight_path','Straight distance from first straw tube hit to ECAL',100,11,12)
+ut.bookHist(h,'better_path','Curved path through straw tubes, then straight to ECAL',100,11,12)
+ut.bookHist(h,'path_diff','Difference between straight path and better approximation',100,0,0.001)
 
 #----------------------------------------------------FUNCTIONS------------------------------------------------------------
 
@@ -350,7 +353,7 @@ def makePlots():
     h['RPV_reco'].SetYTitle('No. of Particles')
     h['RPV_reco'].SetLineColor(1)
     h['RPV_reco'].Draw()
-    print('Neutralino mass Gaussian fit:')
+    print('\nNeutralino mass Gaussian fit:')
     fitSingleGauss('RPV_reco',0.9,1.1)
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Test_Mass'].cd(3)
@@ -454,7 +457,7 @@ def track_checks(index,true_part,reco_part):
         #print('Too few measurements')
         check = -1
     fit_rchi2 = fit_status.getChi2()                      
-    fit_chi2 = (fit_rchi2/fit_nmeas)                       # gets chi squared value
+    fit_chi2 = (fit_rchi2/fit_nmeas)
     if not fit_chi2 < 4:
         #print('Chi squared value too high')
         check = -1
@@ -462,15 +465,16 @@ def track_checks(index,true_part,reco_part):
     return check,fit_chi2
 
 def time_res_RPV(partkey,pdg,n,m):
-    tnosmear = -1 # declares variables
+    tnosmear = -1   # declares variables
     vnosmear = -1
     tsmear = -1
     vsmear = -1
     diff = -1
     if sTree.GetBranch("strawtubesPoint"):
-        x_array = [] # declares lists
+        x_array = []   # declares lists
         y_array = []
         z_array = []
+        r_array = []
         t_array = []
         px_array = []
         py_array = []
@@ -479,35 +483,42 @@ def time_res_RPV(partkey,pdg,n,m):
         for k,hits in enumerate(sTree.strawtubesPoint):
             straw_TrackID = hits.GetTrackID()
             if straw_TrackID == partkey:
-                x_array.append(hits.GetX()) # adds data to the lists
+                x_array.append(hits.GetX())   # adds data to the lists
                 y_array.append(hits.GetY())
                 z_array.append(hits.GetZ())
                 px_array.append(hits.GetPx())
                 py_array.append(hits.GetPy())
                 pz_array.append(hits.GetPz())
                 t_array.append(hits.GetTime())
-        
-        num_hits = len(z_array) # number of elements in the list
-        if pdg==13: # muon
-            h['num_muon'].Fill(num_hits)
-            for hit in pz_array:
-                if n == m:
-                    h['track_muon'].Fill(hit) # muon z-momentum through straw tubes for particular event
-        if pdg==321: # kaon
-            h['num_kaon'].Fill(num_hits) 
-            for hit in pz_array:
-                if n == m:
-                    h['track_kaon'].Fill(hit) # kaon z-momentum through straw tubes for particular event
 
-        min_z_index = z_array.index(min(z_array)) # gives index of the smallest element in the list
-        straw_z = 0.01*z_array[min_z_index] # positions, time and momenta the first straw tube hit
-        straw_x = 0.01*x_array[min_z_index]
-        straw_y = 0.01*y_array[min_z_index]
+        N = len(z_array)
+        R1 = 0
+        for j in range(0,N-1):
+            s = ROOT.TMath.Sqrt(((0.01*x_array[j] - 0.01*x_array[j+1])**2) + ((0.01*y_array[j] - 0.01*y_array[j+1])**2) + ((0.01*z_array[j] - 0.01*z_array[j+1])**2))
+            r_array.append(s)
+            R1 = sum(r_array)   # total distance travelled in the straw tubes
+
+        min_z_index = z_array.index(min(z_array))   # gives index of the smallest element in the list
+        firststraw_z = 0.01*z_array[min_z_index]   # positions, time and momenta the first straw tube hit
+        firststraw_x = 0.01*x_array[min_z_index]
+        firststraw_y = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
         strawPx = px_array[min_z_index]
         strawPy = py_array[min_z_index]
         strawPz = pz_array[min_z_index]
         strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) # straw tube momentum
+            
+        num_hits = len(z_array)   # number of elements in the list
+        if pdg==13:   # muon
+            h['num_muon'].Fill(num_hits)
+            for hit in pz_array:
+                if n == m:
+                    h['track_muon'].Fill(hit)   # muon z-momentum through straw tubes for particular event
+        if pdg==321:   # kaon
+            h['num_kaon'].Fill(num_hits) 
+            for hit in pz_array:
+                if n == m:
+                    h['track_kaon'].Fill(hit)   # kaon z-momentum through straw tubes for particular event
   
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
@@ -515,26 +526,36 @@ def time_res_RPV(partkey,pdg,n,m):
                 for k,hits in enumerate(sTree.EcalPoint):
                     ecal_TrackID = hits.GetTrackID()
                     if ecal_TrackID == partkey:
-                        ecal_x = 0.01*hits.GetX()           # positions, time and momenta of ECAL hit
-                        ecal_y = 0.01*hits.GetY()           # stored in units of cm 
+                        ecal_x = 0.01*hits.GetX()   # positions, time and momenta of ECAL hit
+                        ecal_y = 0.01*hits.GetY()   # stored in units of cm 
                         ecal_z = 0.01*hits.GetZ()
                         ecal_time = hits.GetTime()
                         ecalPx = hits.GetPx()
                         ecalPy = hits.GetPy()
                         ecalPz = hits.GetPz()
-                        ecalP = ROOT.TMath.Sqrt((ecalPx**2) + (ecalPy**2) + (ecalPz**2)) # ECAL momentum
+                        ecalP = ROOT.TMath.Sqrt((ecalPx**2) + (ecalPy**2) + (ecalPz**2))   # ECAL momentum
 
         if not ecal_time <= 0:
-            diff = strawP - ecalP                           # between 1st straw tube hit and ECAL
-            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-            sigma = 0.01 
+            diff = strawP - ecalP   # between 1st straw tube hit and ECAL
+            r = ROOT.TMath.Sqrt(((ecal_x - firststraw_x)**2) + ((ecal_y - firststraw_y)**2) + ((ecal_z - firststraw_z)**2))
+            h['straight_path'].Fill(r)
+            max_z_index = z_array.index(max(z_array))   # gives index of the smallest element in the list
+            laststraw_x = 0.01*x_array[max_z_index]
+            laststraw_y = 0.01*y_array[max_z_index]
+            laststraw_z = 0.01*z_array[max_z_index]
+            R2 = ROOT.TMath.Sqrt(((ecal_x - laststraw_x)**2) + ((ecal_y - laststraw_y)**2) + ((ecal_z - laststraw_z)**2))
+            R = R1+R2   # better approximation of distance travelled through the straw tubes
+            h['better_path'].Fill(R)
+            rdiff = abs(R-r)
+            h['path_diff'].Fill(rdiff)
+            sigma = 0.01   # standard deviation for Gaussian
             straw_smear = np.random.normal(loc=straw_time,scale=sigma,size=None)
             ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
-            tsmear = abs(straw_smear - ecal_smear)          # smeared time of flight
-            vsmear = (r/tsmear)*(10**9)                     # smeared velocity of flight
+            tsmear = abs(straw_smear - ecal_smear)   # smeared time of flight
+            vsmear = (R/tsmear)*(10**9)   # smeared velocity of flight
 
-            tnosmear = abs(straw_time - ecal_time)          # stored in units of nanoseconds
-            vnosmear = (r/tnosmear)*(10**9)                 # velocity of flight 
+            tnosmear = abs(straw_time - ecal_time)   # stored in units of nanoseconds
+            vnosmear = (R/tnosmear)*(10**9)   # velocity of flight 
             
     return tnosmear,vnosmear,tsmear,vsmear,diff,strawP
 
@@ -546,7 +567,7 @@ c = 2.99792458*(10**8)
 def finStateMuKa():
     if sTree.GetBranch("FitTracks"):
         print('\nRunning final state K+ Mu-:\n')
-        k_decaycheck = 0
+        ka_decaycheck = 0
         successful_events = []          # creates list of event numbers of desired decays
         for n in range(nEvents):                            # loops over events
             rc = sTree.GetEntry(n)                              # loads tree entry
@@ -566,7 +587,7 @@ def finStateMuKa():
 
                     if true_mother.GetPdgCode() == 321:
                         # print('Kaon has decayed to a muon before detection')
-                        k_decaycheck+=1
+                        ka_decaycheck+=1
 
                     if true_mother.GetPdgCode() == 9900015:    # checks mother is RPV
                         for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
@@ -660,118 +681,97 @@ def finStateMuKa():
                                             h['ecalstraw_mom'].Fill(mu_diff) # fills histogram for momentum difference
                                             h['ecalstraw_mom'].Fill(ka_diff)
 
-        #binsize = float(0.01) # Gev/c2
-        #mass = [] # list of particle masses
-        #prob_mu = []
-        #prob_ka = []
-        #for bins in range(0,200):
-        #    mass.append((float(bins)/100) + binsize)
-
-        #for x in mass:
-        #    j = h['tsmearmass_muon'].GetXaxis().FindBin(x) # jth bin
-        #    num_mu = h['tsmearmass_muon'].GetBinContent(j) # gets number of entries in jth bin
-        #    num_ka = h['tsmearmass_kaon'].GetBinContent(j)
-        #    if num_mu == 0 and num_ka == 0:
-        #        prob = -1
-        #    else:
-        #        prob_mu.append((num_mu) / (num_mu + num_ka)) # probability of being a muon
-        #        prob_ka.append((num_ka) / (num_mu + num_ka)) # probability of being a kaon
-
-        #N = len(mass)
-
-        #c1 = TCanvas('c1','Graph',200,10,700,500) 
-        #c1.SetGrid()
-        #gr = TGraph(N,mass,prob_mu)
-        #gr.SetTitle('Probability that particle is a muon')
-        #gr.GetXaxis().SetTitle('Prob.')
-        #gr.GetYaxis().SetTitle('Mass / [GeV/c2]')
-        #gr.Draw('ACP')
-        #c1.Update()
-        #c1.Modified()
-        #c1.Update()
-
         print('\t' + str(count) + ' detected events for this decay mode')
-        print('\t' + str(k_decaycheck) + ' kaons decayed to muons before detection\n')
+        print('\t' + str(ka_decaycheck) + ' kaons decayed to muons before detection\n')
         
 def finStateMuKa_exc():
     if sTree.GetBranch("FitTracks"):
-        print('Running final state K*+ Mu-:\n')
+        print('\nRunning final state K*+ Mu-:\n')
         decay1count_kaon = 0    # decay 1: N --> K*+ mu- --> K+ pi0 mu-
         decay1count_pion0 = 0
         decay2count_kaon0 = 0   # decay 2: N --> K*+ mu- --> K0 pi+ mu-
         decay2count_pion = 0
-        for n in range(nEvents):                            # loops over events
-            rc = sTree.GetEntry(n)                              # loads tree entry
+        for n in range(nEvents):   # loops over events
+            rc = sTree.GetEntry(n)   # loads tree entry
 
-            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
-                muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
-                true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
+            for index,reco_part in enumerate(sTree.FitTracks):   # loops over index and data of track particles                                   
+                muPartkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
+                true_muon = sTree.MCTrack[muPartkey]   # gives MC particle data
                 
-                if abs(true_muon.GetPdgCode()) == 13:                   # checks particle is muon
-                    muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
-                    true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
-                    check,mu_chi2 = track_checks(index,true_muon,reco_part) # performs various checks (i.e. vertex position, fiducial volume,...)
+                if abs(true_muon.GetPdgCode()) == 13:   # checks particle is muon
+                    muonMotherkey = true_muon.GetMotherId()   # stores a number index of MC track of mother
+                    true_mother = sTree.MCTrack[muonMotherkey]   # obtains mother particle data
+                    check,mu_chi2 = track_checks(index,true_muon,reco_part)   # performs various checks (i.e. vertex position, fiducial volume,...)
                     if not check == 0:  
                         continue
 
-                    for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
-                        Partkey = sTree.fitTrack2MC[index2]                  # matches track to MC particle key
-                        true_daughter = sTree.MCTrack[Partkey]                  # gives MC particle data
+                    for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
+                        Partkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
+                        true_daughter = sTree.MCTrack[Partkey]   # gives MC particle data
                         
                         #-----------------------------------------------DECAY-1--------------------------------------------------------
 
-                        if abs(true_daughter.GetPdgCode()) == 321:              # checks particle is kaon
-                            kaonMotherkey = true_daughter.GetMotherId()             # stores a number index of MC track of mother
-                            true_kaonEx = sTree.MCTrack[kaonMotherkey]          # obtains mother excited kaon data
+                        if abs(true_daughter.GetPdgCode()) == 321:   # checks particle is charged kaon
+                            kaonMotherkey = true_daughter.GetMotherId()   # stores number index of MC track of mother
+                            true_kaonEx = sTree.MCTrack[kaonMotherkey]   # obtains mother excited kaon data
                             if abs(true_kaonEx.GetPdgCode()) == 323:
                                 kaonExMotherkey = true_kaonEx.GetMotherId()           
                                 true_mother_N = sTree.MCTrack[kaonExMotherkey]
-                                if kaonExMotherkey == muonMotherkey:                    # checks if mother keys are the same
-                                    check2,ka_chi2 = track_checks(index2,true_daughter,reco_part2)
+                                if kaonExMotherkey == muonMotherkey:   # checks if mother keys are the same
+                                    check2,ka_chi2 = track_checks(index2,true_muon,reco_part2)
                                     if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
-                                    if true_mother_N.GetPdgCode() == 9900015:    # checks mother is RPV
+                                    if true_mother_N.GetPdgCode() == 9900015:   # checks mother is RPV
                                         decay1count_kaon += 1
 
-                        if abs(true_daughter.GetPdgCode()) == 111:              # checks particle is pion
-                            pionMotherkey = true_daughter.GetMotherId()             # stores a number index of MC track of mother
-                            true_kaonEx = sTree.MCTrack[pionMotherkey]          # obtains mother excited kaon data
+                        if abs(true_daughter.GetPdgCode()) == 111:   # checks particle is neutral pion
+                            pionMotherkey = true_daughter.GetMotherId()   # stores a number index of MC track of mother
+                            true_kaonEx = sTree.MCTrack[pionMotherkey]   # obtains mother excited kaon data
                             if abs(true_kaonEx.GetPdgCode()) == 323:
                                 kaonExMotherkey = true_kaonEx.GetMotherId()           
                                 true_mother_N = sTree.MCTrack[kaonExMotherkey]
-                                if kaonExMotherkey == muonMotherkey:                    # checks if mother keys are the same
-                                    check2,chi2 = track_checks(index2,true_daughter,reco_part2)
-                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                if kaonExMotherkey == muonMotherkey:   # checks if mother keys are the same
+                                    check2,chi2 = track_checks(index2,true_muon,reco_part2)
+                                    if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
-                                    if true_mother_N.GetPdgCode() == 9900015:    # checks mother is RPV
+                                    if true_mother_N.GetPdgCode() == 9900015:   # checks mother is RPV
                                         decay1count_pion0 += 1
 
                         #-----------------------------------------------DECAY-2--------------------------------------------------------
 
-                        if abs(true_daughter.GetPdgCode()) == 310 or abs(true_daughter.GetPdgCode()) == 130:
+                        if abs(true_daughter.GetPdgCode()) == 310 or abs(true_daughter.GetPdgCode()) == 130:   # checks particle is neutral kaon
                             kaon0Motherkey = true_daughter.GetMotherId()
                             true_kaonEx = sTree.MCTrack[kaon0Motherkey]
                             if abs(true_kaonEx.GetPdgCode()) == 323:
                                 kaonExMotherkey = true_kaonEx.GetMotherId()           
                                 true_mother_N = sTree.MCTrack[kaonExMotherkey]
-                                if kaonExMotherkey == muonMotherkey:                    # checks if mother keys are the same
-                                    check2,chi2 = track_checks(index2,true_daughter,reco_part2)
-                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                if kaonExMotherkey == muonMotherkey:   # checks if mother keys are the same
+                                    check2,chi2 = track_checks(index2,true_muon,reco_part2)
+                                    if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
-                                    if true_mother_N.GetPdgCode() == 9900015:    # checks mother is RPV
+                                    if true_mother_N.GetPdgCode() == 9900015:   # checks mother is RPV
                                         decay2count_kaon0 += 1
-
-                        if abs(true_daughter.GetPdgCode()) == 211:
+                        #if abs(true_daughter.GetPdgCode()) == 211:   # checks particle is charged pion (daughter of neutral kaon)
+                        #    pionMotherkey = true_daughter.GetMotherId()
+                        #    true_kaon0 = sTree.MCTrack[pionMotherkey]
+                        #    if abs(true_kaon0.GetPdgCode()) == 310 or abs(true_kaon0.GetPdgCode()) == 130:
+                        #        kaon0Motherkey = true_kaon0.GetMotherId()
+                        #        true_mother_N = sTree.MCTrack[kaon0Motherkey]
+                        #        if kaon0Motherkey == muonMotherkey:
+                        #            #check2,chi2 = track_checks(index2,true_muon,)
+                        #            if true_mother_N.GetPdgCode() == 9900015:   # checks mother is RPV
+                        #                test += 1
+                        if abs(true_daughter.GetPdgCode()) == 211:   # checks particle is charged pion
                             pionMotherkey = true_daughter.GetMotherId()
                             true_kaonEx = sTree.MCTrack[pionMotherkey]
                             if abs(true_kaonEx.GetPdgCode()) == 323:
                                 kaonExMotherkey = true_kaonEx.GetMotherId()           
                                 true_mother_N = sTree.MCTrack[kaonExMotherkey]
-                                if kaonExMotherkey == muonMotherkey:                    # checks if mother keys are the same
-                                    check2,chi2 = track_checks(index2,true_daughter,reco_part2)
-                                    if not check2 == 0: # performs various checks (i.e. vertex position, fiducial volume,...)
+                                if kaonExMotherkey == muonMotherkey:   # checks if mother keys are the same
+                                    check2,chi2 = track_checks(index2,true_muon,reco_part2)
+                                    if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
-                                    if true_mother_N.GetPdgCode() == 9900015:    # checks mother is RPV
+                                    if true_mother_N.GetPdgCode() == 9900015:   # checks mother is RPV
                                         decay2count_pion += 1
 
         print('\t' + str(decay1count_kaon) + ' charged kaons detected')
