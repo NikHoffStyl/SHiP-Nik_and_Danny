@@ -9,9 +9,9 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 from array import array
-from ROOT import TCanvas, TColor, TGaxis, TH1F, TPad, TGraph
-from ROOT import kBlack, kBlue, kRed
-from ROOT import gROOT
+from ROOT import TCanvas, TColor, TGaxis, TH1F, TPad, TGraph, TF1, TMultiGraph
+from ROOT import kBlack, kBlue, kRed, kFALSE, kSolar
+from ROOT import gROOT, gPad, gStyle
 from array import array
 import shipRoot_conf
 import shipDet_conf
@@ -30,7 +30,8 @@ measCutPR = 22
 docaCut = 2.
 c = 2.99792458*(10**8)
 currentDate = datetime.datetime.now().strftime("%y_%m_%d_%H%M")
-
+polyFit1 = TF1("polyFit1","pol9")
+polyFit2 = TF1("polyFit2","pol9")
 
 def inputOptsArgs():
     inputFile  = None
@@ -246,12 +247,12 @@ def create_Hists():
     ut.bookHist(h,'Neutralino_mom_reco','Reconstructed Momentum',100,0.,300.)                       # reco momentum
     ut.bookHist(h,'Neutralino_mom_diff','True/Reco Momentum Difference',100,-3.,3)                  # true-reco momentum difference
 
-    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)                                 # chi squared track fitting
-    ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)
-    ut.bookHist(h,'smearedmass1','Time Smeared Neutralino Mass',500,0.,2.)
-    ut.bookHist(h,'smearedmass2','Time Smeared Neutralino Mass',500,0.,2.)
-    ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum P1(red) P2(blue)',500,0.,300.)
-    ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
+    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)                                     # chi squared track fitting
+    #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
+    #ut.bookHist(h,'smearedmass1','Time Smeared Neutralino Mass',500,0.,2.)
+    #ut.bookHist(h,'smearedmass2','Time Smeared Neutralino Mass',500,0.,2.)
+    #ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum P1(red) P2(blue)',500,0.,300.)
+    #ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
 
     
     print("Created Histograms")
@@ -283,7 +284,6 @@ def dist2InnerWall(X,Y,Z):
     if distance < minDistance  :
        minDistance = distance
   return minDistance
-
 
 def myVertex(t1,t2,PosDir):
  # closest distance between two tracks
@@ -331,7 +331,7 @@ def RedoVertexing(t1,t2):
              try:
                  reps[tr].extrapolateToPoint(states[tr], newPos, False)
              except:
-                 print ('SHiPAna: extrapolation did not work')
+                 print ('SHiPAna: extrapolation did not work (@RedoVertexing).')
                  rc = False
                  break
              newPosDir[tr] = [reps[tr].getPos(states[tr]),reps[tr].getDir(states[tr])]
@@ -340,7 +340,7 @@ def RedoVertexing(t1,t2):
          dz = abs(zBefore-zv)
          step+=1
          if step > 10:
-             print ('abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz)
+             print ('Abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz)
              rc = False
              break 
      if not rc: return -1,-1,-1,doca # extrapolation failed, makes no sense to continue
@@ -357,133 +357,26 @@ def RedoVertexing(t1,t2):
      #return xv,yv,zv,doca,NeutralinoMom
      return NeutralinoLV,LV[t1],LV[t2],doca
 
-def fitSingleGauss(x,ba=None,be=None):
-    name    = 'myGauss_'+x 
-    myGauss = h[x].GetListOfFunctions().FindObject(name)
-    if not myGauss:
-       if not ba : ba = h[x].GetBinCenter(1) 
-       if not be : be = h[x].GetBinCenter(h[x].GetNbinsX()) 
-       bw    = h[x].GetBinWidth(1) 
-       mean  = h[x].GetMean()
-       sigma = h[x].GetRMS()
-       norm  = h[x].GetEntries()*0.3
-       myGauss = ROOT.TF1(name,'[0]*'+str(bw)+'/([2]*sqrt(2*pi))*exp(-0.5*((x-[1])/[2])**2)+[3]',4)
-       myGauss.SetParameter(0,norm)
-       myGauss.SetParameter(1,mean)
-       myGauss.SetParameter(2,sigma)
-       myGauss.SetParameter(3,1.)
-       myGauss.SetParName(0,'Signal')
-       myGauss.SetParName(1,'Mean')
-       myGauss.SetParName(2,'Sigma')
-       myGauss.SetParName(3,'bckgr')
-    h[x].Fit(myGauss,'','',ba,be) 
-
-def makePlots():
-   ut.bookCanvas(h,key='DAUGHTERS_TV',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=1000,cx=3,cy=2)
-   cv = h['DAUGHTERS_TV'].cd(1)
-   h['MuonStrawTime'].SetXTitle('Time [ns]')
-   h['MuonStrawTime'].SetYTitle('No. of Particles')
-   h['MuonStrawTime'].Draw()
-   h['KaonStrawTime'].SetLineColor(2)
-   h['KaonStrawTime'].Draw('same')
-
-   cv = h['DAUGHTERS_TV'].cd(2)
-   h['MuonEcalTime'].SetXTitle('Time [ns]')
-   h['MuonEcalTime'].SetYTitle('No. of Particles')
-   h['MuonEcalTime'].Draw()
-   h['KaonEcalTime'].SetLineColor(2)
-   h['KaonEcalTime'].Draw('same')
-
-   cv = h['DAUGHTERS_TV'].cd(3)
-   h['MuonDirDeltaTime'].SetXTitle('Time of Flight [ns]')
-   h['MuonDirDeltaTime'].SetYTitle('No. of Particles')
-   h['MuonDirDeltaTime'].Draw()
-   h['KaonDirDeltaTime'].SetLineColor(2)
-   h['KaonDirDeltaTime'].Draw('same')
-
-   cv = h['DAUGHTERS_TV'].cd(4)
-   h['MuonFlightLen'].SetXTitle('Flight Length (cm)')
-   h['MuonFlightLen'].SetYTitle('No. of Particles')
-   h['MuonFlightLen'].Draw()
-   h['KaonFlightLen'].SetLineColor(2)
-   h['KaonFlightLen'].Draw('same')
-
-   cv = h['DAUGHTERS_TV'].cd(5)
-   h['MuonSpeed'].SetXTitle('beta')
-   h['MuonSpeed'].SetYTitle('No. of Particles')
-   h['MuonSpeed'].Draw()
-   h['KaonSpeed'].SetLineColor(2)
-   h['KaonSpeed'].Draw('same')
-
-   h['DAUGHTERS_TV'].Print('DaughterTVProp'+ currentDate + '.png')
-
-   ut.bookCanvas(h,key='DAUGHTERS_MOM',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=1000,cx=3,cy=2)
-   cv = h['DAUGHTERS_MOM'].cd(1)
-   h['MuonStrawMom'].SetXTitle('Momentum [GeV/c]')
-   h['MuonStrawMom'].SetYTitle('No. of Particles')
-   h['MuonStrawMom'].Draw()
-   h['KaonStrawMom'].SetLineColor(2)
-   h['KaonStrawMom'].Draw('same')
-
-   cv = h['DAUGHTERS_MOM'].cd(2)
-   h['MuonEcalMom'].SetXTitle('Momentum [GeV/c]')
-   h['MuonEcalMom'].SetYTitle('No. of Particles')
-   h['MuonEcalMom'].Draw()
-   h['KaonEcalMom'].SetLineColor(2)
-   h['KaonEcalMom'].Draw('same')
-
-   cv = h['DAUGHTERS_MOM'].cd(3)
-   h['MuonRecoMom'].SetXTitle('Momentum [GeV/c]')
-   h['MuonRecoMom'].SetYTitle('No. of Particles')
-   h['MuonRecoMom'].Draw()
-   h['KaonRecoMom'].SetLineColor(2)
-   h['KaonRecoMom'].Draw('same')
-
-   #cv = h['DAUGHTERS_MOM'].cd(4)
-   #h['MuonTrueMom'].SetXTitle('Momentum [GeV/c]')
-   #h['MuonTrueMom'].SetYTitle('No. of Particles')
-   #h['MuonTrueMom'].Draw()
-   #h['KaonTrueMom'].SetLineColor(2)
-   #h['KaonTrueMom'].Draw('same')
-
-   cv = h['DAUGHTERS_MOM'].cd(4)
-   h['MuonDeltaMom'].SetXTitle('Momentum [GeV/c]')
-   h['MuonDeltaMom'].SetYTitle('No. of Particles')
-   h['MuonDeltaMom'].Draw()
-   h['KaonDeltaMom'].SetLineColor(2)
-   h['KaonDeltaMom'].Draw('same')
-
-   cv = h['DAUGHTERS_MOM'].cd(5)
-   h['MuonRecoMass'].SetXTitle('Mass [GeV/c2]')
-   h['MuonRecoMass'].SetYTitle('No. of Particles')
-   h['MuonRecoMass'].Draw()
-   h['KaonRecoMass'].SetLineColor(2)
-   h['KaonRecoMass'].Draw('same')
-
-   cv = h['DAUGHTERS_MOM'].cd(6)
-   h['MuonSmearedMass'].SetXTitle('Mass [GeV/c2]')
-   h['MuonSmearedMass'].SetYTitle('No. of Particles')
-   h['MuonSmearedMass'].Draw()
-   h['MuonSmearedMass'].Fit("landau")
-   h['MuonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
-   h['KaonSmearedMass'].SetLineColor(2)
-   h['KaonSmearedMass'].Draw('same')
-   h['KaonSmearedMass'].Fit("landau")
-   h['KaonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
-   h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
-
-   ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=500,ny=500,cx=1,cy=1)
-   cv = h['DAUGHTERS_PROB'].cd(1)
-   h['MuonProbMeasr'].SetXTitle('Mass [GeV/c2]')
-   h['MuonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
-   h['MuonProbMeasr'].Fit('pol9')
-   h['MuonProbMeasr'].Draw('E2')
-   #h['KaonProbMeasr'].SetLineColor(2)
-   #h['KaonProbMeasr'].Draw('same')
-   h['DAUGHTERS_PROB'].Print('DaughterProb'+ currentDate + '.png')
-
-
-
+#def fitSingleGauss(x,ba=None,be=None):
+#    name    = 'myGauss_'+x 
+#    myGauss = h[x].GetListOfFunctions().FindObject(name)
+#    if not myGauss:
+#       if not ba : ba = h[x].GetBinCenter(1) 
+#       if not be : be = h[x].GetBinCenter(h[x].GetNbinsX()) 
+#       bw    = h[x].GetBinWidth(1) 
+#       mean  = h[x].GetMean()
+#       sigma = h[x].GetRMS()
+#       norm  = h[x].GetEntries()*0.3
+#       myGauss = ROOT.TF1(name,'[0]*'+str(bw)+'/([2]*sqrt(2*pi))*exp(-0.5*((x-[1])/[2])**2)+[3]',4)
+#       myGauss.SetParameter(0,norm)
+#       myGauss.SetParameter(1,mean)
+#       myGauss.SetParameter(2,sigma)
+#       myGauss.SetParameter(3,1.)
+#       myGauss.SetParName(0,'Signal')
+#       myGauss.SetParName(1,'Mean')
+#       myGauss.SetParName(2,'Sigma')
+#       myGauss.SetParName(3,'bckgr')
+#    h[x].Fit(myGauss,'','',ba,be) 
 
 def isInFiducial(X,Y,Z):
    if Z > ShipGeo.TrackStation1.z : return False
@@ -501,7 +394,6 @@ def checkFiducialVolume(sTree,trackkey,dy):
     if not rc: return False
     if not dist2InnerWall(pos.X(),pos.Y(),pos.Z())>0: return False
     return inside
-
 
 nEvents = min(sTree.GetEntries(),nEvents)
 
@@ -580,8 +472,8 @@ def createRatio(h1, h2):
     h3.SetMarkerStyle(20)
     h3.SetMarkerSize(0.7)
     h3.SetTitle("")
-    #h3.SetMinimum(0.8)
-    #h3.SetMaximum(1.35)
+    h3.SetMinimum(0.8)
+    h3.SetMaximum(1.35)
     # Set up plot for markers and errors
     h3.Sumw2()
     h3.SetStats(0)
@@ -589,27 +481,13 @@ def createRatio(h1, h2):
     # Adjust y-axis settings
     y = h3.GetYaxis()
     y.SetRangeUser(-0.1,1.2)
-    #y.SetTitle("ratio h1/h2 ")
-    #y.SetNdivisions(505)
-    #y.SetTitleSize(20)
-    #y.SetTitleFont(43)
     y.SetTitleOffset(1.)
-    #y.SetLabelFont(43)
-    #y.SetLabelSize(15)
     ## Adjust x-axis settings
     x = h3.GetXaxis()
     x.SetRangeUser(0,1.5)
-    #x.SetTitleSize(20)
-    #x.SetTitleFont(43)
-    #x.SetTitleOffset(1.)
-    #x.SetLabelFont(43)
-    #x.SetLabelSize(15)
     return h3
 
 def finState2MuK():
-    #n = 20
-    #x, y = array( 'd' ), array( 'd' )
-    #i=0
     if sTree.GetBranch("FitTracks"):
         k_decaycheck = 0
         for n in range(nEvents):                            # loop over events
@@ -621,8 +499,8 @@ def finState2MuK():
                 if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
-                    muonMotherTrue_mass = true_mother.GetMass()        # get Neutralino/final states mother mass
-                    muonMotherTrue_mom = true_mother.GetP()            # get Neutralino/final states mother mom
+                    muonMotherTrue_mass = true_mother.GetMass()         # get Neutralino/final states mother mass
+                    muonMotherTrue_mom = true_mother.GetP()             # get Neutralino/final states mother mom
                     if true_mother.GetPdgCode() == 321:
                         #print('Kaon has decayed to a muon')
                         k_decaycheck+=1
@@ -755,43 +633,168 @@ def finState2MuK():
                                                 h['TotalSmearedMass'].Fill(k_smearedM)                                                
                                                 mu_smearedM = muP*(ROOT.TMath.Sqrt(1-(mu_beta**2)))/mu_beta
                                                 h['MuonSmearedMass'].Fill(mu_smearedM)
-                                                h['TotalSmearedMass'].Fill(mu_smearedM)
-
-                                                h['MuonProbMeasr'] = createRatio(h['MuonSmearedMass'],h['TotalSmearedMass'])
-
-
-                                                #prob_k_measr = k_smearedM/(k_smearedM+mu_smearedM)
-                                                #prob_mu_measr = mu_smearedM/(k_smearedM+mu_smearedM)
-                                                #if abs(k_smearedM-kM)<=0.01:
-                                                #    h['KaonProbMeasr'].Fill(prob_k_measr)
-                                                    #if i in range( n ):
-                                                    #    x.append( k_smearedM )
-                                                    #    y.append( prob_k_measr )
-                                                    #i=i+1
-                                                    
-                                                #if abs(mu_smearedM-muM)<=0.01:
-                                                #    h['MuonProbMeasr'].Fill(prob_mu_measr)
-                                                #if abs(k_smearedM-kM)<=0.0001:
-                                                #    print('probability of it being a Kaon at true mass:'+str(prob_k_measr))
-                                                #if abs(mu_smearedM-muM)<=0.0001:
-                                                #    print('probability of it being a Muon at true mass:'+str(prob_mu_measr))
-
+                                                h['TotalSmearedMass'].Fill(mu_smearedM)  
 
         print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
-        #gr = TGraph( n, x, y )
-        #gr.SetLineColor( 2 )
-        #gr.SetLineWidth( 4 )
-        #gr.SetMarkerColor( 4 )
-        #gr.SetMarkerStyle( 21 )
-        #gr.SetTitle( 'Probs' )
-        #gr.GetXaxis().SetTitle( 'Mass [GeV/c2]' )
-        #gr.GetYaxis().SetTitle( 'Prob(particle=(kaon or muon))' )
-        #gr.Draw( 'ACP' )
- 
+        h['MuonProbMeasr'] = createRatio(h['MuonSmearedMass'],h['TotalSmearedMass'])
+        h['KaonProbMeasr'] = createRatio(h['KaonSmearedMass'],h['TotalSmearedMass'])
 
+def makePlots():
+   ut.bookCanvas(h,key='DAUGHTERS_TV',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=800,cx=3,cy=2)
+   cv = h['DAUGHTERS_TV'].cd(1)
+   h['MuonStrawTime'].SetXTitle('Time [ns]')
+   h['MuonStrawTime'].SetYTitle('No. of Particles')
+   h['MuonStrawTime'].Draw()
+   h['KaonStrawTime'].SetLineColor(2)
+   h['KaonStrawTime'].Draw('same')
 
-#########################################
+   cv = h['DAUGHTERS_TV'].cd(2)
+   h['MuonEcalTime'].SetXTitle('Time [ns]')
+   h['MuonEcalTime'].SetYTitle('No. of Particles')
+   h['MuonEcalTime'].Draw()
+   h['KaonEcalTime'].SetLineColor(2)
+   h['KaonEcalTime'].Draw('same')
 
+   cv = h['DAUGHTERS_TV'].cd(3)
+   h['MuonDirDeltaTime'].SetXTitle('Time of Flight [ns]')
+   h['MuonDirDeltaTime'].SetYTitle('No. of Particles')
+   h['MuonDirDeltaTime'].Draw()
+   h['KaonDirDeltaTime'].SetLineColor(2)
+   h['KaonDirDeltaTime'].Draw('same')
+
+   cv = h['DAUGHTERS_TV'].cd(4)
+   h['MuonFlightLen'].SetXTitle('Flight Length (cm)')
+   h['MuonFlightLen'].SetYTitle('No. of Particles')
+   h['MuonFlightLen'].Draw()
+   h['KaonFlightLen'].SetLineColor(2)
+   h['KaonFlightLen'].Draw('same')
+
+   cv = h['DAUGHTERS_TV'].cd(5)
+   h['MuonSpeed'].SetXTitle('beta')
+   h['MuonSpeed'].SetYTitle('No. of Particles')
+   h['MuonSpeed'].Draw()
+   h['KaonSpeed'].SetLineColor(2)
+   h['KaonSpeed'].Draw('same')
+
+   #h['DAUGHTERS_TV'].Print('DaughterTVProp'+ currentDate + '.png')
+
+   ut.bookCanvas(h,key='DAUGHTERS_MOM',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=800,cx=3,cy=2)
+   cv = h['DAUGHTERS_MOM'].cd(1)
+   h['MuonStrawMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonStrawMom'].SetYTitle('No. of Particles')
+   h['MuonStrawMom'].Draw()
+   h['KaonStrawMom'].SetLineColor(2)
+   h['KaonStrawMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(2)
+   h['MuonEcalMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonEcalMom'].SetYTitle('No. of Particles')
+   h['MuonEcalMom'].Draw()
+   h['KaonEcalMom'].SetLineColor(2)
+   h['KaonEcalMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(3)
+   h['MuonRecoMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonRecoMom'].SetYTitle('No. of Particles')
+   h['MuonRecoMom'].Draw()
+   h['KaonRecoMom'].SetLineColor(2)
+   h['KaonRecoMom'].Draw('same')
+
+   #cv = h['DAUGHTERS_MOM'].cd(4)
+   #h['MuonTrueMom'].SetXTitle('Momentum [GeV/c]')
+   #h['MuonTrueMom'].SetYTitle('No. of Particles')
+   #h['MuonTrueMom'].Draw()
+   #h['KaonTrueMom'].SetLineColor(2)
+   #h['KaonTrueMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(4)
+   h['MuonDeltaMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonDeltaMom'].SetYTitle('No. of Particles')
+   h['MuonDeltaMom'].Draw()
+   h['KaonDeltaMom'].SetLineColor(2)
+   h['KaonDeltaMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(5)
+   h['MuonRecoMass'].SetXTitle('Mass [GeV/c2]')
+   h['MuonRecoMass'].SetYTitle('No. of Particles')
+   h['MuonRecoMass'].Draw()
+   h['KaonRecoMass'].SetLineColor(2)
+   h['KaonRecoMass'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(6)
+   h['MuonSmearedMass'].SetXTitle('Mass [GeV/c2]')
+   h['MuonSmearedMass'].SetYTitle('No. of Particles')
+   h['MuonSmearedMass'].Draw()
+   h['MuonSmearedMass'].Fit("landau")
+   h['MuonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
+   h['KaonSmearedMass'].SetLineColor(2)
+   h['KaonSmearedMass'].Draw('same')
+   h['KaonSmearedMass'].Fit("landau")
+   h['KaonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
+
+   #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
+
+   ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=600,cx=3,cy=1)
+   cv = h['DAUGHTERS_PROB'].cd(1)
+   h['MuonProbMeasr'].SetMarkerColor(38)
+   polyFit1.SetLineColor(4)
+   h['MuonProbMeasr'].Fit('polyFit1')
+   h['MuonProbMeasr'].Draw('E2')
+   h['MuonProbMeasr'].SetXTitle('Mass [GeV/c2]')
+   h['MuonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
+   h['MuonProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+   cv = h['DAUGHTERS_PROB'].cd(2)
+   h['KaonProbMeasr'].SetMarkerColor(46)
+   polyFit2.SetLineColor(2)
+   h['KaonProbMeasr'].Fit('polyFit2')
+   h['KaonProbMeasr'].Draw('E2')
+   h['KaonProbMeasr'].SetXTitle('Mass [GeV/c2]')
+   h['KaonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
+   h['KaonProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+   cv = h['DAUGHTERS_PROB'].cd(3)
+   multigr = TMultiGraph()
+   #gStyle.SetOptTitle(kFALSE)
+   #gStyle.SetPalette(kSolar)
+   #n = 300
+   x1, y1 = array( 'd' ), array( 'd' )
+   x2, y2 = array( 'd' ), array( 'd' )
+   i=0
+   n=0
+   for i in range(30,240,6):
+       #print(i)
+       x1.append(h['MuonProbMeasr'].GetBinCenter(i))
+       y1.append(h['MuonProbMeasr'].GetBinContent(i))
+       x2.append(h['KaonProbMeasr'].GetBinCenter(i))
+       y2.append(h['KaonProbMeasr'].GetBinContent(i))
+       n=n+1
+   gr1 = TGraph( n, x1, y1 )
+   gr1.SetTitle('Prob(ID = Muon)')
+   gr2 = TGraph( n, x2, y2 )
+   gr2.SetTitle('Prob(ID = Kaon)')
+   gr1.SetLineColor( 4 )
+   gr1.SetLineWidth( 3 )
+   gr1.SetMarkerColor( 4 )
+   gr1.SetMarkerStyle( 20 )
+   gr1.SetMarkerSize(0.7)   
+   #gr1.GetXaxis().SetRangeUser(0,1.5)   
+   gr2.SetLineColor( 2 )
+   gr2.SetLineWidth( 3 )
+   gr2.SetMarkerColor( 2 )
+   gr2.SetMarkerStyle( 20 )
+   gr2.SetMarkerSize(0.7)
+   #gr2.GetXaxis().SetRangeUser(0,1.5)
+   multigr.Add(gr1, "PC")
+   multigr.Add(gr2, "PC")
+   multigr.Draw("A pfc plc")#P PLC PFCPLC PFC
+   multigr.GetXaxis().SetTitle( 'Mass [GeV/c2]' )
+   multigr.GetYaxis().SetTitle( 'Prob(particle=(kaon or muon))' )
+   multigr.GetYaxis().SetTitleOffset(1.5)
+   #gr1.Draw("CA* PLC PFC")
+   #gr2.Draw("PC  PLC PFC")
+   gPad.BuildLegend()
+   h['DAUGHTERS_PROB'].Print('DaughterProb'+ currentDate + '.png')
 
 finState2MuK()          
 makePlots()
