@@ -9,9 +9,9 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 from array import array
-from ROOT import TCanvas, TColor, TGaxis, TH1F, TPad, TGraph, TF1, TMultiGraph, gPad, gStyle
+from ROOT import TCanvas, TColor, TGaxis, TH1F, TPad, TGraph, TF1, TMultiGraph
 from ROOT import kBlack, kBlue, kRed, kFALSE, kSolar
-from ROOT import gROOT
+from ROOT import gROOT, gPad, gStyle
 from array import array
 import shipRoot_conf
 import shipDet_conf
@@ -247,12 +247,12 @@ def create_Hists():
     ut.bookHist(h,'Neutralino_mom_reco','Reconstructed Momentum',100,0.,300.)                       # reco momentum
     ut.bookHist(h,'Neutralino_mom_diff','True/Reco Momentum Difference',100,-3.,3)                  # true-reco momentum difference
 
-    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)                                 # chi squared track fitting
-    ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)
-    ut.bookHist(h,'smearedmass1','Time Smeared Neutralino Mass',500,0.,2.)
-    ut.bookHist(h,'smearedmass2','Time Smeared Neutralino Mass',500,0.,2.)
-    ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum P1(red) P2(blue)',500,0.,300.)
-    ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
+    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)                                     # chi squared track fitting
+    #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
+    #ut.bookHist(h,'smearedmass1','Time Smeared Neutralino Mass',500,0.,2.)
+    #ut.bookHist(h,'smearedmass2','Time Smeared Neutralino Mass',500,0.,2.)
+    #ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum P1(red) P2(blue)',500,0.,300.)
+    #ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
 
     
     print("Created Histograms")
@@ -284,7 +284,6 @@ def dist2InnerWall(X,Y,Z):
     if distance < minDistance  :
        minDistance = distance
   return minDistance
-
 
 def myVertex(t1,t2,PosDir):
  # closest distance between two tracks
@@ -332,7 +331,7 @@ def RedoVertexing(t1,t2):
              try:
                  reps[tr].extrapolateToPoint(states[tr], newPos, False)
              except:
-                 print ('SHiPAna: extrapolation did not work')
+                 print ('SHiPAna: extrapolation did not work (@RedoVertexing).')
                  rc = False
                  break
              newPosDir[tr] = [reps[tr].getPos(states[tr]),reps[tr].getDir(states[tr])]
@@ -341,7 +340,7 @@ def RedoVertexing(t1,t2):
          dz = abs(zBefore-zv)
          step+=1
          if step > 10:
-             print ('abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz)
+             print ('Abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz)
              rc = False
              break 
      if not rc: return -1,-1,-1,doca # extrapolation failed, makes no sense to continue
@@ -358,27 +357,26 @@ def RedoVertexing(t1,t2):
      #return xv,yv,zv,doca,NeutralinoMom
      return NeutralinoLV,LV[t1],LV[t2],doca
 
-def fitSingleGauss(x,ba=None,be=None):
-    name    = 'myGauss_'+x 
-    myGauss = h[x].GetListOfFunctions().FindObject(name)
-    if not myGauss:
-       if not ba : ba = h[x].GetBinCenter(1) 
-       if not be : be = h[x].GetBinCenter(h[x].GetNbinsX()) 
-       bw    = h[x].GetBinWidth(1) 
-       mean  = h[x].GetMean()
-       sigma = h[x].GetRMS()
-       norm  = h[x].GetEntries()*0.3
-       myGauss = ROOT.TF1(name,'[0]*'+str(bw)+'/([2]*sqrt(2*pi))*exp(-0.5*((x-[1])/[2])**2)+[3]',4)
-       myGauss.SetParameter(0,norm)
-       myGauss.SetParameter(1,mean)
-       myGauss.SetParameter(2,sigma)
-       myGauss.SetParameter(3,1.)
-       myGauss.SetParName(0,'Signal')
-       myGauss.SetParName(1,'Mean')
-       myGauss.SetParName(2,'Sigma')
-       myGauss.SetParName(3,'bckgr')
-    h[x].Fit(myGauss,'','',ba,be) 
-
+#def fitSingleGauss(x,ba=None,be=None):
+#    name    = 'myGauss_'+x 
+#    myGauss = h[x].GetListOfFunctions().FindObject(name)
+#    if not myGauss:
+#       if not ba : ba = h[x].GetBinCenter(1) 
+#       if not be : be = h[x].GetBinCenter(h[x].GetNbinsX()) 
+#       bw    = h[x].GetBinWidth(1) 
+#       mean  = h[x].GetMean()
+#       sigma = h[x].GetRMS()
+#       norm  = h[x].GetEntries()*0.3
+#       myGauss = ROOT.TF1(name,'[0]*'+str(bw)+'/([2]*sqrt(2*pi))*exp(-0.5*((x-[1])/[2])**2)+[3]',4)
+#       myGauss.SetParameter(0,norm)
+#       myGauss.SetParameter(1,mean)
+#       myGauss.SetParameter(2,sigma)
+#       myGauss.SetParameter(3,1.)
+#       myGauss.SetParName(0,'Signal')
+#       myGauss.SetParName(1,'Mean')
+#       myGauss.SetParName(2,'Sigma')
+#       myGauss.SetParName(3,'bckgr')
+#    h[x].Fit(myGauss,'','',ba,be) 
 
 def isInFiducial(X,Y,Z):
    if Z > ShipGeo.TrackStation1.z : return False
@@ -396,7 +394,6 @@ def checkFiducialVolume(sTree,trackkey,dy):
     if not rc: return False
     if not dist2InnerWall(pos.X(),pos.Y(),pos.Z())>0: return False
     return inside
-
 
 nEvents = min(sTree.GetEntries(),nEvents)
 
@@ -484,27 +481,13 @@ def createRatio(h1, h2):
     # Adjust y-axis settings
     y = h3.GetYaxis()
     y.SetRangeUser(-0.1,1.2)
-    #y.SetTitle("ratio h1/h2 ")
-    #y.SetNdivisions(505)
-    #y.SetTitleSize(20)
-    #y.SetTitleFont(43)
     y.SetTitleOffset(1.)
-    #y.SetLabelFont(43)
-    #y.SetLabelSize(15)
     ## Adjust x-axis settings
     x = h3.GetXaxis()
     x.SetRangeUser(0,1.5)
-    #x.SetTitleSize(20)
-    #x.SetTitleFont(43)
-    #x.SetTitleOffset(1.)
-    #x.SetLabelFont(43)
-    #x.SetLabelSize(15)
     return h3
 
 def finState2MuK():
-    #n = 60
-    #x1, y1 = array( 'd' ), array( 'd' )
-    #i=0
     if sTree.GetBranch("FitTracks"):
         k_decaycheck = 0
         for n in range(nEvents):                            # loop over events
@@ -652,27 +635,10 @@ def finState2MuK():
                                                 h['MuonSmearedMass'].Fill(mu_smearedM)
                                                 h['TotalSmearedMass'].Fill(mu_smearedM)  
 
-                                                #prob_k_measr = k_smearedM/(k_smearedM+mu_smearedM)
-                                                #prob_mu_measr = mu_smearedM/(k_smearedM+mu_smearedM)
-                                                #if abs(k_smearedM-kM)<=0.01:
-                                                #    h['KaonProbMeasr'].Fill(prob_k_measr)
-                                                    #for i in range( n ):
-                                                    #    x.append(h['MuonProbMeasr'].GetBinCentre(i))
-                                                    #    y.append(h['MuonProbMeasr'].GetBinEntries(i))
-                                                    #i=i+1
-                                                    
-                                                #if abs(mu_smearedM-muM)<=0.01:
-                                                #    h['MuonProbMeasr'].Fill(prob_mu_measr)
-                                                #if abs(k_smearedM-kM)<=0.0001:
-                                                #    print('probability of it being a Kaon at true mass:'+str(prob_k_measr))
-                                                #if abs(mu_smearedM-muM)<=0.0001:
-                                                #    print('probability of it being a Muon at true mass:'+str(prob_mu_measr))
-
-
         print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
         h['MuonProbMeasr'] = createRatio(h['MuonSmearedMass'],h['TotalSmearedMass'])
         h['KaonProbMeasr'] = createRatio(h['KaonSmearedMass'],h['TotalSmearedMass'])
-    #########################################
+
 def makePlots():
    ut.bookCanvas(h,key='DAUGHTERS_TV',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=800,cx=3,cy=2)
    cv = h['DAUGHTERS_TV'].cd(1)
@@ -710,7 +676,7 @@ def makePlots():
    h['KaonSpeed'].SetLineColor(2)
    h['KaonSpeed'].Draw('same')
 
-   h['DAUGHTERS_TV'].Print('DaughterTVProp'+ currentDate + '.png')
+   #h['DAUGHTERS_TV'].Print('DaughterTVProp'+ currentDate + '.png')
 
    ut.bookCanvas(h,key='DAUGHTERS_MOM',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=800,cx=3,cy=2)
    cv = h['DAUGHTERS_MOM'].cd(1)
@@ -765,27 +731,29 @@ def makePlots():
    h['KaonSmearedMass'].Draw('same')
    h['KaonSmearedMass'].Fit("landau")
    h['KaonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
-   h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
 
-   ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=1000,ny=600,cx=2,cy=1)
+   #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
+
+   ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=600,cx=3,cy=1)
    cv = h['DAUGHTERS_PROB'].cd(1)
-   h['MuonProbMeasr'].SetXTitle('Mass [GeV/c2]')
-   h['MuonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
    h['MuonProbMeasr'].SetMarkerColor(38)
    polyFit1.SetLineColor(4)
    h['MuonProbMeasr'].Fit('polyFit1')
    h['MuonProbMeasr'].Draw('E2')
-   #polyFit1.Draw('same')
-   #cv = h['DAUGHTERS_PROB'].cd(2)
-   #h['KaonProbMeasr'].SetXTitle('Mass [GeV/c2]')
-   #h['KaonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
-   #h['KaonProbMeasr'].SetMarkerColorAlpha(kRed, 0.35)
+   h['MuonProbMeasr'].SetXTitle('Mass [GeV/c2]')
+   h['MuonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
+   h['MuonProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+   cv = h['DAUGHTERS_PROB'].cd(2)
    h['KaonProbMeasr'].SetMarkerColor(46)
    polyFit2.SetLineColor(2)
    h['KaonProbMeasr'].Fit('polyFit2')
-   h['KaonProbMeasr'].Draw('E2,same')
-   #polyFit2.Draw('same')
-   cv = h['DAUGHTERS_PROB'].cd(2)
+   h['KaonProbMeasr'].Draw('E2')
+   h['KaonProbMeasr'].SetXTitle('Mass [GeV/c2]')
+   h['KaonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
+   h['KaonProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+   cv = h['DAUGHTERS_PROB'].cd(3)
    multigr = TMultiGraph()
    #gStyle.SetOptTitle(kFALSE)
    #gStyle.SetPalette(kSolar)
@@ -794,7 +762,7 @@ def makePlots():
    x2, y2 = array( 'd' ), array( 'd' )
    i=0
    n=0
-   for i in range(30,300,6):
+   for i in range(30,240,6):
        #print(i)
        x1.append(h['MuonProbMeasr'].GetBinCenter(i))
        y1.append(h['MuonProbMeasr'].GetBinContent(i))
@@ -822,6 +790,7 @@ def makePlots():
    multigr.Draw("A pfc plc")#P PLC PFCPLC PFC
    multigr.GetXaxis().SetTitle( 'Mass [GeV/c2]' )
    multigr.GetYaxis().SetTitle( 'Prob(particle=(kaon or muon))' )
+   multigr.GetYaxis().SetTitleOffset(1.5)
    #gr1.Draw("CA* PLC PFC")
    #gr2.Draw("PC  PLC PFC")
    gPad.BuildLegend()
