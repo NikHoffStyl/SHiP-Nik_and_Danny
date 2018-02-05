@@ -22,6 +22,7 @@ import datetime
 shipRoot_conf.configure()
 
 debug = False
+loop=True 
 chi2CutOff  = 4.
 PDG = ROOT.TDatabasePDG.Instance()
 fiducialCut = True
@@ -256,7 +257,6 @@ def create_Hists():
 
     
     print("Created Histograms")
-create_Hists()
 
 def dist2InnerWall(X,Y,Z):
   dist = 0
@@ -488,6 +488,7 @@ def createRatio(h1, h2):
     return h3
 
 def finState2MuK():
+    create_Hists()
     if sTree.GetBranch("FitTracks"):
         k_decaycheck = 0
         for n in range(nEvents):                            # loop over events
@@ -796,8 +797,41 @@ def makePlots():
    gPad.BuildLegend()
    h['DAUGHTERS_PROB'].Print('DaughterProb'+ currentDate + '.png')
 
-finState2MuK()          
-makePlots()
+      
+def print_menu(): 
+    print (30 * "-" + "MENU" + 30 * "-")
+    print ("1. RPV SUSY Benchmark1 --> K+/- mu+/- final state")
+    print ("2. RPV SUSY Benchmark1 --> K*+/- mu+/- final state")
+    print ("3. RPV SUSY Benchmark1 --> K*0 nu_mu final state")
+    print ("4. Exit")
+    print (67 * "-")
+     
+while loop:        
+    print_menu()
+    choice = input("Enter your choice [1-4]: ")
+     
+    if choice==1:     
+        print ("RPV SUSY Benchmark1 --> K+/- mu+/- final state selected.")
+        finState2MuK()
+        makePlots()
+        loop=False
+    elif choice==2:
+        print ("RPV SUSY Benchmark1 --> K*+/- mu+/- final state selected.")
+        #finState2MuKexc()
+        #makePlots2()
+        loop=False
+    elif choice==3:
+        print ("RPV SUSY Benchmark1 --> K*0 nu_mu final state selected")
+        #finState2MuKzero()
+        #makePlots3()
+        loop=False
+    elif choice==4:
+        print ("EXIT was selected.")
+        loop=False 
+    else:
+        #raw_input("No such option. Try again.")
+        print("No such option. Try again.")
+
 hfile = inputFile.split(',')[0].replace('_rec','_RPVeditana')#create outputFile
 if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
 # do not write to eos, write to local directory 
