@@ -717,7 +717,7 @@ def finStateMuKa():
             y_mu[i] = prob_mu[i]
             y_ka[i] = prob_ka[i]
 
-        #fit = TF1('fit','pol2',0,0.6)
+        #fit = TF1('fit','pol10',0,0.6)
         #fit.SetLineColor(1)
 
         Graph_mu = TGraph(N,x,y_mu)
@@ -730,7 +730,7 @@ def finStateMuKa():
         Graph_mu.SetMarkerSize(1)
         #Graph_mu.Fit('fit')
         Graph_mu.Draw('AP')
-        canvas.Update()
+        #canvas.Update()
         canvas.SaveAs('Prob_mu.png')
 
         Graph_ka = TGraph(N,x,y_ka)
@@ -743,7 +743,7 @@ def finStateMuKa():
         Graph_ka.SetMarkerSize(1)
         #Graph_ka.Fit('fit')
         Graph_ka.Draw('AP')
-        canvas2.Update()
+        #canvas2.Update()
         canvas2.SaveAs('Prob_ka.png')
         
 def finStateMuKa_exc():
@@ -845,7 +845,7 @@ def finStateMuKa_exc():
 finStateMuKa()
 finStateMuKa_exc()
 makePlots()
-
+ 
 #-------------------------------------------------OUTPUT----------------------------------------------------
 
 hfile = inputFile.split(',')[0].replace('_rec','_RPV')  # Outputs histograms and ROOT file
