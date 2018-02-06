@@ -168,7 +168,7 @@ else:
 
 import TrackExtrapolateTool
 from array import array
-from ROOT import TGraph,TCanvas,TH1,TF1,THStack
+from ROOT import TGraph,TCanvas,TH1,TF1,THStack,TMultiGraph,TPad
 
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
@@ -709,42 +709,50 @@ def finStateMuKa():
                 prob_mu.append((num_mu)/(num_mu + num_ka))   # probability of being a muon
                 prob_ka.append((num_ka)/(num_mu + num_ka))   # probability of being a kaon
    
-        x = array('f',N*[0.0])
-        y_mu = array('f',N*[0.0])
-        y_ka = array('f',N*[0.0])
+        x = array('f',(N+1)*[0.0])
+        y_mu = array('f',(N+1)*[0.0])
+        y_ka = array('f',(N+1)*[0.0])
         for i in range(0,N-rejected):
             x[i] = mass[i]
             y_mu[i] = prob_mu[i]
             y_ka[i] = prob_ka[i]
 
-        #fit = TF1('fit','pol10',0,0.6)
-        #fit.SetLineColor(1)
-
+        e = 2.718281828459
+        #fit = TF1('fit','1/(1+(e**((-x*[0])+[1])))',0,2)   # sigmoid function
+        #fit.SetParameters(20,10)
+        fit_mu = TF1('fit_mu','pol10',0,1.8)
+        fit_mu.SetLineColor(4)
+        fit_ka = TF1('fit_ka','pol10',0,1.8)
+        fit_ka.SetLineColor(2)
+         
         Graph_mu = TGraph(N,x,y_mu)
-        canvas = TCanvas('canvas','canvas',100,100,1200,600)
         Graph_mu.SetTitle('Probability of particle being a muon')
         Graph_mu.GetXaxis().SetTitle('Mass / [GeV/c2]')
         Graph_mu.GetYaxis().SetTitle('Probability')
         Graph_mu.SetMarkerStyle(33)
         Graph_mu.SetMarkerColor(4)
         Graph_mu.SetMarkerSize(1)
-        #Graph_mu.Fit('fit')
-        Graph_mu.Draw('AP')
-        #canvas.Update()
-        canvas.SaveAs('Prob_mu.png')
+        Graph_mu.Fit('fit_mu')
+        #Graph_mu.Draw('AP')
 
         Graph_ka = TGraph(N,x,y_ka)
-        canvas2 = TCanvas('canvas2','canvas2',100,100,1200,600)
         Graph_ka.SetTitle('Probability of particle being a kaon')
         Graph_ka.GetXaxis().SetTitle('Mass / [GeV/c2]')
         Graph_ka.GetYaxis().SetTitle('Probability')
         Graph_ka.SetMarkerStyle(33)
         Graph_ka.SetMarkerColor(2)
         Graph_ka.SetMarkerSize(1)
-        #Graph_ka.Fit('fit')
-        Graph_ka.Draw('AP')
-        #canvas2.Update()
-        canvas2.SaveAs('Prob_ka.png')
+        Graph_ka.Fit('fit_ka')
+        #Graph_ka.Draw('AP')
+
+        canvas = TCanvas('canvas','canvas',100,100,1200,600)
+        combo = TMultiGraph()
+        combo.Add(Graph_ka)
+        combo.Add(Graph_mu)
+        combo.SetTitle('Probability of particles being correctly identified')
+        combo.Draw('AP')
+        canvas.Update()
+        canvas.SaveAs('Probs.png')
         
 def finStateMuKa_exc():
     if sTree.GetBranch("FitTracks"):
@@ -843,7 +851,7 @@ def finStateMuKa_exc():
         print('\t' + str(decay2count_kaon0) + ' neutral kaons detected\n')
 
 finStateMuKa()
-finStateMuKa_exc()
+#finStateMuKa_exc()
 makePlots()
  
 #-------------------------------------------------OUTPUT----------------------------------------------------
