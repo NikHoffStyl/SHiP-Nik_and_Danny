@@ -168,7 +168,7 @@ else:
 
 import TrackExtrapolateTool
 from array import array
-from ROOT import TGraph,TCanvas,TH1,TF1,THStack,TMultiGraph,TPad
+from ROOT import TGraph,TGraph2D,TCanvas,TH1,TF1,THStack,TMultiGraph,TPad
 
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
@@ -586,8 +586,11 @@ def finStateMuKa():
                         continue
 
                     if true_mother.GetPdgCode() == 321:
-                        # print('Kaon has decayed to a muon before detection')
-                        ka_decaycheck+=1
+                        motherK = true_mother.GetMotherId()
+                        motherN = sTree.MCTrack[motherK]
+                        if motherN.GetPdgCode() == 9900015:
+                            # print('Kaon has decayed to a muon before detection')
+                            ka_decaycheck+=1
 
                     if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV
                         for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
@@ -686,7 +689,8 @@ def finStateMuKa():
 
         #-------------------------------------PROBABILITIES-----------------------------------
         
-        N = 100   # number of bins in histogram
+        #N = 100   # number of bins in histogram
+        N = (h['tsmearmass_muon'].GetSize()) - 2 # -2 for the underflow and overflow?
         binsize = float(0.02)   # mass range / number of bins (N)
         mass = []   # list for particle masses
         prob_mu = []   # lists for probabilities
