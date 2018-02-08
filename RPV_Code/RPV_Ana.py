@@ -168,7 +168,7 @@ else:
 
 import TrackExtrapolateTool
 from array import array
-from ROOT import TGraph,TCanvas,TH1,TF1,THStack
+from ROOT import TGraph,TGraph2D,TCanvas,TH1,TF1,THStack,TMultiGraph,TPad
 
 #----------------------------------------------------HISTOGRAMS-----------------------------------------------------------
 
@@ -189,9 +189,9 @@ ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)   # chi squared trac
 ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight (Gaussian blurred)
 ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight (Gaussian blurred)
 ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,3.)   # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
-ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',150,0.,3.)
-ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)   # same as above but using smeared time
-ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,2.)
+ut.bookHist(h,'tmass_kaon','Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,3.)
+ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,3.)   # same as above but using smeared time
+ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon(red)-Muon(blue) Mass',100,0.,3.)
 ut.bookHist(h,'Daughter_masses','True Masses of Daughter Particles',100,0.,1.)   # kaon and muon true mass
 
 ut.bookHist(h,'MuonDir_nosmear','True Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight
@@ -415,8 +415,8 @@ def makePlots():
     h['tmass_kaon'].SetYTitle('Frequency')
     h['tmass_kaon'].SetLineColor(2)
     h['tmass_kaon'].Draw()
-    h['tmass_muon'].Draw("same")
-    h['Daughter_masses'].Draw("same")
+    h['tmass_muon'].Draw('same')
+    h['Daughter_masses'].Draw('same')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Test_Time'].cd(4)
     h['tsmearmass_kaon'].SetXTitle('Mass [GeV/c2]')
@@ -424,18 +424,42 @@ def makePlots():
     h['tsmearmass_kaon'].SetLineColor(2)
     h['tsmearmass_kaon'].Draw()
     print('\nLandau fits for mass (time of flight):')
-    h['tsmearmass_kaon'].Fit("landau")
-    h['tsmearmass_kaon'].GetFunction("landau").SetLineColor(1)
+    h['tsmearmass_kaon'].Fit('landau')
+    h['tsmearmass_kaon'].GetFunction('landau').SetLineColor(1)
     #par0 = h['tsmearmass_kaon'].GetFunction("landau").GetParameter(0)
     #par1 = h['tsmearmass_kaon'].GetFunction("landau").GetParameter(1)
     #par2 = h['tsmearmass_kaon'].GetFunction("landau").GetParameter(2)
-    h['tsmearmass_muon'].Draw("same")
-    h['tsmearmass_muon'].Fit("landau") # alternatively --> .Fit("pol5") for 5th order polynomial
-    h['tsmearmass_muon'].GetFunction("landau").SetLineColor(1)
+    h['tsmearmass_muon'].Draw('same')
+    h['tsmearmass_muon'].Fit('landau') # alternatively --> .Fit("pol5") for 5th order polynomial
+    h['tsmearmass_muon'].GetFunction('landau').SetLineColor(1)
     h['Daughter_masses'].SetLineColor(1)
     h['Daughter_masses'].SetLineStyle(2)
-    h['Daughter_masses'].Draw("same")
+    h['Daughter_masses'].Draw('same')
     h['Test_Time'].Print('Smeared_Time.png')
+    #======================================================================================================================
+    ut.bookCanvas(h,key='prob',title='Results 4',nx=1000,ny=1000,cx=2,cy=2)
+    cv = h['prob'].cd(1)
+    h['graph_mu'].SetTitle('Probability of particle being a muon')
+    h['graph_mu'].GetXaxis().SetTitle('Mass / [GeV/c2]')
+    h['graph_mu'].GetYaxis().SetTitle('Probability')
+    h['graph_mu'].SetMarkerStyle(33)
+    h['graph_mu'].SetMarkerColor(4)
+    h['graph_mu'].SetMarkerSize(1)
+    h['graph_mu'].Draw('AP')
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['prob'].cd(2)
+    h['graph_ka'].SetTitle('Probability of particle being a kaon')
+    h['graph_ka'].GetXaxis().SetTitle('Mass / [GeV/c2]')
+    h['graph_ka'].GetYaxis().SetTitle('Probability')
+    h['graph_ka'].SetMarkerStyle(33)
+    h['graph_ka'].SetMarkerColor(2)
+    h['graph_ka'].SetMarkerSize(1)
+    h['graph_ka'].Draw('AP')
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['prob'].cd(3)
+    h['combo'].SetTitle('Probability of identifying muon (blue) and kaon (red)')
+    h['combo'].Draw('AP')
+    h['prob'].Print('Prob.png')
 
 def track_checks(index,true_part,reco_part):
     check = 0
@@ -586,8 +610,11 @@ def finStateMuKa():
                         continue
 
                     if true_mother.GetPdgCode() == 321:
-                        # print('Kaon has decayed to a muon before detection')
-                        ka_decaycheck+=1
+                        motherK = true_mother.GetMotherId()
+                        motherN = sTree.MCTrack[motherK]
+                        if motherN.GetPdgCode() == 9900015:
+                            # print('Kaon has decayed to a muon before detection')
+                            ka_decaycheck+=1
 
                     if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV
                         for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
@@ -686,65 +713,58 @@ def finStateMuKa():
 
         #-------------------------------------PROBABILITIES-----------------------------------
         
-        N = 100   # number of bins in histogram
-        binsize = float(0.02)   # mass range / number of bins (N)
+        N = (h['tsmearmass_muon'].GetSize()) - 2 #   -2 for the underflow and overflow
+        xRange = h['tsmearmass_muon'].GetXaxis().GetXmax()   # maximum value of the x-axis
+        binsize = xRange/float(N)   # width of histogram bins
         mass = []   # list for particle masses
         prob_mu = []   # lists for probabilities
         prob_ka = []
-        
+
         for bins in range(0,N):
-            mass.append((2*float(bins)/N) + binsize)   # constant factor refers to the mass range (list has N entries, last one: mass[N-1])
+            mass.append((xRange*float(bins)/float(N)) + binsize)   # list has N entries, last one: mass[N-1]
 
         rejected = 0
         for entry,x in enumerate(mass):
             j = h['tsmearmass_muon'].GetXaxis().FindBin(x)   # jth bin
             num_mu = h['tsmearmass_muon'].GetBinContent(j)   # gets number of entries in jth bin
             num_ka = h['tsmearmass_kaon'].GetBinContent(j)
+            print(entry)
             if num_mu == 0 and num_ka == 0:
                 rejected += 1
-                del mass[entry]
-                del prob_mu[entry]
-                del prob_ka[entry]
+                del mass[entry+1]
+                del prob_mu[entry+1]
+                del prob_ka[entry+1]
             else:
                 prob_mu.append((num_mu)/(num_mu + num_ka))   # probability of being a muon
                 prob_ka.append((num_ka)/(num_mu + num_ka))   # probability of being a kaon
    
-        x = array('f',N*[0.0])
-        y_mu = array('f',N*[0.0])
-        y_ka = array('f',N*[0.0])
+        x = array('f',(N)*[0.0])
+        y_mu = array('f',(N)*[0.0])
+        y_ka = array('f',(N)*[0.0])
         for i in range(0,N-rejected):
             x[i] = mass[i]
             y_mu[i] = prob_mu[i]
             y_ka[i] = prob_ka[i]
-
-        #fit = TF1('fit','pol2',0,0.6)
-        #fit.SetLineColor(1)
-
+        
+        #e = 2.718281828459
+        #fit = TF1('fit','1/(1+(e**((-x*[0])+[1])))',0,2)   # sigmoid function
+        #fit.SetParameters(20,10)
+        fit_mu = TF1('fit_mu','pol10',0,1.8)
+        fit_mu.SetLineColor(4)
+        fit_ka = TF1('fit_ka','pol10',0,1.8)
+        fit_ka.SetLineColor(2)
+         
         Graph_mu = TGraph(N,x,y_mu)
-        canvas = TCanvas('canvas','canvas',100,100,1200,600)
-        Graph_mu.SetTitle('Probability of particle being a muon')
-        Graph_mu.GetXaxis().SetTitle('Mass / [GeV/c2]')
-        Graph_mu.GetYaxis().SetTitle('Probability')
-        Graph_mu.SetMarkerStyle(33)
-        Graph_mu.SetMarkerColor(4)
-        Graph_mu.SetMarkerSize(1)
-        #Graph_mu.Fit('fit')
-        Graph_mu.Draw('AP')
-        canvas.Update()
-        canvas.SaveAs('Prob_mu.png')
-
+        #Graph_mu.Fit('fit_mu')
         Graph_ka = TGraph(N,x,y_ka)
-        canvas2 = TCanvas('canvas2','canvas2',100,100,1200,600)
-        Graph_ka.SetTitle('Probability of particle being a kaon')
-        Graph_ka.GetXaxis().SetTitle('Mass / [GeV/c2]')
-        Graph_ka.GetYaxis().SetTitle('Probability')
-        Graph_ka.SetMarkerStyle(33)
-        Graph_ka.SetMarkerColor(2)
-        Graph_ka.SetMarkerSize(1)
-        #Graph_ka.Fit('fit')
-        Graph_ka.Draw('AP')
-        canvas2.Update()
-        canvas2.SaveAs('Prob_ka.png')
+        #Graph_ka.Fit('fit_ka')
+        combo = TMultiGraph()
+        combo.Add(Graph_ka)
+        combo.Add(Graph_mu)
+        h['graph_mu'] = Graph_mu
+        h['graph_ka'] = Graph_ka
+        h['combo'] = combo
+
         
 def finStateMuKa_exc():
     if sTree.GetBranch("FitTracks"):
@@ -843,9 +863,9 @@ def finStateMuKa_exc():
         print('\t' + str(decay2count_kaon0) + ' neutral kaons detected\n')
 
 finStateMuKa()
-finStateMuKa_exc()
+#finStateMuKa_exc()
 makePlots()
-
+ 
 #-------------------------------------------------OUTPUT----------------------------------------------------
 
 hfile = inputFile.split(',')[0].replace('_rec','_RPV')  # Outputs histograms and ROOT file
