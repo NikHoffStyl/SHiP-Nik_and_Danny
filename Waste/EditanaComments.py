@@ -944,7 +944,337 @@ def finStateMuPi():
                                 h['Time_man'].Fill(manualCalTime)
                                 if pi_t != None:                                     #
                                     h['Time2'].Fill(pi_t) 
-                                    
+  
+                             
+def fitSingleGauss(x,ba=None,be=None):
+    name    = 'myGauss_'+x 
+    myGauss = h[x].GetListOfFunctions().FindObject(name)
+    if not myGauss:
+       if not ba : ba = h[x].GetBinCenter(1) 
+       if not be : be = h[x].GetBinCenter(h[x].GetNbinsX()) 
+       bw    = h[x].GetBinWidth(1) 
+       mean  = h[x].GetMean()
+       sigma = h[x].GetRMS()
+       norm  = h[x].GetEntries()*0.3
+       myGauss = ROOT.TF1(name,'[0]*'+str(bw)+'/([2]*sqrt(2*pi))*exp(-0.5*((x-[1])/[2])**2)+[3]',4)
+       myGauss.SetParameter(0,norm)
+       myGauss.SetParameter(1,mean)
+       myGauss.SetParameter(2,sigma)
+       myGauss.SetParameter(3,1.)
+       myGauss.SetParName(0,'Signal')
+       myGauss.SetParName(1,'Mean')
+       myGauss.SetParName(2,'Sigma')
+       myGauss.SetParName(3,'bckgr')
+    h[x].Fit(myGauss,'','',ba,be) 
 #for n in range(nEvents):
 #    myEventLoop(n)
 #    sTree.FitTracks.Delete()
+def finState2MuK():
+    create_Hists()
+    if sTree.GetBranch("FitTracks"):
+        k_decaycheck = 0
+        for n in range(nEvents):                            # loop over events
+            rc = sTree.GetEntry(n)                              # load tree entry
+            for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
+                muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
+                true_muon = sTree.MCTrack[muPartkey]                  # gives MC particle data
+                #print(reco_part)
+                if abs(true_muon.GetPdgCode()) == 13:               # checks particle is muon
+                    muonMotherkey = true_muon.GetMotherId()             # stores a number index of MC track of mother
+                    true_mother = sTree.MCTrack[muonMotherkey]          # obtains mother particle data
+                    muonMotherTrue_mass = true_mother.GetMass()         # get Neutralino/final states mother mass
+                    muonMotherTrue_mom = true_mother.GetP()             # get Neutralino/final states mother mom
+                    if true_mother.GetPdgCode() == 321:
+                        #print('Kaon has decayed to a muon')
+                        k_decaycheck+=1
+                    if true_mother.GetPdgCode() == 9900015:             # checks mother is Neutralino
+
+                        Decay_X = true_muon.GetStartX()
+                        Decay_Y = true_muon.GetStartY()
+                        Decay_Z = true_muon.GetStartZ()
+                        
+                        if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
+                            #print('Neutralino decayed outside fiducial volume')
+                            continue
+                        if not checkFiducialVolume(sTree,index,dy): 
+                            #print('Track outside fiducial volume')
+                            continue 
+                        mu_status = reco_part.getFitStatus()             
+                        if not mu_status.isFitConverged():
+                            #print('Fit did not converge')
+                            continue
+                        mu_nmeas = mu_status.getNdf()                      
+                        if not mu_nmeas > 25:
+                            #print('Too few measurements')
+                            continue
+
+                        mu_rchi2 = mu_status.getChi2()                      # gets chi squared value
+                        mu_chi2 = (mu_rchi2/mu_nmeas)                       # gets chi value
+                        if not mu_chi2 < 4:
+                            #print('Chi squared value too high')
+                            continue
+
+                        for index2,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles
+                            kPartkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
+                            true_kaon = sTree.MCTrack[kPartkey]                  # gives MC particle data
+                            if abs(true_kaon.GetPdgCode()) == 321:               # checks particle is kaon
+                                kaonMotherkey = true_kaon.GetMotherId()             # stores a number index of MC track of mother
+                                true_mother = sTree.MCTrack[kaonMotherkey]          # obtains mother particle data
+                                if kaonMotherkey==muonMotherkey:                    # check if keys are the same
+                                    kaonMotherTrue_mass = true_mother.GetMass()        # get Neutralino/final states mother mass
+                                    kaonMotherTrue_mom = true_mother.GetP()            # get Neutralino/final states mother mom
+
+                                    if not checkFiducialVolume(sTree,index,dy): 
+                                        #print('Decay outside fiducial volume')
+                                        continue 
+                                    k_status = reco_part.getFitStatus()                
+                                    if not k_status.isFitConverged():
+                                        #print('Fit did not converge')
+                                        continue
+                                    k_nmeas = k_status.getNdf() 
+                                    if not k_nmeas > 25:
+                                        #print('Too few measurements')
+                                        continue
+
+                                    k_rchi2 = k_status.getChi2()                       # chi squared value
+                                    k_chi2 = (k_rchi2/k_nmeas)                         # gets chi value
+                                    if not k_chi2 < 4:
+                                        #print('Chi squared value too high')
+                                        continue
+                                    
+                                    Muon_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                                    Kaon_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                                    Neutralino_LVec = ROOT.TLorentzVector()               # declares variable as TLorentzVector class
+                                    Neutralino_LVec,Muon_LVec,Kaon_LVec,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
+                                    if Neutralino_LVec == -1: continue
+                                    if doca > 2.: 
+                                        #print('distance of closest approach too large')
+                                        continue
+
+                                    Neutralino_mass = Neutralino_LVec.M()
+                                    Neutralino_reco_mom = Neutralino_LVec.P()
+                                    mom_diff = kaonMotherTrue_mom - Neutralino_reco_mom
+
+                                    kM = Kaon_LVec.M()
+                                    kP = Kaon_LVec.P()
+                                    kE = Kaon_LVec.E()
+                                    muM = Muon_LVec.M()
+                                    muP = Muon_LVec.P()
+                                    muE = Muon_LVec.E()
+                                    
+                                    kaonTrueMom = true_kaon.GetP()
+                                    kaonTrueMass = true_kaon.GetMass()
+                                    muonTrueMom = true_muon.GetP()
+                                    muonTrueMass = true_muon.GetMass()
+                                    h['MuonTrueMom'].Fill(muonTrueMom)
+                                    h['MuonTrueMass'].Fill(muonTrueMass)
+                                    h['KaonTrueMom'].Fill(kaonTrueMom)
+                                    h['KaonTrueMass'].Fill(kaonTrueMass)
+                                    h['Neutralino_true'].Fill(kaonMotherTrue_mass)            
+                                    h['Neutralino_mom'].Fill(kaonMotherTrue_mom)
+                                    h['Neutralino_reco'].Fill(Neutralino_mass)                        
+                                    h['Neutralino_mom_reco'].Fill(Neutralino_reco_mom)                
+                                    h['Chi2'].Fill(mu_chi2)       
+                                    h['Chi2'].Fill(k_chi2)                             
+                                    h['Neutralino_mom_diff'].Fill(mom_diff)
+                                    h['KaonRecoMom'].Fill(kP)
+                                    h['MuonRecoMom'].Fill(muP)
+                                    h['KaonRecoMass'].Fill(kM)
+                                    h['MuonRecoMass'].Fill(muM)
+
+                                    mu_strwT,mu_ecalT,mu_Dt,mu_Len,mu_v,mu_strawP,mu_ecalP = time_res(muPartkey) 
+                                    if mu_strwT!= None and mu_ecalT!= None and mu_Dt!= None and mu_Len!= None and mu_v != None and mu_strawP!=None and mu_ecalP!=None:
+                                        h['MuonStrawTime'].Fill(mu_strwT)
+                                        h['MuonEcalTime'].Fill(mu_ecalT)
+                                        h['MuonDirDeltaTime'].Fill(mu_Dt)
+                                        h['MuonFlightLen'].Fill(mu_Len)
+                                        mu_beta = mu_v/c
+                                        h['MuonSpeed'].Fill(mu_beta)
+                                        h['MuonStrawMom'].Fill(mu_strawP)
+                                        h['MuonEcalMom'].Fill(mu_ecalP)
+                                        mu_Dp = mu_strawP-mu_ecalP
+                                        h['MuonDeltaMom'].Fill(mu_Dp)
+
+                                        k_strwT,k_ecalT,k_Dt,k_Len,k_v,k_strawP,k_ecalP = time_res(kPartkey)
+                                        if k_strwT!= None and k_ecalT!= None and k_Dt!= None and k_Len!= None and k_v != None and k_strawP!=None and k_ecalP!=None:     
+                                            h['KaonStrawTime'].Fill(k_strwT)
+                                            h['KaonEcalTime'].Fill(k_ecalT)
+                                            h['KaonDirDeltaTime'].Fill(k_Dt)
+                                            h['KaonFlightLen'].Fill(k_Len)
+                                            k_beta = k_v/c
+                                            h['KaonSpeed'].Fill(k_beta)
+                                            h['KaonStrawMom'].Fill(k_strawP)
+                                            h['KaonEcalMom'].Fill(k_ecalP)
+                                            k_Dp = k_strawP-k_ecalP
+                                            h['KaonDeltaMom'].Fill(k_Dp)
+                                              
+                                            
+                                            if k_beta < 1:
+                                                #TRYING SOMETHING ELSE
+                                                k_smearedM = kP*(ROOT.TMath.Sqrt(1-(k_beta**2)))/k_beta
+                                                h['KaonSmearedMass'].Fill(k_smearedM)
+                                                h['TotalSmearedMass'].Fill(k_smearedM)                                                
+                                                mu_smearedM = muP*(ROOT.TMath.Sqrt(1-(mu_beta**2)))/mu_beta
+                                                h['MuonSmearedMass'].Fill(mu_smearedM)
+                                                h['TotalSmearedMass'].Fill(mu_smearedM)  
+
+        print('\n'+str(k_decaycheck) + ' K+ --> mu decays before detection\n')
+        h['MuonProbMeasr'] = createRatio(h['MuonSmearedMass'],h['TotalSmearedMass'])
+        h['KaonProbMeasr'] = createRatio(h['KaonSmearedMass'],h['TotalSmearedMass'])
+
+def makePlots():
+   ut.bookCanvas(h,key='DAUGHTERS_TV',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=800,cx=3,cy=2)
+   cv = h['DAUGHTERS_TV'].cd(1)
+   h['MuonStrawTime'].SetXTitle('Time [ns]')
+   h['MuonStrawTime'].SetYTitle('No. of Particles')
+   h['MuonStrawTime'].Draw()
+   h['KaonStrawTime'].SetLineColor(2)
+   h['KaonStrawTime'].Draw('same')
+
+   cv = h['DAUGHTERS_TV'].cd(2)
+   h['MuonEcalTime'].SetXTitle('Time [ns]')
+   h['MuonEcalTime'].SetYTitle('No. of Particles')
+   h['MuonEcalTime'].Draw()
+   h['KaonEcalTime'].SetLineColor(2)
+   h['KaonEcalTime'].Draw('same')
+
+   cv = h['DAUGHTERS_TV'].cd(3)
+   h['MuonDirDeltaTime'].SetXTitle('Time of Flight [ns]')
+   h['MuonDirDeltaTime'].SetYTitle('No. of Particles')
+   h['MuonDirDeltaTime'].Draw()
+   h['KaonDirDeltaTime'].SetLineColor(2)
+   h['KaonDirDeltaTime'].Draw('same')
+
+   cv = h['DAUGHTERS_TV'].cd(4)
+   h['MuonFlightLen'].SetXTitle('Flight Length (cm)')
+   h['MuonFlightLen'].SetYTitle('No. of Particles')
+   h['MuonFlightLen'].Draw()
+   h['KaonFlightLen'].SetLineColor(2)
+   h['KaonFlightLen'].Draw('same')
+
+   cv = h['DAUGHTERS_TV'].cd(5)
+   h['MuonSpeed'].SetXTitle('beta')
+   h['MuonSpeed'].SetYTitle('No. of Particles')
+   h['MuonSpeed'].Draw()
+   h['KaonSpeed'].SetLineColor(2)
+   h['KaonSpeed'].Draw('same')
+
+   #h['DAUGHTERS_TV'].Print('DaughterTVProp'+ currentDate + '.png')
+
+   ut.bookCanvas(h,key='DAUGHTERS_MOM',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=800,cx=3,cy=2)
+   cv = h['DAUGHTERS_MOM'].cd(1)
+   h['MuonStrawMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonStrawMom'].SetYTitle('No. of Particles')
+   h['MuonStrawMom'].Draw()
+   h['KaonStrawMom'].SetLineColor(2)
+   h['KaonStrawMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(2)
+   h['MuonEcalMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonEcalMom'].SetYTitle('No. of Particles')
+   h['MuonEcalMom'].Draw()
+   h['KaonEcalMom'].SetLineColor(2)
+   h['KaonEcalMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(3)
+   h['MuonRecoMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonRecoMom'].SetYTitle('No. of Particles')
+   h['MuonRecoMom'].Draw()
+   h['KaonRecoMom'].SetLineColor(2)
+   h['KaonRecoMom'].Draw('same')
+
+   #cv = h['DAUGHTERS_MOM'].cd(4)
+   #h['MuonTrueMom'].SetXTitle('Momentum [GeV/c]')
+   #h['MuonTrueMom'].SetYTitle('No. of Particles')
+   #h['MuonTrueMom'].Draw()
+   #h['KaonTrueMom'].SetLineColor(2)
+   #h['KaonTrueMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(4)
+   h['MuonDeltaMom'].SetXTitle('Momentum [GeV/c]')
+   h['MuonDeltaMom'].SetYTitle('No. of Particles')
+   h['MuonDeltaMom'].Draw()
+   h['KaonDeltaMom'].SetLineColor(2)
+   h['KaonDeltaMom'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(5)
+   h['MuonRecoMass'].SetXTitle('Mass [GeV/c2]')
+   h['MuonRecoMass'].SetYTitle('No. of Particles')
+   h['MuonRecoMass'].Draw()
+   h['KaonRecoMass'].SetLineColor(2)
+   h['KaonRecoMass'].Draw('same')
+
+   cv = h['DAUGHTERS_MOM'].cd(6)
+   h['MuonSmearedMass'].SetXTitle('Mass [GeV/c2]')
+   h['MuonSmearedMass'].SetYTitle('No. of Particles')
+   h['MuonSmearedMass'].Draw()
+   h['MuonSmearedMass'].Fit("landau")
+   h['MuonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
+   h['KaonSmearedMass'].SetLineColor(2)
+   h['KaonSmearedMass'].Draw('same')
+   h['KaonSmearedMass'].Fit("landau")
+   h['KaonSmearedMass'].GetFunction("landau").SetLineColor(kBlack)
+
+   #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
+
+   ut.bookCanvas(h,key='DAUGHTERS_PROB',title='Muons are Blue, Kaons are Red and so are you',nx=1300,ny=600,cx=3,cy=1)
+   cv = h['DAUGHTERS_PROB'].cd(1)
+   h['MuonProbMeasr'].SetMarkerColor(38)
+   polyFit1.SetLineColor(4)
+   h['MuonProbMeasr'].Fit('polyFit1')
+   h['MuonProbMeasr'].Draw('E2')
+   h['MuonProbMeasr'].SetXTitle('Mass [GeV/c2]')
+   h['MuonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
+   h['MuonProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+   cv = h['DAUGHTERS_PROB'].cd(2)
+   h['KaonProbMeasr'].SetMarkerColor(46)
+   polyFit2.SetLineColor(2)
+   h['KaonProbMeasr'].Fit('polyFit2')
+   h['KaonProbMeasr'].Draw('E2')
+   h['KaonProbMeasr'].SetXTitle('Mass [GeV/c2]')
+   h['KaonProbMeasr'].SetYTitle('Prob(particle=(kaon or muon))')
+   h['KaonProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+   cv = h['DAUGHTERS_PROB'].cd(3)
+   multigr = TMultiGraph()
+   #gStyle.SetOptTitle(kFALSE)
+   #gStyle.SetPalette(kSolar)
+   #n = 300
+   x1, y1 = array( 'd' ), array( 'd' )
+   x2, y2 = array( 'd' ), array( 'd' )
+   i=0
+   n=0
+   for i in range(30,240,6):
+       #print(i)
+       x1.append(h['MuonProbMeasr'].GetBinCenter(i))
+       y1.append(h['MuonProbMeasr'].GetBinContent(i))
+       x2.append(h['KaonProbMeasr'].GetBinCenter(i))
+       y2.append(h['KaonProbMeasr'].GetBinContent(i))
+       n=n+1
+   gr1 = TGraph( n, x1, y1 )
+   gr1.SetTitle('Prob(ID = Muon)')
+   gr2 = TGraph( n, x2, y2 )
+   gr2.SetTitle('Prob(ID = Kaon)')
+   gr1.SetLineColor( 4 )
+   gr1.SetLineWidth( 3 )
+   gr1.SetMarkerColor( 4 )
+   gr1.SetMarkerStyle( 20 )
+   gr1.SetMarkerSize(0.7)   
+   #gr1.GetXaxis().SetRangeUser(0,1.5)   
+   gr2.SetLineColor( 2 )
+   gr2.SetLineWidth( 3 )
+   gr2.SetMarkerColor( 2 )
+   gr2.SetMarkerStyle( 20 )
+   gr2.SetMarkerSize(0.7)
+   #gr2.GetXaxis().SetRangeUser(0,1.5)
+   multigr.Add(gr1, "PC")
+   multigr.Add(gr2, "PC")
+   multigr.Draw("A pfc plc")#P PLC PFCPLC PFC
+   multigr.GetXaxis().SetTitle( 'Mass [GeV/c2]' )
+   multigr.GetYaxis().SetTitle( 'Prob(particle=(kaon or muon))' )
+   multigr.GetYaxis().SetTitleOffset(1.5)
+   #gr1.Draw("CA* PLC PFC")
+   #gr2.Draw("PC  PLC PFC")
+   gPad.BuildLegend()
+   h['DAUGHTERS_PROB'].Print('DaughterProb'+ currentDate + '.png')
