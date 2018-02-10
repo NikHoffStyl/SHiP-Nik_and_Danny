@@ -233,6 +233,7 @@ def create_Hists(HiddPart,part1,part2, part3):
     #################################
     ####  Neutralino Histograms  ####
     ut.bookHist(h,HiddPart + 'TrueMass','Monte Carlo Mass',500,0.,2.)                            # true mass
+    h[HiddPart + 'TrueMass'].SetLineColor(1)
     ut.bookHist(h,HiddPart + 'RecoMass','Reconstructed Mass',500,0.,2.)                          # reco mass
     ut.bookHist(h,HiddPart + 'TrueMom','True (red) & Reco. (blue) Momentum',100,0.,300.)         # true momentum 
     ut.bookHist(h,HiddPart + 'RecoMom','Reconstructed Momentum',100,0.,300.)                     # reco momentum
@@ -681,7 +682,7 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                             h['TotalSmearedMass'].Fill(p3_smearedM)                                                
                                                 
 
-        print(n)#'n=' + str(n)
+        print('n=' + str(n))
         print('\n'+str(k2mu_decaycheck) + ' K+/- -->' + daught1 + ' decays before detection\n')
         print('\n'+str(pi2mu_decaycheck) + ' pi+/- -->' + daught1 + ' decays before detection\n')
         h[daught1 + 'ProbMeasr'] = createRatio(h[daught1 + 'SmearedMass'],h['TotalSmearedMass'],daught1 + 'ProbMeasr')
@@ -810,15 +811,17 @@ def makePlots2(HiddPart,part1,part2,part3):
     h[part1 + 'SmearedMass'].SetXTitle('Mass [GeV/c2]')
     h[part1 + 'SmearedMass'].SetYTitle('No. of Particles')
     h[part1 + 'SmearedMass'].Draw()
-    #h[part1 + 'SmearedMass'].Fit("landau")
-    #h[part1 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
+    h[part1 + 'SmearedMass'].Fit("landau")
+    h[part1 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
     h[part2 + 'SmearedMass'].SetLineColor(2)
     h[part2 + 'SmearedMass'].Draw('same')
-    #h[part2 + 'SmearedMass'].Fit(fitName)
-    #h[part2 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
+    h[part2 + 'SmearedMass'].Fit('landau')
+    h[part2 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
     if not part3==None:
         h[part3 + 'SmearedMass'].SetLineColor(3)
         h[part3 + 'SmearedMass'].Draw('same')
+        h[part3 + 'SmearedMass'].Fit('landau')
+        h[part3 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
 
     h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
     if part3==None:
