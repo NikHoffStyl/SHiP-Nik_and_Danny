@@ -1,4 +1,4 @@
-# #########################################
+###########################################
 #         RPV_EDITA Test Code             #
 ###########################################
 #Code Performs Analysis on Data Obtained by simulation and reconstruction
@@ -213,8 +213,8 @@ def create_Hists(HiddPart,part1,part2, part3):
     ###############################
     ####  Daughter Histograms  ####
     for partName in partList:
-        print(partName)
-        ut.bookHist(h,partName + 'StrawTime','Gaussian Straw t measurement',600,321.7,324.7)
+        #print(partName)
+        ut.bookHist(h,partName + 'StrawTime',partName + 'Gaussian Straw t measurement',600,321.7,324.7)
         ut.bookHist(h,partName + 'EcalTime','Gaussian Ecal t measurement',600,359.7,361.7)
         ut.bookHist(h,partName + 'DirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,38.9)      # time of flight
         ut.bookHist(h,partName + 'FlightLen','Straw-ECAL Flight Lenght',600,11.36,11.47)                   # flight Length
@@ -248,6 +248,7 @@ def create_Hists(HiddPart,part1,part2, part3):
     #ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
 
     print("Created Histograms")
+    print(partList)
 
 def dist2InnerWall(X,Y,Z):
   dist = 0
@@ -485,8 +486,6 @@ def track_checks(index,true_part,reco_part):
     return check,fit_chi2
 
 def finState2t1t2(HiddPart,daught1,daught2):
-    kaonDet_PDG = 321
-    pionDet_PDG = 211
     if HiddenPart == 'Neutralino':
         HiddPart_PDG = 9900015
     if daught1 == 'Mu':
@@ -498,9 +497,23 @@ def finState2t1t2(HiddPart,daught1,daught2):
     elif daught2 == 'K*0':
         daught2_PDG = 313
     if sTree.GetBranch("FitTracks"):
-        k2mu_decaycheck = 0
-        pi2mu_decaycheck = 0
-        for n in range(nEvents):                            
+        totalEvents=0
+        daught1Events=0
+        d1EventsAfterChecks=0
+        k2muEvents=0
+        k2mu_MotherHP = 0
+        k2mu_Motherd2 = 0
+        pi2muEvents=0
+        pi2mu_MotherHP = 0
+        pi2mu_Motherd2 = 0
+        HiddPartDaught1Events=0
+        daught2toKaonEvents=0
+        d2toKaonEventsAfterChecks=0
+        daught2toPionEvents=0
+        d2toPionEventsAfterChecks=0
+        
+        for n in range(nEvents):
+            totalEvents+=1
             rc = sTree.GetEntry(n)                              # load tree entry
             #for part in sTree.MCTrack:
             #    print(part)
@@ -508,22 +521,31 @@ def finState2t1t2(HiddPart,daught1,daught2):
                 d1Partkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_daught1 = sTree.MCTrack[d1Partkey]                  # gives MC particle data
                 if abs(true_daught1.GetPdgCode()) == daught1_PDG:        # checks particle is muon
+                    daught1Events+=1
                     daught1MotherKey = true_daught1.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[daught1MotherKey]             # obtains mother particle data
                     check,d1_chi2 = track_checks(index,true_daught1,reco_part)
                     if not check == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                         continue
+                    d1EventsAfterChecks+=1
                     if true_mother.GetPdgCode() == 321:
                         d1GrannyKey = true_mother.GetMotherId()
                         true_gran = sTree.MCTrack[d1GrannyKey]
+                        k2muEvents+=1
                         if true_gran == HiddPart_PDG:
-                            k2mu_decaycheck+=1
+                            k2mu_MotherHP+=1
+                        if true_gran == daught2_PDG:
+                            k2mu_Motherd2+=1
                     if true_mother.GetPdgCode() == 211:
                         d1GrannyKey = true_mother.GetMotherId()
                         true_gran = sTree.MCTrack[d1GrannyKey]
+                        pi2muEvents+=1
                         if true_gran == HiddPart_PDG:
-                            pi2mu_decaycheck+=1
+                            pi2mu_MotherHP+=1
+                        if true_gran == daught2_PDG:
+                            pi2mu_Motherd2+=1
                     if true_mother.GetPdgCode() == HiddPart_PDG:              # checks mother is Neutralino
+                        HiddPartDaught1Events+=1
                         for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
                             p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
                             true_part2 = sTree.MCTrack[p2Partkey]               # gives MC particle data
@@ -532,13 +554,14 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                 true_mother = sTree.MCTrack[part2MotherKey]          # obtains mother particle data
                                     
                                 if (part2MotherKey==daught1MotherKey and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
+                                    daught2toKaonEvents+=1
                                     #print(reco_part2)
                                     p2MotherTrueMass = true_mother.GetMass()               # get Neutralino/final states mother mass
                                     p2MotherTrueMom = true_mother.GetP()                   # get Neutralino/final states mother mom
                                     check2,p2_chi2 = track_checks(index2,true_part2,reco_part2)
                                     if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
-                                    
+                                    d2toKaonEventsAfterChecks+=1
                                     daught1_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     part2_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     HiddPart_LVec = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
@@ -621,13 +644,14 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                 true_mother = sTree.MCTrack[part3MotherKey]          # obtains mother particle data
                                     
                                 if true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-':                 # check if keys are the same
+                                    daught2toPionEvents+=1
                                     #print(reco_part2)
                                     p3MotherTrueMass = true_mother.GetMass()               # get Neutralino/final states mother mass
                                     p3MotherTrueMom = true_mother.GetP()                   # get Neutralino/final states mother mom
                                     check3,p3_chi2 = track_checks(index2,true_part2,reco_part2)
                                     if not check3 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
-                                    
+                                    d2toPionEventsAfterChecks+=1
                                     
                                     part3_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     HiddPart_LVec = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
@@ -682,9 +706,23 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                             h['TotalSmearedMass'].Fill(p3_smearedM)                                                
                                                 
 
-        print('n=' + str(n))
-        print('\n'+str(k2mu_decaycheck) + ' K+/- -->' + daught1 + ' decays before detection\n')
-        print('\n'+str(pi2mu_decaycheck) + ' pi+/- -->' + daught1 + ' decays before detection\n')
+        print(2*' ' + 80*'_')
+        print(2*' ' + '||  Total number of events = ' + str(totalEvents))
+        print(2*' ' + '||  ' + daught1 + ' number of events = ' + str(daught1Events))
+        print(2*' ' + '||  ' + daught1 + ' number of events after checks = ' + str(d1EventsAfterChecks))
+        print(2*' ' + '||  ' + daught1 + ' number of events (with K+/- mother) = ' + str(k2muEvents))
+        print(2*' ' + '||  ' + daught1 + ' number of events (with K+/- mother and gran '+ HiddPart +') = ' + str(k2mu_MotherHP))
+        print(2*' ' + '||  ' + daught1 + ' number of events (with K+/- mother and gran '+ daught2 +') = ' + str(k2mu_Motherd2))
+        print(2*' ' + '||  ' + daught1 + ' number of events (with pi+/- mother) = ' + str(pi2muEvents))
+        print(2*' ' + '||  ' + daught1 + ' number of events (with pi+/- mother and gran '+ HiddPart +') = ' + str(pi2mu_MotherHP))
+        print(2*' ' + '||  ' + daught1 + ' number of events (with pi+/- mother and gran '+ daught2 +') = ' + str(pi2mu_Motherd2))
+        print(2*' ' + '||  ' + daught1 + ' number of events (with ' + HiddPart + ' mother) = ' + str(HiddPartDaught1Events))
+        print(2*' ' + '||  K+/- number of events (with ' + daught2 + ' mother) = ' + str(daught2toKaonEvents))
+        print(2*' ' + '||  K+/- number of events (with ' + daught2 + ' mother) after checks = ' + str(d2toKaonEventsAfterChecks))
+        print(2*' ' + '||  pi+/- number of events (with ' + daught2 + ' mother) = ' + str(daught2toPionEvents))
+        print(2*' ' + '||  pi+/- number of events (with ' + daught2 + ' mother) after checks = ' + str(d2toPionEventsAfterChecks))
+        print(2*' ' + 80*'_'+ '\n')
+
         h[daught1 + 'ProbMeasr'] = createRatio(h[daught1 + 'SmearedMass'],h['TotalSmearedMass'],daught1 + 'ProbMeasr')
         h[part2 + 'ProbMeasr'] = createRatio(h[part2 + 'SmearedMass'],h['TotalSmearedMass'],part2 + 'ProbMeasr')
         if not daught2=='K+/-':
@@ -693,7 +731,7 @@ def finState2t1t2(HiddPart,daught1,daught2):
 def makePlots2(HiddPart,part1,part2,part3):
     
     key='DAUGHTERS'
-    title='Muons are Blue, Kaons are Red and so are you'
+    title='Time and velocity plots'
         
     ut.bookCanvas(h,key + '_TV',title,nx=1300,ny=800,cx=3,cy=2)
     cv = h[key + '_TV'].cd(1)
@@ -705,6 +743,7 @@ def makePlots2(HiddPart,part1,part2,part3):
     if not part3==None:
         h[part3 + 'StrawTime'].SetLineColor(3)
         h[part3 + 'StrawTime'].Draw('same')
+    gPad.BuildLegend()
 
     cv = h[key + '_TV'].cd(2)
     h[part1 + 'EcalTime'].SetXTitle('Time [ns]')
@@ -748,6 +787,7 @@ def makePlots2(HiddPart,part1,part2,part3):
 
     h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
 
+    title='Momenta and mass plots'
     ut.bookCanvas(h,key + '_MOM', title , nx=1300, ny=800, cx=3, cy=2)
     cv = h[key + '_MOM'].cd(1)
     h[part1 + 'StrawMom'].SetXTitle('Momentum [GeV/c]')
@@ -828,6 +868,7 @@ def makePlots2(HiddPart,part1,part2,part3):
         partString=''
     else:
         partString=' or pion'
+    title='Probability Plots'
     ut.bookCanvas(h,key + '_PROB',title,nx=1300,ny=600,cx=3,cy=2)
     cv = h[key + '_PROB'].cd(1)
     h[part1 + 'ProbMeasr'].SetMarkerColor(38)
@@ -914,12 +955,12 @@ def makePlots2(HiddPart,part1,part2,part3):
     h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
     
 def print_menu(): 
-    print (30 * "-" + "MENU" + 30 * "-")
+    print ('\n \n' + 30 * "-" + "MENU" + 30 * "-")
     print ("1. RPV SUSY Benchmark1 --> K+/- mu+/- final state")
     print ("2. RPV SUSY Benchmark1 --> K*+/- mu+/- final state")
     print ("3. RPV SUSY Benchmark1 --> K*0 nu_mu final state")
     print ("4. Exit")
-    print (67 * "-")
+    print (64 * "-"+ '\n')
 
 ########################################
      
