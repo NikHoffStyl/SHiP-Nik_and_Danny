@@ -169,7 +169,7 @@ import TrackExtrapolateTool
 from array import array
 c = 2.99792458*(10**8)   # speed of light
 e = 2.718281828459   # Euler's number
-h = {}   # creates empty dictionary
+h = {}   # creates empty dictionary for histograms and graphs
 
 #----------------------------------------------------FUNCTIONS------------------------------------------------------------
 
@@ -436,7 +436,7 @@ def makePlots():
     h['Daughter_masses'].Draw('same')
     h['Test_Time'].Print('Time_Mass.png')
     #======================================================================================================================
-    ut.bookCanvas(h,key='prob',title='Results 4',nx=1000,ny=1000,cx=2,cy=2)
+    ut.bookCanvas(h,key='prob',title='Results 4',nx=1300,ny=800,cx=3,cy=2)
     cv = h['prob'].cd(1)
     h['graph_mu'].SetTitle('Probability of particle being a muon')
     h['graph_mu'].GetXaxis().SetTitle('Mass / [GeV/c2]')
@@ -458,6 +458,23 @@ def makePlots():
     cv = h['prob'].cd(3)
     h['combo'].SetTitle('Probability of identifying muon (blue) and kaon (red)')
     h['combo'].Draw('AP')
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['prob'].cd(4)
+    h['path_diff'].SetXTitle('Path difference / [cm]')
+    h['path_diff'].SetYTitle('No. of particles')
+    h['path_diff'].SetLineColor(1)
+    h['path_diff'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['prob'].cd(5)
+    h['num_muon'].SetXTitle('No. of muon hits in straw tubes')
+    h['num_muon'].SetYTitle('Frequency')
+    h['num_muon'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['prob'].cd(6)
+    h['num_kaon'].SetXTitle('No. of kaon hits in straw tubes')
+    h['num_kaon'].SetYTitle('Frequency')
+    h['num_kaon'].SetLineColor(2)
+    h['num_kaon'].Draw()
     h['prob'].Print('Probs.png')
 
 def track_checks(index,true_part,reco_part,veto):
@@ -474,10 +491,10 @@ def track_checks(index,true_part,reco_part,veto):
         veto[1] += 1
         check = -1
     fit_status = reco_part.getFitStatus()             
-    if not fit_status.isFitConverged():
-        #print('Fit did not converge')
-        veto[2] += 1
-        check = -1
+    #if not fit_status.isFitConverged():
+    #    #print('Fit did not converge')
+    #    veto[2] += 1
+    #    check = -1
     fit_nmeas = fit_status.getNdf()                      
     if not fit_nmeas > measCut:
         #print('Too few measurements')
@@ -544,11 +561,9 @@ def time_res(partkey,pdg,n,m):
                     h['track_muon'].Fill(hit)   # muon z-momentum through straw tubes for particular event
         if pdg==321:   # kaon
             h['num_kaon'].Fill(num_hits)
-            h['num_kaon'].SetLineColor(2)
             for hit in pz_array:
                 if n == m:
                     h['track_kaon'].Fill(hit)   # kaon z-momentum through straw tubes for particular event
-                    h['track_kaon'].SetLineColor(2)
   
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
@@ -728,7 +743,6 @@ def finStateMuKa():
         print('\t' + str(total-accepted) + ' events rejected:')
         print('\t\t' + str(total-veto[0]/2) + ' vertices inside fiducial volume (' + str(veto[0]/2) + ' vetos)')
         print('\t\t' + str(total-veto[1]) + ' tracks within fiducial volume (' + str(veto[1]) + ' vetos)')
-        print('\t\t' + str(total-veto[2]) + ' fits successfully converged (' + str(veto[2]) + ' vetos)')
         print('\t\t' + str(total-veto[3]) + ' tracks with no. measurements > ' + str(measCut) + ' (' + str(veto[3]) + ' vetos)')
         print('\t\t' + str(total-veto[4]) + ' chi squared < ' + str(chi2Cut) + ' (' + str(veto[4]) + ' vetos)')
         print('\t\t' + str(total-veto[5]/2) + ' DOCA < ' + str(docaCut) + ' (' + str(veto[5]/2) + ' vetos)')
