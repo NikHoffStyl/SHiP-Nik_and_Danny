@@ -12,7 +12,7 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 from array import array
-from ROOT import TCanvas, TColor, TGaxis, TH1F, TH1D, TPad, TGraph, TF1, TMultiGraph
+from ROOT import TCanvas, TColor, TGaxis, TH1F, TH1D, TPad, TGraph, TF1, TMultiGraph,TGraphErrors
 from ROOT import kBlack, kBlue, kRed, kFALSE, kSolar
 from ROOT import gROOT, gPad, gStyle
 from array import array
@@ -216,7 +216,7 @@ def create_Hists(HiddPart,part1,part2, part3):
         edgesarray.append(edgesarray[binNumber]+ 0.015)
     for binNumber in range(40,86):
         edgesarray.append(edgesarray[binNumber]+0.045)
-    print(edgesarray)
+    #print(edgesarray)
     ###############################
     ####  Daughter Histograms  ####
     for partName in partList:
@@ -563,7 +563,7 @@ def finState2t1t2(HiddPart,daught1,daught2):
                             pi2mu_MotherHP+=1
                         if true_gran.GetPdgCode() == daught2_PDG:
                             pi2mu_Motherd2+=1
-                    if true_mother.GetPdgCode() == HiddPart_PDG:              # checks mother is Neutralino
+                    if true_mother.GetPdgCode() == HiddPart_PDG:              # checks mother is hidden particle
                         HiddPartDaught1Events+=1
                         for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
                             p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
@@ -903,7 +903,7 @@ def makePlots2(HiddPart,part1,part2,part3):
     else:
         partString=' or pion'
     title='Probability Plots'
-    ut.bookCanvas(h,key + '_PROB',title,nx=1300,ny=600,cx=3,cy=2)
+    ut.bookCanvas(h,key + '_PROB',title,nx=1300,ny=800,cx=3,cy=2)
     cv = h[key + '_PROB'].cd(1)
     h[part1 + 'ProbMeasr'].SetMarkerColor(38)
     polyFit1.SetLineColor(4)
@@ -938,55 +938,66 @@ def makePlots2(HiddPart,part1,part2,part3):
     #gStyle.SetPalette(kSolar)
     #n = 300
     x1, y1 = array( 'd' ), array( 'd' )
+    ex1, ey1 = array( 'd' ), array( 'd' )
     x2, y2 = array( 'd' ), array( 'd' )
+    ex2, ey2 = array( 'd' ), array( 'd' )
     if not part3==None:
         x3, y3 = array( 'd' ), array( 'd' )
+        ex3, ey3 = array( 'd' ), array( 'd' )
     i=0
     n=0
-    for i in range(2,80,2):
+    numBins = h[part1 + 'ProbMeasr'].GetNbinsX()
+    for i in range(numBins):
         x1.append(h[part1 + 'ProbMeasr'].GetBinCenter(i))
+        ex1.append(0)
         y1.append(h[part1 + 'ProbMeasr'].GetBinContent(i))
+        ey1.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/3))
         x2.append(h[part2 + 'ProbMeasr'].GetBinCenter(i))
+        ex2.append(0)
         y2.append(h[part2 + 'ProbMeasr'].GetBinContent(i))
+        ey2.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/3))
         if not part3==None:
             x3.append(h[part3 + 'ProbMeasr'].GetBinCenter(i))
+            ex3.append(0)
             y3.append(h[part3 + 'ProbMeasr'].GetBinContent(i))
+            ey3.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/3))
         n=n+1
-    gr1 = TGraph( n, x1, y1 )
+    gr1 = TGraphErrors( n, x1, y1, ex1, ey1 )
     gr1.SetTitle('Prob(ID = ' + part1 + ')')
     gr1.SetLineColor( 4 )
-    gr1.SetLineWidth( 3 )
+    gr1.SetLineWidth( 1 )
     gr1.SetMarkerColor( 4 )
     gr1.SetMarkerStyle( 20 )
-    gr1.SetMarkerSize(0.7)   
+    gr1.SetMarkerSize(0.5)   
     #gr1.GetXaxis().SetRangeUser(0,1.5) 
-    gr2 = TGraph( n, x2, y2 )
+    gr2 = TGraphErrors( n, x2, y2, ex2, ey2 )
     gr2.SetTitle('Prob(ID = ' + part2 + ')')  
     gr2.SetLineColor( 2 )
-    gr2.SetLineWidth( 3 )
+    gr2.SetLineWidth( 1 )
     gr2.SetMarkerColor( 2 )
     gr2.SetMarkerStyle( 20 )
-    gr2.SetMarkerSize(0.7)
+    gr2.SetMarkerSize(0.5)
     #gr2.GetXaxis().SetRangeUser(0,1.5)
     multigr.Add(gr1, "PC")
     multigr.Add(gr2, "PC")
     if not part3==None:
-        gr3 = TGraph( n, x3, y3 )
+        gr3 = TGraphErrors( n, x3, y3, ex3, ey3 )
         gr3.SetTitle('Prob(ID = ' + part3 + ')')  
         gr3.SetLineColor( 3 )
-        gr3.SetLineWidth( 3 )
+        gr3.SetLineWidth( 1 )
         gr3.SetMarkerColor( 3 )
         gr3.SetMarkerStyle( 20 )
-        gr3.SetMarkerSize(0.7)
+        gr3.SetMarkerSize(0.5)
         multigr.Add(gr3, "PC")
     multigr.Draw("A pfc plc")#P PLC PFCPLC PFC
     multigr.GetXaxis().SetTitle( 'Mass [GeV/c2]' )
     multigr.GetYaxis().SetTitle( 'Prob(particle=(kaon or muon))' )
     multigr.GetYaxis().SetTitleOffset(1.5)
+    multigr.GetXaxis().SetRangeUser(0,1.5)
     #gr1.Draw("CA* PLC PFC")
     #gr2.Draw("PC  PLC PFC")
     gPad.BuildLegend()
-    #h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
+    h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
     
 def print_menu(): 
     print ('\n \n' + 30 * "-" + "MENU" + 30 * "-")
