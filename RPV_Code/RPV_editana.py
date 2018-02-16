@@ -12,7 +12,7 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 from array import array
-from ROOT import TCanvas, TColor, TGaxis, TH1F, TPad, TGraph, TF1, TMultiGraph
+from ROOT import TCanvas, TColor, TGaxis, TH1F, TH1D, TPad, TGraph, TF1, TMultiGraph
 from ROOT import kBlack, kBlue, kRed, kFALSE, kSolar
 from ROOT import gROOT, gPad, gStyle
 from array import array
@@ -34,8 +34,8 @@ measCutPR = 22
 docaCut = 2.
 c = 2.99792458*(10**8)
 currentDate = datetime.datetime.now().strftime("%y_%m_%d_%H%M")
-polyFit1 = TF1("polyFit1","pol9")
-polyFit2 = TF1("polyFit2","pol9")
+polyFit1 = TF1("polyFit1","pol3")
+polyFit2 = TF1("polyFit2","pol3")
 
 def inputOptsArgs():
     inputFile  = None
@@ -210,35 +210,45 @@ def create_Hists(HiddPart,part1,part2, part3):
     partList = [part1,part2]
     if not part3 == None:
         partList.append(part3)
+    edgesarray=[]
+    edgesarray.append(0)
+    for binNumber in range(0,40):
+        edgesarray.append(edgesarray[binNumber]+ 0.015)
+    for binNumber in range(40,86):
+        edgesarray.append(edgesarray[binNumber]+0.045)
+    print(edgesarray)
     ###############################
     ####  Daughter Histograms  ####
     for partName in partList:
         #print(partName)
-        ut.bookHist(h,partName + 'StrawTime',partName + 'Gaussian Straw t measurement',600,321.7,324.7)
-        ut.bookHist(h,partName + 'EcalTime','Gaussian Ecal t measurement',600,359.7,361.7)
-        ut.bookHist(h,partName + 'DirDeltaTime','Straw-ECAL Time of Flight (directly)',600,37.5,38.9)      # time of flight
-        ut.bookHist(h,partName + 'FlightLen','Straw-ECAL Flight Lenght',600,11.36,11.47)                   # flight Length
-        ut.bookHist(h,partName + 'Speed','Beta value',600,0.993,1.0014)                                    # speed
-        ut.bookHist(h,partName + 'StrawMom','Straw Momentum',600,-0.05,120.)                               # straw momentum
-        ut.bookHist(h,partName + 'EcalMom','Ecal Momentum',600,-0.05,120.)                                 # ecal  momentum
-        ut.bookHist(h,partName + 'DeltaMom','Straw-Ecal Momentum',600,-0.1,0.21)                           # delta momentum
-        ut.bookHist(h,partName + 'RecoMom','Reco Momentum',600,-0.05,120.)                                 # reco  momentum
-        ut.bookHist(h,partName + 'TrueMom','True Momentum',600,-0.05,120.)                                 # true  momentum
-        ut.bookHist(h,partName + 'RecoMass','Reco Mass',400,0.,2.)                                         # reco  mass
-        ut.bookHist(h,partName + 'TrueMass','True Mass',400,0.,2.)                                         # true  mass
-        ut.bookHist(h,partName + 'SmearedMass','Smeared Mass',400,0.,2.)                                   # smrd  mass
-        ut.bookHist(h,partName + 'ProbMeasr','Probs identifying Muon',400,0.,2.)                           # ID Prob
+        ut.bookHist(h,partName + 'StrawTime',partName + 'Gaussian Straw t measurement',300,321.7,323.5)
+        ut.bookHist(h,partName + 'EcalTime','Gaussian Ecal t measurement',300,359.7,361.2)
+        ut.bookHist(h,partName + 'DirDeltaTime','Straw-ECAL Time of Flight (directly)',300,37.8,38.4)      # time of flight
+        ut.bookHist(h,partName + 'FlightLen','Straw-ECAL Flight Lenght',300,11.375,11.42)                  # flight Length
+        ut.bookHist(h,partName + 'Speed','Beta value',300,0.997,1.001)                                     # speed
+        ut.bookHist(h,partName + 'StrawMom','Straw Momentum',300,-0.05,120.)                               # straw momentum
+        ut.bookHist(h,partName + 'EcalMom','Ecal Momentum',300,-0.05,120.)                                 # ecal  momentum
+        ut.bookHist(h,partName + 'DeltaMom','Straw-Ecal Momentum',300,0.02,0.13)                           # delta momentum
+        ut.bookHist(h,partName + 'RecoMom','Reco Momentum',300,-0.05,120.)                                 # reco  momentum
+        ut.bookHist(h,partName + 'TrueMom','True Momentum',300,-0.05,120.)                                 # true  momentum
+        ut.bookHist(h,partName + 'RecoMass','Reco Mass',300,0.,0.6)                                        # reco  mass
+        ut.bookHist(h,partName + 'TrueMass','True Mass',300,0.,0.6)                                        # true  mass
+        #ut.bookHist(h,partName + 'SmearedMass','Smeared Mass',300,0.,2.)                                   # smrd  mass
+        h[partName + 'SmearedMass'] = TH1D(partName + 'SmearedMass','Smeared Mass',85,array('d',edgesarray))
+        #ut.bookHist(h,partName + 'ProbMeasr','Probs identifying Muon',170,array('d',edgesarray))            # ID Prob
+        h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr','Probs identifying Muon',85,array('d',edgesarray))
+
     ###########################
-    ut.bookHist(h,'TotalSmearedMass','Smeared Mass',400,0.,2.)                                   # Total mass
+    #ut.bookHist(h,'TotalSmearedMass','Smeared Mass',300,0.,2.)                                   # Total mass
+    h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass',85,array('d',edgesarray))
     #################################
     ####  Neutralino Histograms  ####
-    ut.bookHist(h,HiddPart + 'TrueMass','Monte Carlo Mass',500,0.,2.)                            # true mass
-    h[HiddPart + 'TrueMass'].SetLineColor(1)
-    ut.bookHist(h,HiddPart + 'RecoMass','Reconstructed Mass',500,0.,2.)                          # reco mass
-    ut.bookHist(h,HiddPart + 'TrueMom','True (red) & Reco. (blue) Momentum',100,0.,300.)         # true momentum 
-    ut.bookHist(h,HiddPart + 'RecoMom','Reconstructed Momentum',100,0.,300.)                     # reco momentum
-    ut.bookHist(h,HiddPart + 'DeltaMom','True/Reco Momentum Difference',100,-3.,3)               # true-reco momentum difference
-    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0.,3.)                                  # chi squared track fitting
+    ut.bookHist(h,HiddPart + 'TrueMass','Monte Carlo Mass',300,0.99,1.01)                            # true mass
+    ut.bookHist(h,HiddPart + 'RecoMass','Reconstructed Mass',300,0.97,1.03)                          # reco mass
+    ut.bookHist(h,HiddPart + 'TrueMom','True (red) & Reco. (blue) Momentum',100,0.,180.)         # true momentum 
+    ut.bookHist(h,HiddPart + 'RecoMom','Reconstructed Momentum',300,0.,180.)                     # reco momentum
+    ut.bookHist(h,HiddPart + 'DeltaMom','True/Reco Momentum Difference',300,-3.,3)               # true-reco momentum difference
+    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',300,0.2,1.8)                                  # chi squared track fitting
 
     #ut.bookHist(h,HiddPart + '_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
     #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
@@ -249,6 +259,7 @@ def create_Hists(HiddPart,part1,part2, part3):
 
     print("Created Histograms")
     print(partList)
+    print('\n')
 
 def dist2InnerWall(X,Y,Z):
   dist = 0
@@ -458,7 +469,7 @@ def createRatio(h1, h2, histname):
     x.SetRangeUser(0,1.5)
     return h3
 
-def track_checks(index,true_part,reco_part):
+def track_checks(index,true_part,reco_part,veto):
     check = 0
     Decay_X = true_part.GetStartX()
     Decay_Y = true_part.GetStartY()
@@ -466,24 +477,29 @@ def track_checks(index,true_part,reco_part):
     if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
         #print('RPV decayed outside fiducial volume')
         check = -1
+        veto[0] += 1
     if not checkFiducialVolume(sTree,index,dy): 
         #print('Track outside fiducial volume')
         check = -1
+        veto[1] += 1
     fit_status = reco_part.getFitStatus()             
     if not fit_status.isFitConverged():
         #print('Fit did not converge')
         check = -1
+        veto[2] += 1
     fit_nmeas = fit_status.getNdf()                      
     if not fit_nmeas > 25:
         #print('Too few measurements')
         check = -1
+        veto[3] += 1
     fit_rchi2 = fit_status.getChi2()                      
     fit_chi2 = (fit_rchi2/fit_nmeas)
     if not fit_chi2 < 4:
         #print('Chi squared value too high')
         check = -1
+        veto[4] += 1
 
-    return check,fit_chi2
+    return check,fit_chi2,veto
 
 def finState2t1t2(HiddPart,daught1,daught2):
     if HiddenPart == 'Neutralino':
@@ -499,6 +515,7 @@ def finState2t1t2(HiddPart,daught1,daught2):
     if sTree.GetBranch("FitTracks"):
         totalEvents=0
         daught1Events=0
+        d1veto=6*[0]
         d1EventsAfterChecks=0
         k2muEvents=0
         k2mu_MotherHP = 0
@@ -508,8 +525,10 @@ def finState2t1t2(HiddPart,daught1,daught2):
         pi2mu_Motherd2 = 0
         HiddPartDaught1Events=0
         daught2toKaonEvents=0
+        d2toKaonveto=6*[0]
         d2toKaonEventsAfterChecks=0
         daught2toPionEvents=0
+        d2toPionveto=6*[0]
         d2toPionEventsAfterChecks=0
         
         for n in range(nEvents):
@@ -524,7 +543,7 @@ def finState2t1t2(HiddPart,daught1,daught2):
                     daught1Events+=1
                     daught1MotherKey = true_daught1.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[daught1MotherKey]             # obtains mother particle data
-                    check,d1_chi2 = track_checks(index,true_daught1,reco_part)
+                    check,d1_chi2, d1veto = track_checks(index,true_daught1,reco_part,d1veto)
                     if not check == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                         continue
                     d1EventsAfterChecks+=1
@@ -532,25 +551,25 @@ def finState2t1t2(HiddPart,daught1,daught2):
                         d1GrannyKey = true_mother.GetMotherId()
                         true_gran = sTree.MCTrack[d1GrannyKey]
                         k2muEvents+=1
-                        if true_gran == HiddPart_PDG:
+                        if true_gran.GetPdgCode() == HiddPart_PDG:
                             k2mu_MotherHP+=1
-                        if true_gran == daught2_PDG:
+                        if true_gran.GetPdgCode() == daught2_PDG:
                             k2mu_Motherd2+=1
                     if true_mother.GetPdgCode() == 211:
                         d1GrannyKey = true_mother.GetMotherId()
                         true_gran = sTree.MCTrack[d1GrannyKey]
                         pi2muEvents+=1
-                        if true_gran == HiddPart_PDG:
+                        if true_gran.GetPdgCode() == HiddPart_PDG:
                             pi2mu_MotherHP+=1
-                        if true_gran == daught2_PDG:
+                        if true_gran.GetPdgCode() == daught2_PDG:
                             pi2mu_Motherd2+=1
                     if true_mother.GetPdgCode() == HiddPart_PDG:              # checks mother is Neutralino
                         HiddPartDaught1Events+=1
                         for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
                             p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
-                            true_part2 = sTree.MCTrack[p2Partkey]               # gives MC particle data
-                            if abs(true_part2.GetPdgCode()) == 321:     # checks particle is kaon
-                                part2MotherKey = true_part2.GetMotherId()          # stores a number index of MC track of mother
+                            true_part2 = sTree.MCTrack[p2Partkey]                 # gives MC particle data
+                            if abs(true_part2.GetPdgCode()) == 321:               # checks particle is kaon
+                                part2MotherKey = true_part2.GetMotherId()            # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[part2MotherKey]          # obtains mother particle data
                                     
                                 if (part2MotherKey==daught1MotherKey and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
@@ -558,12 +577,12 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                     #print(reco_part2)
                                     p2MotherTrueMass = true_mother.GetMass()               # get Neutralino/final states mother mass
                                     p2MotherTrueMom = true_mother.GetP()                   # get Neutralino/final states mother mom
-                                    check2,p2_chi2 = track_checks(index2,true_part2,reco_part2)
+                                    check2,p2_chi2,d2toKaonveto = track_checks(index2,true_part2,reco_part2,d2toKaonveto)
                                     if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
                                     d2toKaonEventsAfterChecks+=1
                                     daught1_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                                    part2_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
+                                    part2_LVec = ROOT.TLorentzVector()                   # declares variable as TLorentzVector class
                                     HiddPart_LVec = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
                                     HiddPart_LVec,daught1_LVec,part2_LVec,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
                                     if HiddPart_LVec == -1: continue
@@ -648,7 +667,7 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                     #print(reco_part2)
                                     p3MotherTrueMass = true_mother.GetMass()               # get Neutralino/final states mother mass
                                     p3MotherTrueMom = true_mother.GetP()                   # get Neutralino/final states mother mom
-                                    check3,p3_chi2 = track_checks(index2,true_part2,reco_part2)
+                                    check3,p3_chi2,d2toPionveto = track_checks(index2,true_part2,reco_part2,d2toPionveto)
                                     if not check3 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
                                     d2toPionEventsAfterChecks+=1
@@ -710,6 +729,11 @@ def finState2t1t2(HiddPart,daught1,daught2):
         print(2*' ' + '||  Total number of events = ' + str(totalEvents))
         print(2*' ' + '||  ' + daught1 + ' number of events = ' + str(daught1Events))
         print(2*' ' + '||  ' + daught1 + ' number of events after checks = ' + str(d1EventsAfterChecks))
+        print(2*' ' + '||  ==>' + daught1 + ' number of events isInFiducial = ' + str(d1veto[0]))
+        print(2*' ' + '||  ==>' + daught1 + ' number of events checkFiducialVolume = ' + str(d1veto[1]))
+        print(2*' ' + '||  ==>' + daught1 + ' number of events fit_status = ' + str(d1veto[2]))
+        print(2*' ' + '||  ==>' + daught1 + ' number of events fit_nmeas = ' + str(d1veto[3]))
+        print(2*' ' + '||  ==>' + daught1 + ' number of events fit_chi2 = ' + str(d1veto[4]))
         print(2*' ' + '||  ' + daught1 + ' number of events (with K+/- mother) = ' + str(k2muEvents))
         print(2*' ' + '||  ' + daught1 + ' number of events (with K+/- mother and gran '+ HiddPart +') = ' + str(k2mu_MotherHP))
         print(2*' ' + '||  ' + daught1 + ' number of events (with K+/- mother and gran '+ daught2 +') = ' + str(k2mu_Motherd2))
@@ -719,8 +743,18 @@ def finState2t1t2(HiddPart,daught1,daught2):
         print(2*' ' + '||  ' + daught1 + ' number of events (with ' + HiddPart + ' mother) = ' + str(HiddPartDaught1Events))
         print(2*' ' + '||  K+/- number of events (with ' + daught2 + ' mother) = ' + str(daught2toKaonEvents))
         print(2*' ' + '||  K+/- number of events (with ' + daught2 + ' mother) after checks = ' + str(d2toKaonEventsAfterChecks))
+        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) isInFiducial = ' + str(d2toKaonveto[0]))
+        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) checkFiducialVolume = ' + str(d2toKaonveto[1]))
+        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_status = ' + str(d2toKaonveto[2]))
+        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_nmeas = ' + str(d2toKaonveto[3]))
+        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_chi2 = ' + str(d2toKaonveto[4]))
         print(2*' ' + '||  pi+/- number of events (with ' + daught2 + ' mother) = ' + str(daught2toPionEvents))
         print(2*' ' + '||  pi+/- number of events (with ' + daught2 + ' mother) after checks = ' + str(d2toPionEventsAfterChecks))
+        print(2*' ' + '||  ==> pi+/- number of events (with ' + daught2 + ' mother) isInFiducial = ' + str(d2toPionveto[0]))
+        print(2*' ' + '||  ==> pi+/- number of events (with ' + daught2 + ' mother) checkFiducialVolume = ' + str(d2toPionveto[1]))
+        print(2*' ' + '||  ==> pi+/- number of events (with ' + daught2 + ' mother) fit_status = ' + str(d2toPionveto[2]))
+        print(2*' ' + '||  ==> pi+/- number of events (with ' + daught2 + ' mother) fit_nmeas = ' + str(d2toPionveto[3]))
+        print(2*' ' + '||  ==> pi+/- number of events (with ' + daught2 + ' mother) fit_chi2 = ' + str(d2toPionveto[4]))
         print(2*' ' + 80*'_'+ '\n')
 
         h[daught1 + 'ProbMeasr'] = createRatio(h[daught1 + 'SmearedMass'],h['TotalSmearedMass'],daught1 + 'ProbMeasr')
@@ -785,7 +819,7 @@ def makePlots2(HiddPart,part1,part2,part3):
         h[part3 + 'Speed'].SetLineColor(3)
         h[part3 + 'Speed'].Draw('same')
 
-    h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
+    #h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
 
     title='Momenta and mass plots'
     ut.bookCanvas(h,key + '_MOM', title , nx=1300, ny=800, cx=3, cy=2)
@@ -863,7 +897,7 @@ def makePlots2(HiddPart,part1,part2,part3):
         h[part3 + 'SmearedMass'].Fit('landau')
         h[part3 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
 
-    h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
+    #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
     if part3==None:
         partString=''
     else:
@@ -909,7 +943,7 @@ def makePlots2(HiddPart,part1,part2,part3):
         x3, y3 = array( 'd' ), array( 'd' )
     i=0
     n=0
-    for i in range(30,240,6):
+    for i in range(2,80,2):
         x1.append(h[part1 + 'ProbMeasr'].GetBinCenter(i))
         y1.append(h[part1 + 'ProbMeasr'].GetBinContent(i))
         x2.append(h[part2 + 'ProbMeasr'].GetBinCenter(i))
@@ -952,7 +986,7 @@ def makePlots2(HiddPart,part1,part2,part3):
     #gr1.Draw("CA* PLC PFC")
     #gr2.Draw("PC  PLC PFC")
     gPad.BuildLegend()
-    h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
+    #h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
     
 def print_menu(): 
     print ('\n \n' + 30 * "-" + "MENU" + 30 * "-")
