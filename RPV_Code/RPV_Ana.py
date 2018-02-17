@@ -19,7 +19,7 @@ chi2Cut  = 4
 measCut = 25
 ecalCut = 0.150
 docaCut = 2
-ipCut = 2.5
+ipCut = 250
 
 # Select decay channel to be analysed
 Kaon_Muon = True   # N --> K+- mu-+
@@ -308,7 +308,7 @@ def RedoVertexing(t1,t2):
          # print 'abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz
          rc = False
          break # ... number of iterations exceeds 10
-     if not rc: return -1,-1,-1,doca # extrapolation failed, makes no sense to continue
+     if not rc: return -1,-1,-1,xv,yv,zv,doca # extrapolation failed, makes no sense to continue
      LV={}
      for tr in [t1,t2]: # from here on we have reproduced (see inv_mass() function in Test_1.py)     
       mom = reps[tr].getMom(states[tr])
@@ -320,7 +320,7 @@ def RedoVertexing(t1,t2):
       LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
      RPVMom = LV[t1]+LV[t2]
 
-     return RPVMom,LV[t1],LV[t2],doca
+     return RPVMom,LV[t1],LV[t2],xv,yv,zv,doca
 
 def time_res(partkey,pdg,n,m):
     tnosmear = -1   # declares variables
@@ -420,30 +420,17 @@ def time_res(partkey,pdg,n,m):
 def track_checks(index,partkey,true_part,reco_part,veto,fill):
     check = 0
 
-    fit_status = reco_part.getFitStatus()         
-    if not fit_status.isFitConverged():
-        #print('Fit did not converge')
-        veto[0] += 1
-        return -2,veto
-
-    Decay_X = true_part.GetStartX()
-    Decay_Y = true_part.GetStartY()
-    Decay_Z = true_part.GetStartZ()
-    if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
-        #print('Neutralino decayed outside fiducial volume')
+    if not checkFiducialVolume(sTree,index,dy): 
+        #print('Track outside fiducial volume')
         veto[1] += 1
         check = -1
 
-    if not checkFiducialVolume(sTree,index,dy): 
-        #print('Track outside fiducial volume')
-        veto[2] += 1
-        check = -1
-
+    fit_status = reco_part.getFitStatus() 
     fit_nmeas = fit_status.getNdf()
     if fill == 1: h['nmeas'].Fill(fit_nmeas)
     if not fit_nmeas > measCut:
         #print('Too few measurements')
-        veto[3] += 1
+        veto[2] += 1
         check = -1
 
     fit_rchi2 = fit_status.getChi2()                      
@@ -451,7 +438,7 @@ def track_checks(index,partkey,true_part,reco_part,veto,fill):
     if fill == 1: h['Chi2'].Fill(fit_chi2)
     if not fit_chi2 < chi2Cut:
         #print('Chi squared value too high')
-        veto[4] += 1
+        veto[3] += 1
         check = -1
 
     if sTree.GetBranch('EcalPoint'):
@@ -464,7 +451,7 @@ def track_checks(index,partkey,true_part,reco_part,veto,fill):
         if fill == 1: h['ecalE'].Fill(ecal_Etot)
         if not ecal_Etot > ecalCut:
             #print('Not enough energy deposited in the ECAL')
-            veto[5] += 1
+            veto[4] += 1
             check = -1
 
     if sTree.GetBranch('muonPoint'):
@@ -474,15 +461,13 @@ def track_checks(index,partkey,true_part,reco_part,veto,fill):
                 muonTrackID = hits.GetTrackID()
                 if muonTrackID == partkey:
                     muonstation_z.append(hits.GetZ())
-            for num in muonstation_z:
-                if fill == 1: h['muonstation'].Fill(num)
             if not len(muonstation_z) > 2:
                 #print('Did not leave hits in both the 1st and 2nd muon stations')
-                veto[6] += 1
+                veto[5] += 1
                 check = -1
             else:
                 if not muonstation_z[0] == 4017.0:
-                    veto[6] += 1
+                    veto[5] += 1
                     check = -1
 
     return check,veto
@@ -508,12 +493,12 @@ def createHists_KaMu():
     ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon Mass',150,0.,3.)
     ut.bookHist(h,'daughter_masses','Kaon and muon true masses',100,0,1)
 
-    ut.bookHist(h,'IP_target','Impact parameter to target',100,0,1.2)
+    ut.bookHist(h,'IP_target','Impact parameter to target',150,0,10)
     ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
     ut.bookHist(h,'doca','Distance of closest approach between muon and kaon tracks',150,0,3)
     ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
     ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0,3)
-    ut.bookHist(h,'muonstation','Muon station hits',500,4000,4400)
+    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',500,-100,100)
 
     ut.bookHist(h,'MuonDir_nosmear','Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight
     ut.bookHist(h,'KaonDir_nosmear','Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight
@@ -727,11 +712,11 @@ def makePlots_KaMu():
     h['Chi2'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Checks'].cd(6)
-    h['muonstation'].SetXTitle('Z / [cm]')
-    h['muonstation'].SetYTitle('No. of muons')
-    h['muonstation'].SetLineColor(1)
-    h['muonstation'].SetFillColor(17)
-    h['muonstation'].Draw()
+    h['recovertex'].SetXTitle('Z / [cm]')
+    h['recovertex'].SetYTitle('Frequency')
+    h['recovertex'].SetLineColor(1)
+    h['recovertex'].SetFillColor(17)
+    h['recovertex'].Draw()
     h['Checks'].Print('Vetos.png')
     #======================================================================================================================
     h['straight_path'].SetLineColor(1)
@@ -749,7 +734,6 @@ def finStateMuKa():
         successful_events = []   # creates list of event numbers of desired decays
         veto = 9*[0]   # creates list of veto counts for each possible veto cause
         ka_veto = 10*[0]   # creates list of veto counts for muons which decayed from kaons from neutralinos
-        rejected = 0   # variable for total number of events which are vetoed
         ka_decaycheck = 0   # variable for counting when kaons from neutralinos decay to muons before detection
         for n in range(nEvents):   # loops over events
             rc = sTree.GetEntry(n)   # loads tree entry
@@ -768,15 +752,10 @@ def finStateMuKa():
                         if motherN.GetPdgCode() == 9900015:
                             ka_decaycheck += 1   # kaon has decayed to a muon before detection
                             check,ka_veto = track_checks(index,muPartkey,true_muon,reco_part,ka_veto,0)
-                            if check == -1:
-                                ka_veto[9] += 1
-
+                            if check == -1: ka_veto[9] += 1 
+                                
                     if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV  
                         event = True
-                        check,veto = track_checks(index,muPartkey,true_muon,reco_part,veto,1)   # performs various track checks
-                        if check == -1: 
-                            event = False
-
                         for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
                             Partkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
                             true_part = sTree.MCTrack[Partkey]   # gives MC particle data
@@ -787,31 +766,45 @@ def finStateMuKa():
                                 true_mother = sTree.MCTrack[kaonMotherkey]   # obtains mother particle data
 
                                 if kaonMotherkey == muonMotherkey and true_mother.GetPdgCode() == 9900015:   # check if mother keys are the same
-                                    check,veto = track_checks(index2,kaPartkey,true_kaon,reco_part2,veto,1)
-                                    if check == -1:   # performs various checks
-                                        event = False
 
+                                    fit_status1 = reco_part.getFitStatus() 
+                                    fit_status2 = reco_part2.getFitStatus()
+                                    if fit_status1.isFitConverged() and fit_status2.isFitConverged():
+                                        veto[0] += 1
+                                    else:
+                                        #print('At least one of the track fits did not converge')
+                                        break
+                                    
+                                    check,veto = track_checks(index,muPartkey,true_muon,reco_part,veto,1)   # performs various track checks
+                                    if check == -1: event = False
+                                    if event == True:   # if the first track was fine, check the other one (ensures event veto counting is correct)
+                                        check,veto = track_checks(index2,kaPartkey,true_kaon,reco_part2,veto,1)
+                                        if check == -1: event = False
+                                    
                                     #---------------------------------------------PARTICLE-DATA-----------------------------------------------------
 
-                                    if n == 23178:   # this is hopefully only temporary
-                                        break
+                                    #if n == 23178:   # this is hopefully only temporary
+                                    #    break
 
                                     RPV_Vector = ROOT.TLorentzVector()   # declares variables as TLorentzVector class
                                     RPV_Pos = ROOT.TLorentzVector()
                                     Muon_Vector = ROOT.TLorentzVector()
                                     Kaon_Vector = ROOT.TLorentzVector()
-                                    RPV_Vector,Muon_Vector,Kaon_Vector,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
-
+                                    RPV_Vector,Muon_Vector,Kaon_Vector,X,Y,Z,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
                                     if RPV_Vector == -1: break
+
+                                    h['recovertex'].Fill(Z)
+                                    if not isInFiducial(X,Y,Z):
+                                        #print('Neutralino decayed outside fiducial volume')
+                                        veto[6] += 1
+                                        check = -1
+                                    
                                     h['doca'].Fill(doca)
                                     if not doca < docaCut: 
                                         #print('distance of closest approach too large')
                                         veto[7] +=1
                                         event = False
                                         
-                                    X = true_mother.GetStartX()   # these are the true coordinates, need to use the reconstructed vertex
-                                    Y = true_mother.GetStartY()
-                                    Z = true_mother.GetStartZ()
                                     T = true_mother.GetStartT()
                                     RPV_Pos.SetXYZT(X,Y,Z,T)
                                     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
@@ -823,7 +816,6 @@ def finStateMuKa():
                                         event = False
 
                                     if event == False:
-                                        rejected += 1
                                         break
 
                                     kaonMotherTrue_mass = true_mother.GetMass()   # RPV neutralino mass
@@ -843,7 +835,8 @@ def finStateMuKa():
                                     h['RPV_reco'].Fill(RPV_mass)                        
                                     h['RPV_mom_reco'].Fill(RPV_reco_mom)                            
                                     h['RPV_mom_diff'].Fill(mom_diff)
-                                    h['daughter_masses'].Fill(kaM,muM)
+                                    h['daughter_masses'].Fill(kaM)
+                                    h['daughter_masses'].Fill(muM)
                                     h['Kaon_mom'].Fill(reco_kaP)
                                     h['Muon_mom'].Fill(reco_muP)
                                     h['Kaon_mom_true'].Fill(true_kaP)
@@ -886,18 +879,18 @@ def finStateMuKa():
                                             h['ecalstraw_mom'].Fill(ka_diff)
 
         accepted = len(successful_events)
-        total = accepted + rejected
-        print('\t' + str(total) + ' events reconstructed for this decay mode')
+        rejected = veto[0] - accepted
+        print('\t' + str(veto[0]) + ' events reconstructed for this decay mode')   # 
         print('\t' + str(accepted) + ' events not rejected')
         print('\t' + str(rejected) + ' events rejected:')
-        print('\t\t' + str(total-veto[1]/2) + ' events with neutralino decay vertex inside fiducial volume (' + str(veto[1]/2) + ' event vetos)')
-        print('\t\t' + str(total-veto[2]) + ' events with both tracks within fiducial volume (' + str(veto[2]) + ' event vetos)')
-        print('\t\t' + str(total-veto[3]) + ' events with both tracks no. of measurements > ' + str(measCut) + ' (' + str(veto[3]) + ' event vetos)')
-        print('\t\t' + str(total-veto[4]) + ' events with both tracks chi squared < ' + str(chi2Cut) + ' (' + str(veto[4]) + ' event vetos)')
-        print('\t\t' + str(total-veto[5]) + ' events where both tracks leave > ' + str(ecalCut) + ' GeV in ECAL (' + str(veto[5]) + ' event vetos)')
-        print('\t\t' + str(total-veto[6]) + ' events with muon hits in both the 1st and 2nd muon stations (' + str(veto[6]) + ' event vetos)')
-        print('\t\t' + str(total-veto[7]) + ' events with DOCA between tracks < ' + str(docaCut) + ' (' + str(veto[7]) + ' event vetos)')
-        print('\t\t' + str(total-veto[8]) + ' events with IP to target < ' + str(ipCut) + ' (' + str(veto[8]) + ' event vetos)')
+        print('\t\t' + str(veto[0]-veto[6]) + ' events with neutralino decay vertex inside fiducial volume (' + str(veto[6]) + ' event vetos)')
+        print('\t\t' + str(veto[0]-veto[1]) + ' events with both tracks within fiducial volume (' + str(veto[1]) + ' event vetos)')
+        print('\t\t' + str(veto[0]-veto[2]) + ' events with both tracks no. of measurements > ' + str(measCut) + ' (' + str(veto[2]) + ' event vetos)')
+        print('\t\t' + str(veto[0]-veto[3]) + ' events with both tracks chi squared < ' + str(chi2Cut) + ' (' + str(veto[3]) + ' event vetos)')
+        print('\t\t' + str(veto[0]-veto[4]) + ' events where both tracks leave > ' + str(ecalCut) + ' GeV in ECAL (' + str(veto[4]) + ' event vetos)')
+        print('\t\t' + str(veto[0]-veto[5]) + ' events with muon hits in both the 1st and 2nd muon stations (' + str(veto[5]) + ' event vetos)')
+        print('\t\t' + str(veto[0]-veto[7]) + ' events with DOCA between tracks < ' + str(docaCut) + ' (' + str(veto[7]) + ' event vetos)')
+        print('\t\t' + str(veto[0]-veto[8]) + ' events with IP to target < ' + str(ipCut) + ' (' + str(veto[8]) + ' event vetos)')
         print('\t' + str(ka_decaycheck) + ' kaons decayed to muons before detection (' + str(ka_decaycheck-ka_veto[9]) + ' after track checks)')
 
         #-------------------------------------PROBABILITIES-----------------------------------
