@@ -318,7 +318,7 @@ def myVertex(t1,t2,PosDir):
    Z = c.z()+v.z()*t
    return X,Y,Z,abs(dist)
 #
-def  RedoVertexing(t1,t2):    
+def RedoVertexing(t1,t2):    
      PosDir = {} 
      for tr in [t1,t2]:
       xx  = sTree.FitTracks[tr].getFittedState()
