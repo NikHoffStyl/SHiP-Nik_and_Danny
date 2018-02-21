@@ -223,25 +223,31 @@ def create_Hists(HiddPart,part1,part2, part3):
         edgesarray.append(edgesarray[binNumber]+ 0.015)
     for binNumber in range(40,86):
         edgesarray.append(edgesarray[binNumber]+0.045)
-    #print(edgesarray)
+    
     ###############################
     ####  Daughter Histograms  ####
     for partName,val in dictionList.items():
         #print(partName)
-        ut.bookHist(h,partName + 'StrawTime',partName + 'Gaussian Straw t measurement',300,321.7,323.5)
+        ut.bookHist(h,partName + 'StrawTime',partName + 'Gaussian Straw t measurement',300,321.7,323.5)    #straw time
         h[partName + 'StrawTime'].SetLineColor(val)
-        ut.bookHist(h,partName + 'EcalTime','Gaussian Ecal t measurement',300,359.7,361.2)
+        ut.bookHist(h,partName + 'EcalTime','Gaussian Ecal t measurement',300,359.7,361.2)                 #ecal time
         h[partName + 'EcalTime'].SetLineColor(val)
-        ut.bookHist(h,partName + 'SmearedDirDeltaTime','Straw-ECAL Time of Flight (directly)',300,37.8,38.4)# time of flight
-        h[partName + 'SmearedDirDeltaTime'].SetLineColor(val)
+        ut.bookHist(h,partName + 'DirDeltaTimeSmeared','Straw-ECAL Smeared Time of Flight (directly)',300,37.8,38.4)# time of flight
+        h[partName + 'DirDeltaTimeSmeared'].SetLineColor(val)
         ut.bookHist(h,partName + 'DirDeltaTime','Straw-ECAL Time of Flight (directly)',300,37.8,38.4)      # time of flight
         h[partName + 'DirDeltaTime'].SetLineColor(val)
-        ut.bookHist(h,partName + 'FlightLen','Straw-ECAL Flight Lenght',300,11.375,11.42)                  # flight Length
+        ut.bookHist(h,partName + 'StrawHits',partName + ' No. of hits in straw tubes',300,25,50)           #number of straw hits
+        h[partName + 'StrawHits'].SetLineColor(val)
+        ut.bookHist(h,partName + 'StrawHitsMom',partName + ' z-momentum through straw tubes (for particular event)',500,20,21)#momenta of straw hits
+        h[partName + 'StrawHitsMom'].SetLineColor(val)
+        ut.bookHist(h,partName + 'FlightLen','Straw-ECAL Straight Flight Lenght',300,11.375,11.42)         # flight Length
         h[partName + 'FlightLen'].SetLineColor(val)
-        ut.bookHist(h,partName + 'FlightLenImproved','Straw-ECAL Flight Lenght',300,11.375,11.42)          # corrected flight Length        
+        ut.bookHist(h,partName + 'FlightLenImproved','Straw-ECAL Curved Flight Lenght ',300,11.375,11.42)  # corrected flight Length        
         h[partName + 'FlightLenImproved'].SetLineColor(val)
-        ut.bookHist(h,partName + 'SmearedSpeed','Beta value',300,0.997,1.001)                              # speed
-        h[partName + 'SmearedSpeed'].SetLineColor(val)
+        ut.bookHist(h,partName + 'FlightLenDelta','Difference between straight path and better approximation',300,0,0.001)#delta flight Length        
+        h[partName + 'FlightLenDelta'].SetLineColor(val)
+        ut.bookHist(h,partName + 'SpeedSmeared','Beta value',300,0.997,1.001)                              # speed
+        h[partName + 'SpeedSmeared'].SetLineColor(val)
         ut.bookHist(h,partName + 'Speed','Beta value',300,0.997,1.001)                                     # speed
         h[partName + 'Speed'].SetLineColor(val)
         ut.bookHist(h,partName + 'StrawMom','Straw Momentum',300,-0.05,120.)                               # straw momentum
@@ -250,8 +256,6 @@ def create_Hists(HiddPart,part1,part2, part3):
         h[partName + 'EcalMom'].SetLineColor(val)
         ut.bookHist(h,partName + 'DeltaMom','Straw-Ecal Momentum',300,0.02,0.13)                           # delta momentum
         h[partName + 'DeltaMom'].SetLineColor(val)
-        ut.bookHist(h,partName + 'DeltaMom2','Straw-Ecal Momentum',300,0.02,0.13)                          # delta momentum
-        h[partName + 'DeltaMom2'].SetLineColor(val)
         ut.bookHist(h,partName + 'RecoMom','Reco Momentum',300,-0.05,120.)                                 # reco  momentum
         h[partName + 'RecoMom'].SetLineColor(val)
         ut.bookHist(h,partName + 'TrueMom','True Momentum',300,-0.05,120.)                                 # true  momentum
@@ -259,42 +263,35 @@ def create_Hists(HiddPart,part1,part2, part3):
         ut.bookHist(h,partName + 'RecoMass','Reco Mass',300,0.,0.6)                                        # reco  mass
         h[partName + 'RecoMass'].SetLineColor(val)
         ut.bookHist(h,partName + 'TrueMass','True Mass',300,0.,0.6)                                        # true  mass
-        h[partName + 'TrueMass'].SetLineColor(val)
-        #ut.bookHist(h,partName + 'SmearedMass','Smeared Mass',300,0.,2.)                                  # smrd  mass
-        h[partName + 'SmearedMass'] = TH1D(partName + 'SmearedMass','Smeared Mass',85,array('d',edgesarray))
-        h[partName + 'SmearedMass'].SetLineColor(val)
-        #ut.bookHist(h,partName + 'ProbMeasr','Probs identifying Muon',170,array('d',edgesarray))            # ID Prob
-        h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr','Probs identifying Muon',85,array('d',edgesarray))
+        h[partName + 'TrueMass'].SetLineColor(val)     
+        h[partName + 'SmearedMass'] = TH1D(partName + 'SmearedMass','Smeared Mass',85,array('d',edgesarray))# smrd  mass
+        h[partName + 'SmearedMass'].SetLineColor(val)        
+        h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr','Probs identifying Muon',85,array('d',edgesarray))# ID Prob
         h[partName + 'ProbMeasr'].SetLineColor(val)
+                              
+    h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass',85,array('d',edgesarray))     # Total mass
 
-    ###########################
-    #ut.bookHist(h,'TotalSmearedMass','Smeared Mass',300,0.,2.)                                   # Total mass
-    h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass',85,array('d',edgesarray))
     #################################
     ####  Neutralino Histograms  ####
-    ut.bookHist(h,HiddPart + 'TrueMass','Monte Carlo Mass',300,0.99,1.01)                            # true mass
-    ut.bookHist(h,HiddPart + 'RecoMass','Reconstructed Mass',300,0.97,1.03)                          # reco mass
+    ut.bookHist(h,HiddPart + 'TrueMass','Monte Carlo Mass',300,0.99,1.01)                        # true mass
+    h[HiddPart + 'TrueMass'].SetLineColor(1)
+    ut.bookHist(h,HiddPart + 'RecoMass','Reconstructed Mass',300,0.97,1.03)                      # reco mass
+    h[HiddPart + 'RecoMass'].SetLineColor(1)
     ut.bookHist(h,HiddPart + 'TrueMom','True (red) & Reco. (blue) Momentum',100,0.,180.)         # true momentum 
+    h[HiddPart + 'TrueMom'].SetLineColor(1)
     ut.bookHist(h,HiddPart + 'RecoMom','Reconstructed Momentum',300,0.,180.)                     # reco momentum
+    h[HiddPart + 'RecoMom'].SetLineColor(1)
     ut.bookHist(h,HiddPart + 'DeltaMom','True/Reco Momentum Difference',300,-3.,3)               # true-reco momentum difference
-    #ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',300,0.2,1.8)                                  # chi squared track fitting
+    h[HiddPart + 'DeltaMom'].SetLineColor(1)
 
-    ut.bookHist(h,'IP_target','Impact parameter to target',150,0,10)
-    ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
-    ut.bookHist(h,'doca','Distance of closest approach between muon and kaon tracks',150,0,3)
-    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
-    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0,3)
-    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',500,-100,100)
-
-    ut.bookHist(h,'MuonDir_nosmear','Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight
-    ut.bookHist(h,'KaonDir_nosmear','Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight
-    ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
-    ut.bookHist(h,'num_kaon','No. of kaon in straw tubes',25,25,50)
-    ut.bookHist(h,'path_diff','Difference between straight path and better approximation',100,0,0.001)
-    ut.bookHist(h,'straight_path','Straight distance from first straw tube hit to ECAL',200,11,12)
-    ut.bookHist(h,'better_path','Curved path through straw tubes, then straight to ECAL',200,11,12)
-    ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
-    ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular event)',500,44,45)
+    #######################
+    ####  Veto Checks  ####
+    ut.bookHist(h,'IP_target','Impact parameter to target',300,0,10)
+    ut.bookHist(h,'ecalE','Energy deposited in ECAL',300,0,100)
+    ut.bookHist(h,'doca','Distance of closest approach between muon and kaon tracks',300,0,3)
+    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',300,0,50)
+    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',300,0,3)
+    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',300,-100,100)
 
     #ut.bookHist(h,HiddPart + '_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
     #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
@@ -510,15 +507,15 @@ def time_res(partMom,partName,partkey,pdg,eventN,succEventM):
 
         num_hits = len(z_array)   # number of elements in the list
         if pdg==13:   # muon
-            h['num_muon'].Fill(num_hits)
+            h[partName + 'StrawHits'].Fill(num_hits)
             for hit in pz_array:
                 if eventN == succEventM:
-                    h['track_muon'].Fill(hit)   # muon z-momentum through straw tubes for particular event
+                    h[partName + 'StrawHitsMom'].Fill(hit)   # muon z-momentum through straw tubes for particular event
         if pdg==321:   # kaon
-            h['num_kaon'].Fill(num_hits)
+            h[partName + 'StrawHits'].Fill(num_hits)
             for hit in pz_array:
                 if eventN == succEventM:
-                    h['track_kaon'].Fill(hit)   # kaon z-momentum through straw tubes for particular event
+                    h[partName + 'StrawHitsMom'].Fill(hit)   # kaon z-momentum through straw tubes for particular event
 
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
@@ -543,28 +540,26 @@ def time_res(partMom,partName,partkey,pdg,eventN,succEventM):
                                 deltaT = abs(straw_time - ecal_time)
                                 deltaP = strawP - ecalP
                                 r = ROOT.TMath.Sqrt(((ecal_x - inmostStrawX)**2) + ((ecal_y - inmostStrawY)**2) + ((ecal_z - inmostStrawZ)**2))
-                                h['straight_path'].Fill(r)
                                 max_z_index = z_array.index(max(z_array))
                                 laststraw_x = 0.01*x_array[max_z_index]
                                 laststraw_y = 0.01*y_array[max_z_index]
                                 laststraw_z = 0.01*z_array[max_z_index]
                                 R2 = ROOT.TMath.Sqrt(((ecal_x - laststraw_x)**2) + ((ecal_y - laststraw_y)**2) + ((ecal_z - laststraw_z)**2))
                                 R = R1+R2                           # better approximation of distance
-                                h['better_path'].Fill(R)
                                 rdiff = abs(R-r)
-                                h['path_diff'].Fill(rdiff)
                                 smearV = ((r/smearDeltaT)*(10**9) ) # velocity in flight
                                 v = ((R/deltaT)*(10**9) )           # units of nanoseconds
 
     if smearStrawTime != None:
         h[partName + 'StrawTime'].Fill(smearStrawTime)
         h[partName + 'EcalTime'].Fill(smearEcalTime)
-        h[partName + 'SmearedDirDeltaTime'].Fill(smearDeltaT)
+        h[partName + 'DirDeltaTimeSmeared'].Fill(smearDeltaT)
         h[partName + 'DirDeltaTime'].Fill(deltaT)
         h[partName + 'FlightLen'].Fill(r)
         h[partName + 'FlightLenImproved'].Fill(R)
+        h[partName + 'FlightLenDelta'].Fill(rdiff)
         smearBeta = smearV/c
-        h[partName + 'SmearedSpeed'].Fill(smearBeta)
+        h[partName + 'SpeedSmeared'].Fill(smearBeta)
         beta = v/c
         h[partName + 'Speed'].Fill(beta)
         h[partName + 'StrawMom'].Fill(strawP)
@@ -693,8 +688,6 @@ def finState2t1t2(HiddPart,daught1,daught2):
         for n in range(nEvents):
             totalEvents+=1
             rc = sTree.GetEntry(n)                              # load tree entry
-            #for part in sTree.MCTrack:
-            #    print(part)
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 d1Partkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_daught1 = sTree.MCTrack[d1Partkey]               # gives MC particle data
@@ -943,10 +936,8 @@ def makePlots2(HiddPart,part1,part2,part3):
     h[part1 + 'StrawTime'].SetXTitle('Time [ns]')
     h[part1 + 'StrawTime'].SetYTitle('No. of Particles')
     h[part1 + 'StrawTime'].Draw()
-    h[part2 + 'StrawTime'].SetLineColor(2)
     h[part2 + 'StrawTime'].Draw('same')
     if not part3==None:
-        h[part3 + 'StrawTime'].SetLineColor(3)
         h[part3 + 'StrawTime'].Draw('same')
     gPad.BuildLegend()
 
@@ -954,43 +945,35 @@ def makePlots2(HiddPart,part1,part2,part3):
     h[part1 + 'EcalTime'].SetXTitle('Time [ns]')
     h[part1 + 'EcalTime'].SetYTitle('No. of Particles')
     h[part1 + 'EcalTime'].Draw()
-    h[part2 + 'EcalTime'].SetLineColor(2)
     h[part2 + 'EcalTime'].Draw('same')
     if not part3==None:
-        h[part3 + 'EcalTime'].SetLineColor(3)
         h[part3 + 'EcalTime'].Draw('same')
 
     cv = h[key + '_TV'].cd(3)
     h[part1 + 'DirDeltaTime'].SetXTitle('Time of Flight [ns]')
     h[part1 + 'DirDeltaTime'].SetYTitle('No. of Particles')
     h[part1 + 'DirDeltaTime'].Draw()
-    h[part2 + 'DirDeltaTime'].SetLineColor(2)
     h[part2 + 'DirDeltaTime'].Draw('same')
     if not part3==None:
-        h[part3 + 'DirDeltaTime'].SetLineColor(3)
         h[part3 + 'DirDeltaTime'].Draw('same')
 
     cv = h[key + '_TV'].cd(4)
     h[part1 + 'FlightLen'].SetXTitle('Flight Length (cm)')
     h[part1 + 'FlightLen'].SetYTitle('No. of Particles')
     h[part1 + 'FlightLen'].Draw()
-    h[part2 + 'FlightLen'].SetLineColor(2)
     h[part2 + 'FlightLen'].Draw('same')
     if not part3==None:
-        h[part3 + 'FlightLen'].SetLineColor(3)
         h[part3 + 'FlightLen'].Draw('same')
 
     cv = h[key + '_TV'].cd(5)
     h[part1 + 'Speed'].SetXTitle('beta')
     h[part1 + 'Speed'].SetYTitle('No. of Particles')
     h[part1 + 'Speed'].Draw()
-    h[part2 + 'Speed'].SetLineColor(2)
     h[part2 + 'Speed'].Draw('same')
     if not part3==None:
-        h[part3 + 'Speed'].SetLineColor(3)
         h[part3 + 'Speed'].Draw('same')
 
-    #h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
+    h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
 
     title='Momenta and mass plots'
     ut.bookCanvas(h,key + '_MOM', title , nx=1300, ny=800, cx=3, cy=2)
@@ -998,30 +981,24 @@ def makePlots2(HiddPart,part1,part2,part3):
     h[part1 + 'StrawMom'].SetXTitle('Momentum [GeV/c]')
     h[part1 + 'StrawMom'].SetYTitle('No. of Particles')
     h[part1 + 'StrawMom'].Draw()
-    h[part2 + 'StrawMom'].SetLineColor(2)
     h[part2 + 'StrawMom'].Draw('same')
     if not part3==None:
-        h[part3 + 'StrawMom'].SetLineColor(3)
         h[part3 + 'StrawMom'].Draw('same')
 
     cv = h[key + '_MOM'].cd(2)
     h[part1 + 'EcalMom'].SetXTitle('Momentum [GeV/c]')
     h[part1 + 'EcalMom'].SetYTitle('No. of Particles')
     h[part1 + 'EcalMom'].Draw()
-    h[part2 + 'EcalMom'].SetLineColor(2)
     h[part2 + 'EcalMom'].Draw('same')
     if not part3==None:
-        h[part3 + 'EcalMom'].SetLineColor(3)
         h[part3 + 'EcalMom'].Draw('same')
 
     cv = h[key + '_MOM'].cd(3)
     h[part1 + 'RecoMom'].SetXTitle('Momentum [GeV/c]')
     h[part1 + 'RecoMom'].SetYTitle('No. of Particles')
     h[part1 + 'RecoMom'].Draw()
-    h[part2 + 'RecoMom'].SetLineColor(2)
     h[part2 + 'RecoMom'].Draw('same')
     if not part3==None:
-        h[part3 + 'RecoMom'].SetLineColor(3)
         h[part3 + 'RecoMom'].Draw('same')
 
     #cv = h[key + '_MOM'].cd(4)
@@ -1035,20 +1012,16 @@ def makePlots2(HiddPart,part1,part2,part3):
     h[part1 + 'DeltaMom'].SetXTitle('Momentum [GeV/c]')
     h[part1 + 'DeltaMom'].SetYTitle('No. of Particles')
     h[part1 + 'DeltaMom'].Draw()
-    h[part2 + 'DeltaMom'].SetLineColor(2)
     h[part2 + 'DeltaMom'].Draw('same')
     if not part3==None:
-        h[part3 + 'DeltaMom'].SetLineColor(3)
         h[part3 + 'DeltaMom'].Draw('same')
 
     cv = h[key + '_MOM'].cd(5)
     h[part1 + 'RecoMass'].SetXTitle('Mass [GeV/c2]')
     h[part1 + 'RecoMass'].SetYTitle('No. of Particles')
     h[part1 + 'RecoMass'].Draw()
-    h[part2 + 'RecoMass'].SetLineColor(2)
     h[part2 + 'RecoMass'].Draw('same')
     if not part3==None:
-        h[part3 + 'RecoMass'].SetLineColor(3)
         h[part3 + 'RecoMass'].Draw('same')
 
     cv = h[key + '_MOM'].cd(6)
@@ -1058,17 +1031,15 @@ def makePlots2(HiddPart,part1,part2,part3):
     h[part1 + 'SmearedMass'].Draw()
     h[part1 + 'SmearedMass'].Fit("landau")
     h[part1 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
-    h[part2 + 'SmearedMass'].SetLineColor(2)
     h[part2 + 'SmearedMass'].Draw('same')
     h[part2 + 'SmearedMass'].Fit('landau')
     h[part2 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
     if not part3==None:
-        h[part3 + 'SmearedMass'].SetLineColor(3)
         h[part3 + 'SmearedMass'].Draw('same')
         h[part3 + 'SmearedMass'].Fit('landau')
         h[part3 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
 
-    #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
+    h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
     if part3==None:
         partString=''
     else:
