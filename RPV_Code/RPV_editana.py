@@ -29,10 +29,16 @@ loop=True
 chi2CutOff  = 4.
 PDG = ROOT.TDatabasePDG.Instance()
 fiducialCut = True
+chi2Cut  = 4
+measCut = 25
+ecalCut = 0.150
 measCutFK = 25
 measCutPR = 22
 docaCut = 2.
+ipCut = 250
+
 c = 2.99792458*(10**8)
+e = 2.718281828459   # Euler's number
 currentDate = datetime.datetime.now().strftime("%y_%m_%d_%H%M")
 polyFit1 = TF1("polyFit1","pol3")
 polyFit2 = TF1("polyFit2","pol3")
@@ -75,7 +81,6 @@ elif inputFile[0:4] == "/eos":       #doesnt do this
 else:                                #does this
     f = ROOT.TFile(inputFile)
     sTree = f.cbmsim
-    print('Got cbmsim')
 
 #######################################
 ########## LOAD ECAL GEOMETRY #########
@@ -140,7 +145,7 @@ vetoStation_zDown = vetoStation.GetMatrix().GetTranslation()[2]+vetoStation.GetV
 T1Station = ROOT.gGeoManager.GetTopVolume().GetNode('Tr1_1')
 T1Station_zUp = T1Station.GetMatrix().GetTranslation()[2]-T1Station.GetVolume().GetShape().GetDZ()
 
-# calculate z front face of ecal, needed later
+# calculate z front face of ecal, needed later?
 top = ROOT.gGeoManager.GetTopVolume()
 z_ecal      = top.GetNode('Ecal_1').GetMatrix().GetTranslation()[2]
 z_ecalFront = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
@@ -207,9 +212,11 @@ import TrackExtrapolateTool
 ############  DEFINITIONS  #############
 h = {}
 def create_Hists(HiddPart,part1,part2, part3):
+    dictionList={part1:4, part2:2}
     partList = [part1,part2]
     if not part3 == None:
         partList.append(part3)
+        dictionList.update({part3:3})
     edgesarray=[]
     edgesarray.append(0)
     for binNumber in range(0,40):
@@ -219,24 +226,46 @@ def create_Hists(HiddPart,part1,part2, part3):
     #print(edgesarray)
     ###############################
     ####  Daughter Histograms  ####
-    for partName in partList:
+    for partName,val in dictionList.items():
         #print(partName)
         ut.bookHist(h,partName + 'StrawTime',partName + 'Gaussian Straw t measurement',300,321.7,323.5)
+        h[partName + 'StrawTime'].SetLineColor(val)
         ut.bookHist(h,partName + 'EcalTime','Gaussian Ecal t measurement',300,359.7,361.2)
+        h[partName + 'EcalTime'].SetLineColor(val)
+        ut.bookHist(h,partName + 'SmearedDirDeltaTime','Straw-ECAL Time of Flight (directly)',300,37.8,38.4)# time of flight
+        h[partName + 'SmearedDirDeltaTime'].SetLineColor(val)
         ut.bookHist(h,partName + 'DirDeltaTime','Straw-ECAL Time of Flight (directly)',300,37.8,38.4)      # time of flight
+        h[partName + 'DirDeltaTime'].SetLineColor(val)
         ut.bookHist(h,partName + 'FlightLen','Straw-ECAL Flight Lenght',300,11.375,11.42)                  # flight Length
+        h[partName + 'FlightLen'].SetLineColor(val)
+        ut.bookHist(h,partName + 'FlightLenImproved','Straw-ECAL Flight Lenght',300,11.375,11.42)          # corrected flight Length        
+        h[partName + 'FlightLenImproved'].SetLineColor(val)
+        ut.bookHist(h,partName + 'SmearedSpeed','Beta value',300,0.997,1.001)                              # speed
+        h[partName + 'SmearedSpeed'].SetLineColor(val)
         ut.bookHist(h,partName + 'Speed','Beta value',300,0.997,1.001)                                     # speed
+        h[partName + 'Speed'].SetLineColor(val)
         ut.bookHist(h,partName + 'StrawMom','Straw Momentum',300,-0.05,120.)                               # straw momentum
+        h[partName + 'StrawMom'].SetLineColor(val)
         ut.bookHist(h,partName + 'EcalMom','Ecal Momentum',300,-0.05,120.)                                 # ecal  momentum
+        h[partName + 'EcalMom'].SetLineColor(val)
         ut.bookHist(h,partName + 'DeltaMom','Straw-Ecal Momentum',300,0.02,0.13)                           # delta momentum
+        h[partName + 'DeltaMom'].SetLineColor(val)
+        ut.bookHist(h,partName + 'DeltaMom2','Straw-Ecal Momentum',300,0.02,0.13)                          # delta momentum
+        h[partName + 'DeltaMom2'].SetLineColor(val)
         ut.bookHist(h,partName + 'RecoMom','Reco Momentum',300,-0.05,120.)                                 # reco  momentum
+        h[partName + 'RecoMom'].SetLineColor(val)
         ut.bookHist(h,partName + 'TrueMom','True Momentum',300,-0.05,120.)                                 # true  momentum
+        h[partName + 'TrueMom'].SetLineColor(val)
         ut.bookHist(h,partName + 'RecoMass','Reco Mass',300,0.,0.6)                                        # reco  mass
+        h[partName + 'RecoMass'].SetLineColor(val)
         ut.bookHist(h,partName + 'TrueMass','True Mass',300,0.,0.6)                                        # true  mass
-        #ut.bookHist(h,partName + 'SmearedMass','Smeared Mass',300,0.,2.)                                   # smrd  mass
+        h[partName + 'TrueMass'].SetLineColor(val)
+        #ut.bookHist(h,partName + 'SmearedMass','Smeared Mass',300,0.,2.)                                  # smrd  mass
         h[partName + 'SmearedMass'] = TH1D(partName + 'SmearedMass','Smeared Mass',85,array('d',edgesarray))
+        h[partName + 'SmearedMass'].SetLineColor(val)
         #ut.bookHist(h,partName + 'ProbMeasr','Probs identifying Muon',170,array('d',edgesarray))            # ID Prob
         h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr','Probs identifying Muon',85,array('d',edgesarray))
+        h[partName + 'ProbMeasr'].SetLineColor(val)
 
     ###########################
     #ut.bookHist(h,'TotalSmearedMass','Smeared Mass',300,0.,2.)                                   # Total mass
@@ -248,7 +277,24 @@ def create_Hists(HiddPart,part1,part2, part3):
     ut.bookHist(h,HiddPart + 'TrueMom','True (red) & Reco. (blue) Momentum',100,0.,180.)         # true momentum 
     ut.bookHist(h,HiddPart + 'RecoMom','Reconstructed Momentum',300,0.,180.)                     # reco momentum
     ut.bookHist(h,HiddPart + 'DeltaMom','True/Reco Momentum Difference',300,-3.,3)               # true-reco momentum difference
-    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',300,0.2,1.8)                                  # chi squared track fitting
+    #ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',300,0.2,1.8)                                  # chi squared track fitting
+
+    ut.bookHist(h,'IP_target','Impact parameter to target',150,0,10)
+    ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
+    ut.bookHist(h,'doca','Distance of closest approach between muon and kaon tracks',150,0,3)
+    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
+    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',100,0,3)
+    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',500,-100,100)
+
+    ut.bookHist(h,'MuonDir_nosmear','Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight
+    ut.bookHist(h,'KaonDir_nosmear','Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight
+    ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
+    ut.bookHist(h,'num_kaon','No. of kaon in straw tubes',25,25,50)
+    ut.bookHist(h,'path_diff','Difference between straight path and better approximation',100,0,0.001)
+    ut.bookHist(h,'straight_path','Straight distance from first straw tube hit to ECAL',200,11,12)
+    ut.bookHist(h,'better_path','Curved path through straw tubes, then straight to ECAL',200,11,12)
+    ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
+    ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular event)',500,44,45)
 
     #ut.bookHist(h,HiddPart + '_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
     #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
@@ -288,6 +334,23 @@ def dist2InnerWall(X,Y,Z):
        minDistance = distance
   return minDistance
 
+def isInFiducial(X,Y,Z):
+   if Z > ShipGeo.TrackStation1.z : return False
+   if Z < ShipGeo.vetoStation.z+100.*u.cm : return False
+   # typical x,y Vx resolution for exclusive Neutralino decays 0.3cm,0.15cm (gaussian width)
+   if dist2InnerWall(X,Y,Z)<5*u.cm: return False
+   return True 
+
+def checkFiducialVolume(sTree,trackkey,dy):
+    # extrapolate track to middle of magnet and check if in decay volume
+    inside = True
+    if not fiducialCut: return True
+    fT = sTree.FitTracks[trackkey]
+    rc,pos,mom = TrackExtrapolateTool.extrapolateToPlane(fT,ShipGeo.Bfield.z)
+    if not rc: return False
+    if not dist2InnerWall(pos.X(),pos.Y(),pos.Z())>0: return False
+    return inside
+
 def myVertex(t1,t2,PosDir):
  # closest distance between two tracks
     # d = |pq . u x v|/|u x v|
@@ -309,6 +372,37 @@ def myVertex(t1,t2,PosDir):
    Y = c.y()+v.y()*t
    Z = c.z()+v.z()*t
    return X,Y,Z,abs(dist)
+
+def ImpactParameter(point,tPos,tMom):
+  t = 0
+  if hasattr(tMom,'P'): P = tMom.P()
+  else:                 P = tMom.Mag()
+  for i in range(3):   t += tMom(i)/P*(point(i)-tPos(i)) 
+  dist = 0
+  for i in range(3):   dist += (point(i)-tPos(i)-t*tMom(i)/P)**2
+  dist = ROOT.TMath.Sqrt(dist)
+  return dist
+
+def fitSingleGauss(x,ba=None,be=None):
+    name    = 'myGauss_'+x 
+    myGauss = h[x].GetListOfFunctions().FindObject(name)
+    if not myGauss:
+       if not ba : ba = h[x].GetBinCenter(1) 
+       if not be : be = h[x].GetBinCenter(h[x].GetNbinsX()) 
+       bw    = h[x].GetBinWidth(1) 
+       mean  = h[x].GetMean()
+       sigma = h[x].GetRMS()
+       norm  = h[x].GetEntries()*0.3
+       myGauss = ROOT.TF1(name,'[0]*'+str(bw)+'/([2]*sqrt(2*pi))*exp(-0.5*((x-[1])/[2])**2)+[3]',4)
+       myGauss.SetParameter(0,norm)
+       myGauss.SetParameter(1,mean)
+       myGauss.SetParameter(2,sigma)
+       myGauss.SetParameter(3,1.)
+       myGauss.SetParName(0,'Signal')
+       myGauss.SetParName(1,'Mean')
+       myGauss.SetParName(2,'Sigma')
+       myGauss.SetParName(3,'bckgr')
+    h[x].Fit(myGauss,'','',ba,be) 
 
 def RedoVertexing(t1,t2):    
      PosDir = {} 
@@ -346,7 +440,7 @@ def RedoVertexing(t1,t2):
              print ('Abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz)
              rc = False
              break 
-     if not rc: return -1,-1,-1,doca # extrapolation failed, makes no sense to continue
+     if not rc: return -1,-1,-1,xv,yv,zv,doca # extrapolation failed, makes no sense to continue
      LV={}
      for tr in [t1,t2]: # from here on we have reproduced (see inv_mass()) 
          mom = reps[tr].getMom(states[tr])
@@ -358,39 +452,25 @@ def RedoVertexing(t1,t2):
          LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
      NeutralinoLV = LV[t1]+LV[t2]
      #return xv,yv,zv,doca,NeutralinoMom
-     return NeutralinoLV,LV[t1],LV[t2],doca
+     return NeutralinoLV,LV[t1],LV[t2],xv,yv,zv,doca
 
-def isInFiducial(X,Y,Z):
-   if Z > ShipGeo.TrackStation1.z : return False
-   if Z < ShipGeo.vetoStation.z+100.*u.cm : return False
-   # typical x,y Vx resolution for exclusive Neutralino decays 0.3cm,0.15cm (gaussian width)
-   if dist2InnerWall(X,Y,Z)<5*u.cm: return False
-   return True 
-
-def checkFiducialVolume(sTree,trackkey,dy):
-    # extrapolate track to middle of magnet and check if in decay volume
-    inside = True
-    if not fiducialCut: return True
-    fT = sTree.FitTracks[trackkey]
-    rc,pos,mom = TrackExtrapolateTool.extrapolateToPlane(fT,ShipGeo.Bfield.z)
-    if not rc: return False
-    if not dist2InnerWall(pos.X(),pos.Y(),pos.Z())>0: return False
-    return inside
-
-nEvents = min(sTree.GetEntries(),nEvents)
-
-def time_res(partkey):
+def time_res(partMom,partName,partkey,pdg,eventN,succEventM):
     smearStrawTime = None
     smearEcalTime = None
+    smearDeltaT = None
     deltaT = None
     r = None
+    R = None
+    smearV = None
     v = None
     strawP = None
     ecalP = None
+    deltaP = None
     if sTree.GetBranch("strawtubesPoint"):
         x_array = []
         y_array = []
         z_array = []
+        r_array = []
         t_array = []
         px_array = []
         py_array = []
@@ -406,11 +486,18 @@ def time_res(partkey):
                 py_array.append(hits.GetPy())
                 pz_array.append(hits.GetPz())
                 t_array.append(hits.GetTime())
+
+        N = len(z_array)
+        R1 = 0
+        for j in range(0,N-1):
+            s = ROOT.TMath.Sqrt(((0.01*x_array[j] - 0.01*x_array[j+1])**2) + ((0.01*y_array[j] - 0.01*y_array[j+1])**2) + ((0.01*z_array[j] - 0.01*z_array[j+1])**2))
+            r_array.append(s)
+            R1 = sum(r_array)   # total distance travelled in the straw tubes
         
         min_z_index = z_array.index(min(z_array))
-        straw_z = 0.01*z_array[min_z_index]
-        straw_x = 0.01*x_array[min_z_index]
-        straw_y = 0.01*y_array[min_z_index]
+        inmostStrawZ = 0.01*z_array[min_z_index]
+        inmostStrawX = 0.01*x_array[min_z_index]
+        inmostStrawY = 0.01*y_array[min_z_index]
         straw_time = t_array[min_z_index]
         if straw_time != None:
             smearStrawTime = np.random.normal(loc=straw_time,scale=0.01,size=None) # current width of 10 ps
@@ -419,9 +506,19 @@ def time_res(partkey):
         strawPx = px_array[min_z_index]
         strawPy = py_array[min_z_index]
         strawPz = pz_array[min_z_index]
-        strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) # straw tube momentum
+        strawP = ROOT.TMath.Sqrt((strawPx**2) + (strawPy**2) + (strawPz**2)) 
 
-                
+        num_hits = len(z_array)   # number of elements in the list
+        if pdg==13:   # muon
+            h['num_muon'].Fill(num_hits)
+            for hit in pz_array:
+                if eventN == succEventM:
+                    h['track_muon'].Fill(hit)   # muon z-momentum through straw tubes for particular event
+        if pdg==321:   # kaon
+            h['num_kaon'].Fill(num_hits)
+            for hit in pz_array:
+                if eventN == succEventM:
+                    h['track_kaon'].Fill(hit)   # kaon z-momentum through straw tubes for particular event
 
         if sTree.GetBranch("EcalPoint"):
             ecal_time = 0
@@ -436,18 +533,49 @@ def time_res(partkey):
                         ecal_px = hits.GetPx()
                         ecal_py = hits.GetPy()
                         ecal_pz = hits.GetPz()
-                        ecalP = ROOT.TMath.Sqrt((ecal_px**2) + (ecal_py**2) + (ecal_pz**2)) # straw tube momentum
+                        ecalP = ROOT.TMath.Sqrt((ecal_px**2) + (ecal_py**2) + (ecal_pz**2))
 
                         if ecal_time != None:
                             smearEcalTime = np.random.normal(loc=ecal_time,scale=0.01,size=None) # current width of 10 ps
                             #smearEcalTime=ecal_time
+                            if not ecal_time <= straw_time:
+                                smearDeltaT = abs(smearStrawTime - smearEcalTime)
+                                deltaT = abs(straw_time - ecal_time)
+                                deltaP = strawP - ecalP
+                                r = ROOT.TMath.Sqrt(((ecal_x - inmostStrawX)**2) + ((ecal_y - inmostStrawY)**2) + ((ecal_z - inmostStrawZ)**2))
+                                h['straight_path'].Fill(r)
+                                max_z_index = z_array.index(max(z_array))
+                                laststraw_x = 0.01*x_array[max_z_index]
+                                laststraw_y = 0.01*y_array[max_z_index]
+                                laststraw_z = 0.01*z_array[max_z_index]
+                                R2 = ROOT.TMath.Sqrt(((ecal_x - laststraw_x)**2) + ((ecal_y - laststraw_y)**2) + ((ecal_z - laststraw_z)**2))
+                                R = R1+R2                           # better approximation of distance
+                                h['better_path'].Fill(R)
+                                rdiff = abs(R-r)
+                                h['path_diff'].Fill(rdiff)
+                                smearV = ((r/smearDeltaT)*(10**9) ) # velocity in flight
+                                v = ((R/deltaT)*(10**9) )           # units of nanoseconds
 
-                        if not ecal_time <= straw_time:
-                            deltaT=abs(smearStrawTime - smearEcalTime)
-                            r = ROOT.TMath.Sqrt(((ecal_x - straw_x)**2) + ((ecal_y - straw_y)**2) + ((ecal_z - straw_z)**2))
-                            v=((r/deltaT)*(10**9) )# units of nanoseconds
-                            
-    return smearStrawTime,smearEcalTime,deltaT,r,v,strawP,ecalP
+    if smearStrawTime != None:
+        h[partName + 'StrawTime'].Fill(smearStrawTime)
+        h[partName + 'EcalTime'].Fill(smearEcalTime)
+        h[partName + 'SmearedDirDeltaTime'].Fill(smearDeltaT)
+        h[partName + 'DirDeltaTime'].Fill(deltaT)
+        h[partName + 'FlightLen'].Fill(r)
+        h[partName + 'FlightLenImproved'].Fill(R)
+        smearBeta = smearV/c
+        h[partName + 'SmearedSpeed'].Fill(smearBeta)
+        beta = v/c
+        h[partName + 'Speed'].Fill(beta)
+        h[partName + 'StrawMom'].Fill(strawP)
+        h[partName + 'EcalMom'].Fill(ecalP)
+        Dp = strawP-ecalP
+        h[partName + 'DeltaMom'].Fill(Dp)
+        if smearBeta < 1:
+            #TRYING SOMETHING ELSE
+            smearedM = partMom*(ROOT.TMath.Sqrt(1-(smearBeta**2)))/smearBeta
+            h[partName + 'SmearedMass'].Fill(smearedM)
+            h['TotalSmearedMass'].Fill(smearedM)   
 
 def createRatio(h1, h2, histname):
     h3 = h1.Clone(histname)
@@ -459,7 +587,8 @@ def createRatio(h1, h2, histname):
     # Set up plot for markers and errors
     h3.Sumw2()
     h3.SetStats(0)
-    h3.Divide(h2)
+    #h3.Divide(h2)
+    h3.Divide(h1,h2,1,1,"B")
     # Adjust y-axis settings
     y = h3.GetYaxis()
     y.SetRangeUser(-0.1,1.2)
@@ -469,37 +598,61 @@ def createRatio(h1, h2, histname):
     x.SetRangeUser(0,1.5)
     return h3
 
-def track_checks(index,true_part,reco_part,veto):
+def track_checks(index,partkey,true_part,reco_part,veto,fill):
     check = 0
-    Decay_X = true_part.GetStartX()
-    Decay_Y = true_part.GetStartY()
-    Decay_Z = true_part.GetStartZ()
-    if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
-        #print('RPV decayed outside fiducial volume')
-        check = -1
-        veto[0] += 1
+
     if not checkFiducialVolume(sTree,index,dy): 
         #print('Track outside fiducial volume')
-        check = -1
         veto[1] += 1
-    fit_status = reco_part.getFitStatus()             
-    if not fit_status.isFitConverged():
-        #print('Fit did not converge')
         check = -1
-        veto[2] += 1
-    fit_nmeas = fit_status.getNdf()                      
-    if not fit_nmeas > 25:
+
+    fit_status = reco_part.getFitStatus() 
+    fit_nmeas = fit_status.getNdf()
+    if fill == 1: h['nmeas'].Fill(fit_nmeas)
+    if not fit_nmeas > measCut:
         #print('Too few measurements')
+        veto[2] += 1
         check = -1
-        veto[3] += 1
+
     fit_rchi2 = fit_status.getChi2()                      
     fit_chi2 = (fit_rchi2/fit_nmeas)
-    if not fit_chi2 < 4:
+    if fill == 1: h['Chi2'].Fill(fit_chi2)
+    if not fit_chi2 < chi2Cut:
         #print('Chi squared value too high')
+        veto[3] += 1
         check = -1
-        veto[4] += 1
 
-    return check,fit_chi2,veto
+    if sTree.GetBranch('EcalPoint'):
+        ecal_Etot = 0
+        for hits in sTree.EcalPoint:
+            ecal_TrackID = hits.GetTrackID()
+            if ecal_TrackID == partkey:
+                ecalE = hits.GetEnergyLoss()
+                ecal_Etot += ecalE
+        if fill == 1: h['ecalE'].Fill(ecal_Etot)
+        if not ecal_Etot > ecalCut:
+            #print('Not enough energy deposited in the ECAL')
+            veto[4] += 1
+            check = -1
+
+    if sTree.GetBranch('muonPoint'):
+        if abs(true_part.GetPdgCode()) == 13:
+            muonstation_z = []
+            for hits in sTree.muonPoint:
+                muonTrackID = hits.GetTrackID()
+                if muonTrackID == partkey:
+                    muonstation_z.append(hits.GetZ())
+            if not len(muonstation_z) > 2:
+                #print('Did not leave hits in both the 1st and 2nd muon stations')
+                veto[5] += 1
+                check = -1
+            else:
+                if not muonstation_z[0] == 4017.0: #first muon station position
+                    veto[5] += 1
+                    check = -1
+
+    return check,veto
+nEvents = min(sTree.GetEntries(),nEvents)
 
 def finState2t1t2(HiddPart,daught1,daught2):
     if HiddenPart == 'Neutralino':
@@ -514,8 +667,9 @@ def finState2t1t2(HiddPart,daught1,daught2):
         daught2_PDG = 313
     if sTree.GetBranch("FitTracks"):
         totalEvents=0
+        successful_events = []   # creates list of event numbers of desired decays
         daught1Events=0
-        d1veto=6*[0]
+        d1veto=10*[0]
         d1EventsAfterChecks=0
         k2muEvents=0
         k2mu_MotherHP = 0
@@ -525,11 +679,16 @@ def finState2t1t2(HiddPart,daught1,daught2):
         pi2mu_Motherd2 = 0
         HiddPartDaught1Events=0
         daught2toKaonEvents=0
-        d2toKaonveto=6*[0]
+        d2toKaonveto=10*[0]
         d2toKaonEventsAfterChecks=0
         daught2toPionEvents=0
-        d2toPionveto=6*[0]
+        d2toPionveto=10*[0]
         d2toPionEventsAfterChecks=0
+        HP2ka_veto = 10*[0]
+        d2ka_veto = 10*[0]
+        HP2pi_veto = 10*[0]
+        d2pi_veto = 10*[0]
+        veto = 9*[0]
         
         for n in range(nEvents):
             totalEvents+=1
@@ -538,33 +697,47 @@ def finState2t1t2(HiddPart,daught1,daught2):
             #    print(part)
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 d1Partkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
-                true_daught1 = sTree.MCTrack[d1Partkey]                  # gives MC particle data
+                true_daught1 = sTree.MCTrack[d1Partkey]               # gives MC particle data
                 if abs(true_daught1.GetPdgCode()) == daught1_PDG:        # checks particle is muon
                     daught1Events+=1
                     daught1MotherKey = true_daught1.GetMotherId()             # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[daught1MotherKey]             # obtains mother particle data
-                    check,d1_chi2, d1veto = track_checks(index,true_daught1,reco_part,d1veto)
+
+                    check, d1veto = track_checks(index,d1Partkey,true_daught1,reco_part,d1veto,0)
                     if not check == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                         continue
                     d1EventsAfterChecks+=1
+
                     if true_mother.GetPdgCode() == 321:
                         d1GrannyKey = true_mother.GetMotherId()
                         true_gran = sTree.MCTrack[d1GrannyKey]
                         k2muEvents+=1
                         if true_gran.GetPdgCode() == HiddPart_PDG:
                             k2mu_MotherHP+=1
+                            check,HP2ka_veto = track_checks(index,d1Partkey,true_daught1,reco_part,HP2ka_veto,0)
+                            if check == -1: HP2ka_veto[0] += 1 
                         if true_gran.GetPdgCode() == daught2_PDG:
                             k2mu_Motherd2+=1
+                            check,d2ka_veto = track_checks(index,d1Partkey,true_daught1,reco_part,d2ka_veto,0)
+                            if check == -1: d2ka_veto[0] += 1 
+
+
                     if true_mother.GetPdgCode() == 211:
                         d1GrannyKey = true_mother.GetMotherId()
                         true_gran = sTree.MCTrack[d1GrannyKey]
                         pi2muEvents+=1
                         if true_gran.GetPdgCode() == HiddPart_PDG:
                             pi2mu_MotherHP+=1
+                            check,HP2pi_veto = track_checks(index,d1Partkey,true_daught1,reco_part,HP2pi_veto,0)
+                            if check == -1: HP2pi_veto[0] += 1 
                         if true_gran.GetPdgCode() == daught2_PDG:
                             pi2mu_Motherd2+=1
+                            check,d2pi_veto = track_checks(index,d1Partkey,true_daught1,reco_part,d2pi_veto,0)
+                            if check == -1: d2pi_veto[0] += 1
+
                     if true_mother.GetPdgCode() == HiddPart_PDG:              # checks mother is hidden particle
                         HiddPartDaught1Events+=1
+                        event = True
                         for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
                             p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
                             true_part2 = sTree.MCTrack[p2Partkey]                 # gives MC particle data
@@ -575,36 +748,82 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                 if (part2MotherKey==daught1MotherKey and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
                                     daught2toKaonEvents+=1
                                     #print(reco_part2)
-                                    p2MotherTrueMass = true_mother.GetMass()               # get Neutralino/final states mother mass
-                                    p2MotherTrueMom = true_mother.GetP()                   # get Neutralino/final states mother mom
-                                    check2,p2_chi2,d2toKaonveto = track_checks(index2,true_part2,reco_part2,d2toKaonveto)
-                                    if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
-                                        continue
-                                    d2toKaonEventsAfterChecks+=1
+                                    ####################
+                                    #####  CHECKS  #####
+                                    fit_status1 = reco_part.getFitStatus() 
+                                    fit_status2 = reco_part2.getFitStatus()
+                                    if fit_status1.isFitConverged() and fit_status2.isFitConverged():
+                                        veto[0] += 1
+                                    else:
+                                        #print('At least one of the track fits did not converge')
+                                        break
+                                    
+                                    check,veto = track_checks(index,d1Partkey,true_daught1,reco_part,veto,1)   # performs various track checks
+                                    if check == -1: event = False
+
+                                    if event == True:   # if the first track was fine, check the other one (ensures event veto counting is correct)
+                                        check,veto = track_checks(index2,p2Partkey,true_part2,reco_part2,veto,1)
+                                        if check == -1: event = False
+                                    
+                                    HiddPart_Pos = ROOT.TLorentzVector()
                                     daught1_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     part2_LVec = ROOT.TLorentzVector()                   # declares variable as TLorentzVector class
                                     HiddPart_LVec = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
-                                    HiddPart_LVec,daught1_LVec,part2_LVec,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
-                                    if HiddPart_LVec == -1: continue
-                                    if doca > 2.: 
-                                        #print('distance of closest approach too large')
-                                        continue
+                                    HiddPart_LVec,daught1_LVec,part2_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
+                                    if HiddPart_LVec == -1:
+                                        print('RedoVertexing extrapolation failed')
+                                        break
 
+                                    h['recovertex'].Fill(Z)
+                                    if not isInFiducial(X,Y,Z):
+                                        #print('Neutralino decayed outside fiducial volume')
+                                        veto[6] += 1
+                                        check = -1
+                                    
+                                    h['doca'].Fill(doca)
+                                    if not doca < docaCut: 
+                                        #print('distance of closest approach too large')
+                                        veto[7] +=1
+                                        event = False
+                                        
+                                    T = true_mother.GetStartT()
+                                    HiddPart_Pos.SetXYZT(X,Y,Z,T)
+                                    tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
+                                    ip = ImpactParameter(tr,HiddPart_Pos,HiddPart_LVec)
+                                    h['IP_target'].Fill(ip)
+                                    if not ip < ipCut:
+                                        #print('neutralino impact parameter to target too large')
+                                        veto[8] += 1
+                                        event = False
+
+                                    if event == False: break
+                                    d2toKaonEventsAfterChecks+=1
+
+                                    #check2,d2toKaonveto = track_checks(index2,p2Partkey,true_part2,reco_part2,d2toKaonveto,0)
+                                    #if not check2 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
+                                    #    continue
+
+                                    #######################
+                                    ### Reco Properties ###
                                     HiddPart_mass = HiddPart_LVec.M()
                                     HiddPart_recoMom = HiddPart_LVec.P()
-                                    mom_diff = p2MotherTrueMom - HiddPart_recoMom
-
                                     p2M = part2_LVec.M()
                                     p2P = part2_LVec.P()
                                     p2E = part2_LVec.E()
                                     d1M = daught1_LVec.M()
                                     d1P = daught1_LVec.P()
                                     d1E = daught1_LVec.E()
-                                    
+                                    #######################
+                                    ### True Properties ###
+                                    p2MotherTrueMass = true_mother.GetMass()
+                                    p2MotherTrueMom = true_mother.GetP()             
                                     part2TrueMom = true_part2.GetP()
                                     part2TrueMass = true_part2.GetMass()
                                     daught1TrueMom = true_daught1.GetP()
                                     daught1TrueMass = true_daught1.GetMass()
+
+                                    mom_diff = p2MotherTrueMom - HiddPart_recoMom
+
                                     part2='K+/-'
                                     h[daught1 + 'TrueMom'].Fill(daught1TrueMom)
                                     h[daught1 + 'TrueMass'].Fill(daught1TrueMass)
@@ -614,49 +833,19 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                     h[HiddPart + 'TrueMom'].Fill(p2MotherTrueMom)
                                     h[HiddPart + 'RecoMass'].Fill(HiddPart_mass)                        
                                     h[HiddPart + 'RecoMom'].Fill(HiddPart_recoMom)                
-                                    h['Chi2'].Fill(d1_chi2)       
-                                    h['Chi2'].Fill(p2_chi2)                             
+                                    #h['Chi2'].Fill(d1_chi2)       
+                                    #h['Chi2'].Fill(p2_chi2)                             
                                     h[HiddPart + 'DeltaMom'].Fill(mom_diff)
                                     h[part2 + 'RecoMom'].Fill(p2P)
                                     h[daught1 + 'RecoMom'].Fill(d1P)
                                     h[part2 + 'RecoMass'].Fill(p2M)
                                     h[daught1 + 'RecoMass'].Fill(d1M)
 
-                                    d1_strwT,d1_ecalT,d1_Dt,d1_Len,d1_v,d1_strawP,d1_ecalP = time_res(d1Partkey) 
-                                    if d1_strwT!= None and d1_ecalT!= None and d1_Dt!= None and d1_Len!= None and d1_v != None and d1_strawP!=None and d1_ecalP!=None:
-                                        h[daught1 + 'StrawTime'].Fill(d1_strwT)
-                                        h[daught1 + 'EcalTime'].Fill(d1_ecalT)
-                                        h[daught1 + 'DirDeltaTime'].Fill(d1_Dt)
-                                        h[daught1 + 'FlightLen'].Fill(d1_Len)
-                                        d1_beta = d1_v/c
-                                        h[daught1 + 'Speed'].Fill(d1_beta)
-                                        h[daught1 + 'StrawMom'].Fill(d1_strawP)
-                                        h[daught1 + 'EcalMom'].Fill(d1_ecalP)
-                                        d1_Dp = d1_strawP-d1_ecalP
-                                        h[daught1 + 'DeltaMom'].Fill(d1_Dp)
+                                    successful_events.append(n)   # adds entries to the list
+                                    m = successful_events[0]   # arbitrarily picks the first one as an example
 
-                                        p2_strwT,p2_ecalT,p2_Dt,p2_Len,p2_v,p2_strawP,p2_ecalP = time_res(p2Partkey)
-                                        if p2_strwT!= None and p2_ecalT!= None and p2_Dt!= None and p2_Len!= None and p2_v != None and p2_strawP!=None and p2_ecalP!=None:     
-                                            h[part2 + 'StrawTime'].Fill(p2_strwT)
-                                            h[part2 + 'EcalTime'].Fill(p2_ecalT)
-                                            h[part2 + 'DirDeltaTime'].Fill(p2_Dt)
-                                            h[part2 + 'FlightLen'].Fill(p2_Len)
-                                            p2_beta = p2_v/c
-                                            h[part2 + 'Speed'].Fill(p2_beta)
-                                            h[part2 + 'StrawMom'].Fill(p2_strawP)
-                                            h[part2 + 'EcalMom'].Fill(p2_ecalP)
-                                            p2_Dp = p2_strawP-p2_ecalP
-                                            h[part2 + 'DeltaMom'].Fill(p2_Dp)
-                                              
-                                            
-                                            if p2_beta < 1:
-                                                #TRYING SOMETHING ELSE
-                                                p2_smearedM = p2P*(ROOT.TMath.Sqrt(1-(p2_beta**2)))/p2_beta
-                                                h[part2 + 'SmearedMass'].Fill(p2_smearedM)
-                                                h['TotalSmearedMass'].Fill(p2_smearedM)                                                
-                                                d1_smearedM = d1P*(ROOT.TMath.Sqrt(1-(d1_beta**2)))/d1_beta
-                                                h[daught1 + 'SmearedMass'].Fill(d1_smearedM)
-                                                h['TotalSmearedMass'].Fill(d1_smearedM)
+                                    time_res(d1P,daught1,d1Partkey, daught1_PDG,n,m)
+                                    time_res(p2P,part2,p2Partkey, 321, n, m)
                                                 
                             if abs(true_part2.GetPdgCode()) == 211:     # checks particle is kaon
                                 part3MotherKey = true_part2.GetMotherId()          # stores a number index of MC track of mother
@@ -704,26 +893,8 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                     h[part3 + 'RecoMom'].Fill(p3P)
                                     h[part3 + 'RecoMass'].Fill(p3M)
 
-                                    p3_strwT,p3_ecalT,p3_Dt,p3_Len,p3_v,p3_strawP,p3_ecalP = time_res(p2Partkey)
-                                    if p3_strwT!= None and p3_ecalT!= None and p3_Dt!= None and p3_Len!= None and p3_v != None and p3_strawP!=None and p3_ecalP!=None:     
-                                        h[part3 + 'StrawTime'].Fill(p3_strwT)
-                                        h[part3 + 'EcalTime'].Fill(p3_ecalT)
-                                        h[part3 + 'DirDeltaTime'].Fill(p3_Dt)
-                                        h[part3 + 'FlightLen'].Fill(p3_Len)
-                                        p3_beta = p3_v/c
-                                        h[part3 + 'Speed'].Fill(p3_beta)
-                                        h[part3 + 'StrawMom'].Fill(p3_strawP)
-                                        h[part3 + 'EcalMom'].Fill(p3_ecalP)
-                                        p3_Dp = p3_strawP-p3_ecalP
-                                        h[part3 + 'DeltaMom'].Fill(p3_Dp)
-                                              
-                                            
-                                        if p3_beta < 1:
-                                            #TRYING SOMETHING ELSE
-                                            p3_smearedM = p3P*(ROOT.TMath.Sqrt(1-(p3_beta**2)))/p3_beta
-                                            h[part3 + 'SmearedMass'].Fill(p3_smearedM)
-                                            h['TotalSmearedMass'].Fill(p3_smearedM)                                                
-                                                
+
+                                    time_res(p3P,part3, p2Partkey, 211, n,m)
 
         print(2*' ' + 80*'_')
         print(2*' ' + '||  Total number of events = ' + str(totalEvents))
@@ -743,11 +914,11 @@ def finState2t1t2(HiddPart,daught1,daught2):
         print(2*' ' + '||  ' + daught1 + ' number of events (with ' + HiddPart + ' mother) = ' + str(HiddPartDaught1Events))
         print(2*' ' + '||  K+/- number of events (with ' + daught2 + ' mother) = ' + str(daught2toKaonEvents))
         print(2*' ' + '||  K+/- number of events (with ' + daught2 + ' mother) after checks = ' + str(d2toKaonEventsAfterChecks))
-        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) isInFiducial = ' + str(d2toKaonveto[0]))
-        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) checkFiducialVolume = ' + str(d2toKaonveto[1]))
-        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_status = ' + str(d2toKaonveto[2]))
-        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_nmeas = ' + str(d2toKaonveto[3]))
-        print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_chi2 = ' + str(d2toKaonveto[4]))
+        #print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) isInFiducial = ' + str(d2toKaonveto[0]))
+        #print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) checkFiducialVolume = ' + str(d2toKaonveto[1]))
+        #print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_status = ' + str(d2toKaonveto[2]))
+        #print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_nmeas = ' + str(d2toKaonveto[3]))
+        #print(2*' ' + '||  ==> K+/- number of events (with ' + daught2 + ' mother) fit_chi2 = ' + str(d2toKaonveto[4]))
         print(2*' ' + '||  pi+/- number of events (with ' + daught2 + ' mother) = ' + str(daught2toPionEvents))
         print(2*' ' + '||  pi+/- number of events (with ' + daught2 + ' mother) after checks = ' + str(d2toPionEventsAfterChecks))
         print(2*' ' + '||  ==> pi+/- number of events (with ' + daught2 + ' mother) isInFiducial = ' + str(d2toPionveto[0]))
@@ -951,16 +1122,16 @@ def makePlots2(HiddPart,part1,part2,part3):
         x1.append(h[part1 + 'ProbMeasr'].GetBinCenter(i))
         ex1.append(0)
         y1.append(h[part1 + 'ProbMeasr'].GetBinContent(i))
-        ey1.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/3))
+        ey1.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/10))
         x2.append(h[part2 + 'ProbMeasr'].GetBinCenter(i))
         ex2.append(0)
         y2.append(h[part2 + 'ProbMeasr'].GetBinContent(i))
-        ey2.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/3))
+        ey2.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/10))
         if not part3==None:
             x3.append(h[part3 + 'ProbMeasr'].GetBinCenter(i))
             ex3.append(0)
             y3.append(h[part3 + 'ProbMeasr'].GetBinContent(i))
-            ey3.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/3))
+            ey3.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/10))
         n=n+1
     gr1 = TGraphErrors( n, x1, y1, ex1, ey1 )
     gr1.SetTitle('Prob(ID = ' + part1 + ')')
