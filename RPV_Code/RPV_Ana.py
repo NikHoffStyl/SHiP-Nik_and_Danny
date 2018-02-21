@@ -5,6 +5,7 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 import shipRoot_conf
+from array import array
 import numpy as np
 shipRoot_conf.configure()
 
@@ -168,11 +169,9 @@ else:
  ecalMatch.InitPython(ecalStructure, ecalReconstructed, sTree.MCTrack)
 
 import TrackExtrapolateTool
-from array import array
 c = 2.99792458*(10**8)   # speed of light
 e = 2.718281828459   # Euler's number
 h = {}   # creates empty dictionary for histograms and graphs
-choice = -1   # variable for the event loop choice (see end)
 
 #----------------------------------------------------FUNCTIONS------------------------------------------------------------
 
@@ -270,54 +269,71 @@ def fitSingleGauss(x,ba=None,be=None):
     h[x].Fit(myGauss,'','',ba,be) 
 
 def RedoVertexing(t1,t2):
-     PosDir = {} 
-     for tr in [t1,t2]:
-      xx  = sTree.FitTracks[tr].getFittedState()
-      PosDir[tr] = [xx.getPos(),xx.getDir()] # Dir = direction?
-     xv,yv,zv,doca = myVertex(t1,t2,PosDir)
-# as we have learned, need iterative procedure
-     dz = 99999.
-     reps,states,newPosDir = {},{},{}
-     parallelToZ = ROOT.TVector3(0., 0., 1.)
-     rc = True 
-     step = 0
-     while dz > 0.1:
-      zBefore = zv
-      newPos = ROOT.TVector3(xv,yv,zv)
-     # make a new rep for track 1,2
-      for tr in [t1,t2]:     
-       xx = sTree.FitTracks[tr].getFittedState()
-       reps[tr]   = ROOT.genfit.RKTrackRep(xx.getPDG())     # what is rep?
-       states[tr] = ROOT.genfit.StateOnPlane(reps[tr])     # what is this?
-       reps[tr].setPosMom(states[tr],xx.getPos(),xx.getMom())   # and this?
-       try:
-        reps[tr].extrapolateToPoint(states[tr], newPos, False)
-       except: 
-        #print('SHiPAna: extrapolation did not work)'
-        rc = False  
-        break
-       newPosDir[tr] = [reps[tr].getPos(states[tr]),reps[tr].getDir(states[tr])]
-      if not rc: break
-      xv,yv,zv,doca = myVertex(t1,t2,newPosDir)
-      dz = abs(zBefore-zv) # repeats until dz < 0.1 unless...
-      step+=1
-      if step > 10:  
-         # print 'abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz
-         rc = False
-         break
-     if not rc: return -1,-1,-1,xv,yv,zv,doca # extrapolation failed, makes no sense to continue
-     LV={}
-     for tr in [t1,t2]: # from here on we have reproduced (see inv_mass() function in Test_1.py)     
-      mom = reps[tr].getMom(states[tr])
-      pid = abs(states[tr].getPDG()) 
-      if pid == 2212: pid = 211 # why?
-      mass = PDG.GetParticle(pid).Mass()
-      E = ROOT.TMath.Sqrt(mass*mass + mom.Mag2())
-      LV[tr] = ROOT.TLorentzVector()
-      LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
-     RPVMom = LV[t1]+LV[t2]
+    PosDir = {} 
+    for tr in [t1,t2]:
+        xx  = sTree.FitTracks[tr].getFittedState()
+        PosDir[tr] = [xx.getPos(),xx.getDir()]
+    xv,yv,zv,doca = myVertex(t1,t2,PosDir)
+    # as we have learned, need iterative procedure
+    dz = 99999.
+    reps,states,newPosDir = {},{},{}
+    parallelToZ = ROOT.TVector3(0.,0.,1.)
+    rc = True 
+    step = 0
+    while dz > 0.1:
+        zBefore = zv
+        newPos = ROOT.TVector3(xv,yv,zv)
+        # make a new rep for track 1,2
+        for tr in [t1,t2]:     
+            xx = sTree.FitTracks[tr].getFittedState()
+            reps[tr] = ROOT.genfit.RKTrackRep(xx.getPDG())   # what is rep?
+            states[tr] = ROOT.genfit.StateOnPlane(reps[tr])   # what is this?
+            reps[tr].setPosMom(states[tr],xx.getPos(),xx.getMom())   # and this?
+            try:
+                reps[tr].extrapolateToPoint(states[tr],newPos,False)
+            except: 
+                #print('SHiPAna: extrapolation did not work)'
+                rc = False  
+                break
+            newPosDir[tr] = [reps[tr].getPos(states[tr]),reps[tr].getDir(states[tr])]
+        if not rc: break
+        xv,yv,zv,doca = myVertex(t1,t2,newPosDir)
+        dz = abs(zBefore - zv)   # repeats until dz < 0.1 unless...
+        step += 1
+        if step > 10:  
+            # print 'abort iteration, too many steps, pos=',xv,yv,zv,' doca=',doca,'z before and dz',zBefore,dz
+            rc = False
+            break
+    if not rc: return -1,-1,-1,xv,yv,zv,doca   # extrapolation failed, makes no sense to continue
+    LV={}
+    for tr in [t1,t2]:   # from here on we have reproduced (see inv_mass() function in Test_1.py)     
+        mom = reps[tr].getMom(states[tr])
+        pid = abs(states[tr].getPDG()) 
+        if pid == 2212: pid = 211
+        mass = PDG.GetParticle(pid).Mass()
+        E = ROOT.TMath.Sqrt(mass*mass + mom.Mag2())
+        LV[tr] = ROOT.TLorentzVector()
+        LV[tr].SetPxPyPzE(mom.x(),mom.y(),mom.z(),E)
+    RPVMom = LV[t1] + LV[t2]
 
-     return RPVMom,LV[t1],LV[t2],xv,yv,zv,doca
+    return RPVMom,LV[t1],LV[t2],xv,yv,zv,doca
+
+def SingleTrack_4Mom(t1):
+    fittedtrack  = sTree.FitTracks[t1].getFittedState()
+    Partkey = sTree.fitTrack2MC[t1]   # matches track to MC particle key
+    true_part = sTree.MCTrack[Partkey]   # gives MC particle data 
+         
+    M = true_part.GetMass()   # mass 
+    P = fittedtrack.getMomMag()   # momentum in x
+    Px = fittedtrack.getMom().x()   # momentum in y
+    Py = fittedtrack.getMom().y()   # momentum in z
+    Pz = fittedtrack.getMom().z()   # momentum magnitude
+    E = ROOT.TMath.Sqrt((M**2) + (P**2))   # energy
+                                                            
+    LV = ROOT.TLorentzVector()   # declares variable as TLorentzVector class
+    LV.SetPxPyPzE(Px,Py,Pz,E)   # inputs 4-vector elements
+
+    return LV
 
 def time_res(partkey,pdg,n,m):
     tnosmear = -1   # declares variables
@@ -392,6 +408,7 @@ def time_res(partkey,pdg,n,m):
 
         if not ecal_time <= 0:
             diff = strawP - ecalP   # between 1st straw tube hit and ECAL
+
             r = ROOT.TMath.Sqrt(((ecal_x - firststraw_x)**2) + ((ecal_y - firststraw_y)**2) + ((ecal_z - firststraw_z)**2))
             h['straight_path'].Fill(r)
             max_z_index = z_array.index(max(z_array))   # gives index of the largest element in the list
@@ -415,7 +432,7 @@ def time_res(partkey,pdg,n,m):
             
     return tnosmear,vnosmear,tsmear,vsmear,diff,strawP
 
-def track_checks(index,partkey,true_part,reco_part,veto,fill):
+def track_checks(index,partkey,true_part,reco_part,veto,phil):
     check = 0
 
     if not checkFiducialVolume(sTree,index,dy): 
@@ -427,7 +444,7 @@ def track_checks(index,partkey,true_part,reco_part,veto,fill):
     if fit_status.isFitConverged():
 
         fit_nmeas = fit_status.getNdf()
-        if fill == 1: h['nmeas'].Fill(fit_nmeas)
+        if phil == 1: h['nmeas'].Fill(fit_nmeas)
         if not fit_nmeas > measCut:
             #print('Too few measurements')
             veto[2] += 1
@@ -435,7 +452,7 @@ def track_checks(index,partkey,true_part,reco_part,veto,fill):
 
         fit_rchi2 = fit_status.getChi2()
         fit_chi2 = (fit_rchi2/fit_nmeas)
-        if fill == 1: h['Chi2'].Fill(fit_chi2)
+        if phil == 1: h['Chi2'].Fill(fit_chi2)
         if not fit_chi2 < chi2Cut:
             #print('Chi squared value too high')
             veto[3] += 1
@@ -448,7 +465,7 @@ def track_checks(index,partkey,true_part,reco_part,veto,fill):
             if ecal_TrackID == partkey:
                 ecalE = hits.GetEnergyLoss()
                 ecal_Etot += ecalE
-        if fill == 1: h['ecalE'].Fill(ecal_Etot)
+        if phil == 1: h['ecalE'].Fill(ecal_Etot)
         if not ecal_Etot > ecalCut:
             #print('Not enough energy deposited in the ECAL')
             veto[4] += 1
@@ -466,32 +483,61 @@ def track_checks(index,partkey,true_part,reco_part,veto,fill):
                 veto[5] += 1
                 check = -1
             else:
-                if not muonstation_z[0] == 4017.0:
+                if not muonstation_z[0] == 4017.0:   # z position 
                     veto[5] += 1
                     check = -1
 
     return check,veto
 
+def createRatio(h1,h2,histname):
+    h3 = h1.Clone(histname)
+    h3.SetMinimum(0.8)
+    h3.SetMaximum(1.35)
+    # Set up plot for markers and errors
+    h3.Sumw2()
+    h3.SetStats(0)
+    h3.Divide(h1,h2,1,1,"B")   # divide with binomial errors
+    # Adjust y-axis settings
+    y = h3.GetYaxis()
+    y.SetRangeUser(-0.1,1.2)
+    y.SetTitleOffset(1.)
+    ## Adjust x-axis settings
+    x = h3.GetXaxis()
+    x.SetRangeUser(0,2)
+    return h3
+
 def createHists_KaMu():
-    ut.bookHist(h,'RPV_true','Monte Carlo Mass',500,0.8,1.2)   # true mass
-    ut.bookHist(h,'RPV_reco','Reconstructed Mass',500,0.8,1.2)   # reconstructed mass
-    ut.bookHist(h,'RPV_mom','True (red) & Reco. (blue) Momentum',100,0.,300.)   # true momentum distribution
-    ut.bookHist(h,'RPV_mom_reco','Reconstructed Momentum',100,0.,300)   # reconstructed momentum distribution
+    ut.bookHist(h,'RPV_truemass','Monte Carlo Mass',500,0.8,1.2)   # true mass
+    ut.bookHist(h,'RPV_recomass','Reconstructed Mass',500,0.8,1.2)   # reconstructed mass
+    ut.bookHist(h,'RPV_truemom','True (red) & Reco. (blue) Momentum',100,0.,300.)   # true momentum distribution
+    ut.bookHist(h,'RPV_recomom','Reconstructed Momentum',100,0.,300)   # reconstructed momentum distribution
     ut.bookHist(h,'RPV_mom_diff','True/Reco Momentum Difference',100,-3.,3)   # true/reco momentum difference
 
-    ut.bookHist(h,'Muon_mom_true','Muon - True (red) & Reco. (blue) Momentum',100,0.,140.)   # RPV muon daughter reco momentum
-    ut.bookHist(h,'Kaon_mom_true','Kaon - True (red) & Reco. (blue) Momentum',100,0.,140.)   # RPV pion daughter reco momentum
-    ut.bookHist(h,'Muon_mom','Muon - True Momentum',100,0.,140.)   # RPV muon daughter true momentum
-    ut.bookHist(h,'Kaon_mom','Kaon - True Momentum',100,0.,140.)   # RPV pion daughter true momentum
+    ut.bookHist(h,'Muon_truemom','Muon - True (red) & Reco. (blue) Momentum',100,0.,140.)   # RPV muon daughter reco momentum
+    ut.bookHist(h,'Kaon_truemom','Kaon - True (red) & Reco. (blue) Momentum',100,0.,140.)   # RPV pion daughter reco momentum
+    ut.bookHist(h,'Muon_recomom','Muon - True Momentum',100,0.,140.)   # RPV muon daughter true momentum
+    ut.bookHist(h,'Kaon_recomom','Kaon - True Momentum',100,0.,140.)   # RPV pion daughter true momentum
     ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4)   # includes both kaon and muon
 
     ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight (Gaussian blurred)
     ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight (Gaussian blurred)
     ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,3.)   # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
     ut.bookHist(h,'tmass_kaon','Time Deduced Kaon Mass',150,0.,3.)
-    ut.bookHist(h,'tsmearmass_muon','Smeared Time Deduced Muon Mass',150,0.,3.)   # same as above but using smeared time
-    ut.bookHist(h,'tsmearmass_kaon','Smeared Time Deduced Kaon Mass',150,0.,3.)
+    ut.bookHist(h,'tsmearmass_muon_samebins','Time Deduced Muon Mass',150,0.,3.)   # same as above, but for smeared mass
+    ut.bookHist(h,'tsmearmass_kaon_samebins','Time Deduced Kaon Mass',150,0.,3.)
     ut.bookHist(h,'daughter_masses','Kaon and muon true masses',50,0,1)
+
+    edgesarray=[]
+    edgesarray.append(0)
+    for binNumber in range(0,40):
+        edgesarray.append(edgesarray[binNumber] + 0.015)
+    for binNumber in range(40,86):
+        edgesarray.append(edgesarray[binNumber] + 0.045)
+    h['Muon_SmearedMass'] = ROOT.TH1D('Muon_SmearedMass','Muon Smeared Mass',85,array('d',edgesarray))
+    h['Kaon_SmearedMass'] = ROOT.TH1D('Kaon_SmearedMass','Kaon Smeared Mass',85,array('d',edgesarray))
+    h['Total_SmearedMass'] = ROOT.TH1D('Total_SmearedMass','Smeared Mass',85,array('d',edgesarray))
+    h['Muon_ProbMeasr'] = ROOT.TH1D('Muon_ProbMeasr','Probs Identifying Muon',85,array('d',edgesarray))
+    h['Kaon_ProbMeasr'] = ROOT.TH1D('Kaon_ProbMeasr','Probs Identifying Kaon',85,array('d',edgesarray))
 
     ut.bookHist(h,'IP_target','Impact parameter to target',120,0,10)
     ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
@@ -513,25 +559,25 @@ def createHists_KaMu():
 def makePlots_KaMu():
     ut.bookCanvas(h,key='Test_Mass',title='Results 1',nx=1000,ny=1000,cx=2,cy=2)
     cv = h['Test_Mass'].cd(1)
-    h['RPV_true'].SetXTitle('Invariant mass [GeV/c2]')
-    h['RPV_true'].SetYTitle('No. of Particles')
-    h['RPV_true'].SetLineColor(1)
-    h['RPV_true'].Draw()
+    h['RPV_truemass'].SetXTitle('Invariant mass [GeV/c2]')
+    h['RPV_truemass'].SetYTitle('No. of Particles')
+    h['RPV_truemass'].SetLineColor(1)
+    h['RPV_truemass'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Test_Mass'].cd(2)
-    h['RPV_reco'].SetXTitle('Invariant mass [GeV/c2]')
-    h['RPV_reco'].SetYTitle('No. of Particles')
-    h['RPV_reco'].SetLineColor(1)
-    h['RPV_reco'].Draw()
+    h['RPV_recomass'].SetXTitle('Invariant mass [GeV/c2]')
+    h['RPV_recomass'].SetYTitle('No. of Particles')
+    h['RPV_recomass'].SetLineColor(1)
+    h['RPV_recomass'].Draw()
     print('\nNeutralino mass Gaussian fit:\n')
-    fitSingleGauss('RPV_reco',0.9,1.1)
+    fitSingleGauss('RPV_recomass',0.9,1.1)
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Test_Mass'].cd(3)
-    h['RPV_mom'].SetXTitle('Momentum [GeV/c]')
-    h['RPV_mom'].SetYTitle('No. of Particles')
-    h['RPV_mom'].SetLineColor(2)
-    h['RPV_mom'].Draw()
-    h['RPV_mom_reco'].Draw('same')
+    h['RPV_truemom'].SetXTitle('Momentum [GeV/c]')
+    h['RPV_truemom'].SetYTitle('No. of Particles')
+    h['RPV_truemom'].SetLineColor(2)
+    h['RPV_truemom'].Draw()
+    h['RPV_recomom'].Draw('same')
     #ths1 = ROOT.THStack('RPVmom','True (red) & Reco. (blue) Momentum')
     #ths1.Add(h['RPV_mom'])
     #ths1.Add(h['RPV_mom_reco'])
@@ -547,11 +593,11 @@ def makePlots_KaMu():
     #======================================================================================================================
     ut.bookCanvas(h,key='KaMu_Graphs',title='Results 2',nx=1000,ny=1000,cx=2,cy=2)
     cv = h['KaMu_Graphs'].cd(1)
-    h['Kaon_mom_true'].SetXTitle('Momentum [GeV/c]')
-    h['Kaon_mom_true'].SetYTitle('No. of particles')
-    h['Kaon_mom_true'].SetLineColor(2)
-    h['Kaon_mom_true'].Draw()
-    h['Kaon_mom'].Draw('same')
+    h['Kaon_truemom'].SetXTitle('Momentum [GeV/c]')
+    h['Kaon_truemom'].SetYTitle('No. of particles')
+    h['Kaon_truemom'].SetLineColor(2)
+    h['Kaon_truemom'].Draw()
+    h['Kaon_recomom'].Draw('same')
     #ths2 = ROOT.THStack('Kamom','Kaon True (red) & Reco. (blue) Momentum')
     #ths2.Add(h['Kaon_mom_true'])
     #ths2.Add(h['Kaon_mom'])
@@ -559,11 +605,11 @@ def makePlots_KaMu():
     #h['ths2'].Draw('nostack')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['KaMu_Graphs'].cd(2)
-    h['Muon_mom_true'].SetXTitle('Momentum [GeV/c]')
-    h['Muon_mom_true'].SetYTitle('No. of particles')
-    h['Muon_mom_true'].SetLineColor(2)
-    h['Muon_mom_true'].Draw()
-    h['Muon_mom'].Draw('same')
+    h['Muon_truemom'].SetXTitle('Momentum [GeV/c]')
+    h['Muon_truemom'].SetYTitle('No. of particles')
+    h['Muon_truemom'].SetLineColor(2)
+    h['Muon_truemom'].Draw()
+    h['Muon_recomom'].Draw('same')
     #ths3 = ROOT.THStack('Mumom','Muon True (red) & Reco. (blue) Momentum')
     #ths3.Add(h['Muon_mom_true'])
     #ths3.Add(h['Muon_mom'])
@@ -617,63 +663,56 @@ def makePlots_KaMu():
     #h['ths5'].Draw('nostack')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Test_Time'].cd(4)
-    h['tsmearmass_kaon'].SetXTitle('Mass [GeV/c2]')
-    h['tsmearmass_kaon'].SetYTitle('Frequency')
-    h['tsmearmass_kaon'].SetLineColor(2)
+    h['tsmearmass_kaon_samebins'].SetXTitle('Mass / [GeV/c2]')
+    h['tsmearmass_kaon_samebins'].SetYTitle('Frequency')
+    h['tsmearmass_kaon_samebins'].SetLineColor(2)
+    h['tsmearmass_muon_samebins'].SetXTitle('Mass / [GeV/c2]')
+    h['tsmearmass_muon_samebins'].SetYTitle('Frequency')
     print('\nLandau fits for mass (time of flight):\n')
-    h['tsmearmass_kaon'].Fit('landau')
-    h['tsmearmass_kaon'].GetFunction('landau').SetLineColor(1)
-    h['tsmearmass_muon'].Fit('landau')
-    h['tsmearmass_muon'].GetFunction('landau').SetLineColor(1)
-    h['tsmearmass_muon'].Draw()
-    h['tsmearmass_kaon'].Draw('same')
+    h['tsmearmass_kaon_samebins'].Fit('landau')
+    h['tsmearmass_kaon_samebins'].GetFunction('landau').SetLineColor(1)
+    h['tsmearmass_muon_samebins'].Fit('landau')
+    h['tsmearmass_muon_samebins'].GetFunction('landau').SetLineColor(1)
+    h['tsmearmass_kaon_samebins'].Draw()
+    h['tsmearmass_muon_samebins'].Draw('same')
     h['daughter_masses'].Draw('same')
-    #par0 = h['tsmearmass_muon'].GetFunction("landau").GetParameter(0)
-    #par1 = h['tsmearmass_muon'].GetFunction("landau").GetParameter(1)
-    #par2 = h['tsmearmass_muon'].GetFunction("landau").GetParameter(2)
+    #par0 = h['Muon_SmearedMass'].GetFunction("landau").GetParameter(0)
+    #par1 = h['Muon_SmearedMass'].GetFunction("landau").GetParameter(1)
+    #par2 = h['Muon_SmearedMass'].GetFunction("landau").GetParameter(2)
     #ths6 = ROOT.THStack('smeartmass','Smeared Time Deduced Kaon (red) & Muon (blue) Mass')
-    #ths6.Add(h['tsmearmass_kaon'])
-    #ths6.Add(h['tsmearmass_muon'])
+    #ths6.Add(h['Kaon_SmearedMass'])
+    #ths6.Add(h['Muon_SmearedMass'])
     #h['ths6'] = ths6
     #h['ths6'].Draw('nostack')
     h['Test_Time'].Print('Time_Mass.png')
     #======================================================================================================================
-    ut.bookCanvas(h,key='prob',title='Results 4',nx=1500,ny=800,cx=3,cy=2)
+    ut.bookCanvas(h,key='prob',title='Results 4',nx=1000,ny=1000,cx=2,cy=2)
     cv = h['prob'].cd(1)
-    h['graph_mu'].SetTitle('Probability of particle being a muon')
-    h['graph_mu'].GetXaxis().SetTitle('Mass / [GeV/c2]')
-    h['graph_mu'].GetYaxis().SetTitle('Probability')
-    h['graph_mu'].SetMarkerStyle(33)
-    h['graph_mu'].SetMarkerColor(4)
-    h['graph_mu'].SetMarkerSize(1)
-    h['graph_mu'].Draw('AP')
+    h['Muon_ProbMeasr'].SetXTitle('Mass / [GeV/c2]')
+    h['Muon_ProbMeasr'].SetYTitle('Probability')
+    h['Muon_ProbMeasr'].SetLineColor(4)
+    h['Muon_ProbMeasr'].SetMarkerColor(4)
+    h['Muon_ProbMeasr'].SetMarkerStyle(33)
+    h['Muon_ProbMeasr'].SetMarkerSize(1)
+    print('\nPolynomial fits for probability graphs:')
+    h['Muon_ProbMeasr'].Fit('pol4')
+    h['Muon_ProbMeasr'].GetFunction('pol4').SetLineColor(4)
+    h['Muon_ProbMeasr'].Draw('E')
     #----------------------------------------------------------------------------------------------------------------------
-    cv = h['prob'].cd(2)
-    h['graph_ka'].SetTitle('Probability of particle being a kaon')
-    h['graph_ka'].GetXaxis().SetTitle('Mass / [GeV/c2]')
-    h['graph_ka'].GetYaxis().SetTitle('Probability')
-    h['graph_ka'].SetMarkerStyle(33)
-    h['graph_ka'].SetMarkerColor(2)
-    h['graph_ka'].SetMarkerSize(1)
-    h['graph_ka'].Draw('AP')
+    cv = h['prob'].cd(2) 
+    h['Kaon_ProbMeasr'].SetXTitle('Mass / [GeV/c2]')
+    h['Kaon_ProbMeasr'].SetYTitle('Probability')
+    h['Kaon_ProbMeasr'].SetLineColor(2)
+    h['Kaon_ProbMeasr'].SetMarkerColor(2)
+    h['Kaon_ProbMeasr'].SetMarkerStyle(33)
+    h['Kaon_ProbMeasr'].SetMarkerSize(1)
+    h['Kaon_ProbMeasr'].Fit('pol4')
+    h['Kaon_ProbMeasr'].GetFunction('pol4').SetLineColor(2)
+    h['Kaon_ProbMeasr'].Draw('E')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['prob'].cd(3)
-    h['combo'].Draw('AP')
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['prob'].cd(4)
-    h['path_diff'].SetXTitle('Path difference / [cm]')
-    h['path_diff'].SetYTitle('No. of particles')
-    h['path_diff'].SetLineColor(1)
-    h['path_diff'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['prob'].cd(5)
-    h['num_muon'].SetXTitle('No. of hits in straw tubes')
-    h['num_muon'].SetYTitle('Frequency')
-    h['num_muon'].Draw()
-    h['num_kaon'].SetXTitle('No. of kaon hits in straw tubes')
-    h['num_kaon'].SetYTitle('Frequency')
-    h['num_kaon'].SetLineColor(2)
-    h['num_kaon'].Draw('same')
+    h['Kaon_ProbMeasr'].Draw('E')
+    h['Muon_ProbMeasr'].Draw('E same')
     h['prob'].Print('Probs.png')
     #======================================================================================================================
     ut.bookCanvas(h,key='Checks',title='Results 5',nx=1500,ny=800,cx=3,cy=2)
@@ -724,6 +763,14 @@ def makePlots_KaMu():
     h['better_path'].SetLineColor(1)
     h['track_kaon'].SetLineColor(2)
 
+def print_menu(): 
+    print('\n' + 30 * '-' + 'MENU' + 30 * '-')
+    print('1. RPV SUSY Benchmark 1 --> K+- mu+- final state')
+    print('2. RPV SUSY Benchmark 1 --> K*+- mu+- final state')
+    print('3. Test function')
+    print('0. Exit')
+    print(64 * '-' + '\n')
+
 #----------------------------------------------------EVENT-LOOPS--------------------------------------------------------
 
 nEvents = min(sTree.GetEntries(),nEvents)   # number of generated events
@@ -738,12 +785,14 @@ def finStateMuKa():
         ka_decaycheck = 0   # variable for counting when kaons from neutralinos decay to muons before detection
         for n in range(nEvents):   # loops over events
             rc = sTree.GetEntry(n)   # loads tree entry
+            event = True
 
             #-----------------------------------------------TRACK-LOOPS------------------------------------------------
 
             for index,reco_part in enumerate(sTree.FitTracks):   # loops over index and data of track particles                                   
                 muPartkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
-                true_muon = sTree.MCTrack[muPartkey]   # gives MC particle data
+                true_muon = sTree.MCTrack[muPartkey]   # gives MC particle data                      
+
                 if abs(true_muon.GetPdgCode()) == 13:   # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()   # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]   # obtains mother particle data
@@ -751,18 +800,15 @@ def finStateMuKa():
                     if true_mother.GetPdgCode() == 321:
                         motherN = sTree.MCTrack[true_mother.GetMotherId()]
                         if motherN.GetPdgCode() == 9900015:
-                            ka_decaycheck += 1   # kaon has decayed to a muon before detection
+                            ka_decaycheck += 1   # kaon has decayed to a muon in flight
                             check,ka_veto = track_checks(index,muPartkey,true_muon,reco_part,ka_veto,0)
                             if check == -1: ka_veto[0] += 1 
                                 
                     if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV  
-                        event = True
                         for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
-                            Partkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
-                            true_part = sTree.MCTrack[Partkey]   # gives MC particle data
-                            if abs(true_part.GetPdgCode()) == 321:   # checks particle is kaon
-                                true_kaon = true_part   # renames the particle object
-                                kaPartkey = Partkey   # renames the particle key
+                            kaPartkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
+                            true_kaon = sTree.MCTrack[kaPartkey]   # gives MC particle data
+                            if abs(true_kaon.GetPdgCode()) == 321:   # checks particle is kaon
                                 kaonMotherkey = true_kaon.GetMotherId()   # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[kaonMotherkey]   # obtains mother particle data
 
@@ -783,15 +829,11 @@ def finStateMuKa():
                                         check,veto = track_checks(index2,kaPartkey,true_kaon,reco_part2,veto,1)
                                         if check == -1: event = False
                                     
-                                    #---------------------------------------------PARTICLE-DATA-----------------------------------------------------
+                                    #-------------------------------------------------PARTICLE-DATA------------------------------------------------------
 
-                                    RPV_4Mom = ROOT.TLorentzVector()   # declares variables as TLorentzVector class
-                                    RPV_Pos = ROOT.TLorentzVector()
-                                    Muon_4Mom = ROOT.TLorentzVector()
-                                    Kaon_4Mom = ROOT.TLorentzVector()
                                     RPV_4Mom,Muon_4Mom,Kaon_4Mom,X,Y,Z,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
                                     if RPV_4Mom == -1: 
-                                        print('RedoVertexing extrapolation failed')
+                                        print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
                                         break
 
                                     h['recovertex'].Fill(Z)
@@ -807,6 +849,7 @@ def finStateMuKa():
                                         event = False
                                         
                                     T = true_mother.GetStartT()
+                                    RPV_Pos = ROOT.TLorentzVector()
                                     RPV_Pos.SetXYZT(X,Y,Z,T)
                                     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
                                     ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)
@@ -830,17 +873,17 @@ def finStateMuKa():
                                     kaM = true_kaon.GetMass()   # kaon mass
                                     muM = true_muon.GetMass()   # muon mass
                                                       
-                                    h['RPV_true'].Fill(kaonMotherTrue_mass)   # fills histograms
-                                    h['RPV_mom'].Fill(kaonMotherTrue_mom)
-                                    h['RPV_reco'].Fill(RPV_mass)                        
-                                    h['RPV_mom_reco'].Fill(RPV_reco_mom)                            
+                                    h['RPV_truemass'].Fill(kaonMotherTrue_mass)   # fills histograms
+                                    h['RPV_truemom'].Fill(kaonMotherTrue_mom)
+                                    h['RPV_recomass'].Fill(RPV_mass)                        
+                                    h['RPV_recomom'].Fill(RPV_reco_mom)                            
                                     h['RPV_mom_diff'].Fill(mom_diff)
                                     h['daughter_masses'].Fill(kaM)
                                     h['daughter_masses'].Fill(muM)
-                                    h['Kaon_mom'].Fill(reco_kaP)
-                                    h['Muon_mom'].Fill(reco_muP)
-                                    h['Kaon_mom_true'].Fill(true_kaP)
-                                    h['Muon_mom_true'].Fill(true_muP)
+                                    h['Kaon_recomom'].Fill(reco_kaP)
+                                    h['Muon_recomom'].Fill(reco_muP)
+                                    h['Kaon_truemom'].Fill(true_kaP)
+                                    h['Muon_truemom'].Fill(true_muP)
                                     
                                     successful_events.append(n)   # adds entries to the list
                                     m = successful_events[0]   # arbitrarily picks the first one as an example
@@ -874,9 +917,13 @@ def finStateMuKa():
                                             else: smearM_ka = -1
 
                                             if not smearM_mu == -1:
-                                                h['tsmearmass_muon'].Fill(smearM_mu)
+                                                h['Muon_SmearedMass'].Fill(smearM_mu)
+                                                h['Total_SmearedMass'].Fill(smearM_mu)
+                                                h['tsmearmass_muon_samebins'].Fill(smearM_mu)
                                             if not smearM_ka == -1:
-                                                h['tsmearmass_kaon'].Fill(smearM_ka)
+                                                h['Kaon_SmearedMass'].Fill(smearM_ka)
+                                                h['Total_SmearedMass'].Fill(smearM_ka)
+                                                h['tsmearmass_kaon_samebins'].Fill(smearM_ka)
 
                                             h['MuonDir'].Fill(mu_tsmear)   # fills histogram with smeared time
                                             h['MuonDir_nosmear'].Fill(mu_t)   # fills histogram with true time
@@ -904,58 +951,14 @@ def finStateMuKa():
 
         #-------------------------------------PROBABILITIES-----------------------------------
         
-        N = (h['tsmearmass_muon'].GetSize()) - 2   # -2 for the underflow and overflow
-        xRange = h['tsmearmass_muon'].GetXaxis().GetXmax()   # maximum value of the x-axis
-        binsize = xRange/float(N)   # width of histogram bins
-        mass = []   # list for particle masses
-        prob_mu = N*[0.0]   # list for muon identification probability
-        prob_ka = N*[0.0]   # list for kaon identification probability
-
-        for bins in range(0,N):
-            mass.append((xRange*float(bins)/float(N)) + binsize)   # list has N entries, last one: mass[N-1]
-
-        emptybins = 0   # counts the number of bins where both histograms have zero elements
-        for entry,x in enumerate(mass):
-            j = h['tsmearmass_muon'].GetXaxis().FindBin(x)   # jth bin
-            k = h['tsmearmass_kaon'].GetXaxis().FindBin(x)   # kth bin
-            num_mu = h['tsmearmass_muon'].GetBinContent(j)   # gets number of entries in jth bin
-            num_ka = h['tsmearmass_kaon'].GetBinContent(k)   # gets number of entries in kth bin
-            if num_mu == 0 and num_ka == 0:
-                emptybins += 1
-                del mass[entry]
-                del prob_mu[entry]
-                del prob_ka[entry]
-            else:
-                prob_mu[entry] = (num_mu)/(num_mu + num_ka)   # probability of being a muon
-                prob_ka[entry] = (num_ka)/(num_mu + num_ka)   # probability of being a kaon
-   
-        x = array('f',N*[0.0])
-        y_mu = array('f',N*[0.0])
-        y_ka = array('f',N*[0.0])
-        for i in range(0,N-emptybins):   # converts the lists to arrays for TGraph
-            x[i] = mass[i]
-            y_mu[i] = prob_mu[i]
-            y_ka[i] = prob_ka[i]
-
-        Graph_mu = ROOT.TGraph(N,x,y_mu)
-        Graph_ka = ROOT.TGraph(N,x,y_ka)
+        h['Muon_ProbMeasr'] = createRatio(h['Muon_SmearedMass'],h['Total_SmearedMass'],'Muon_ProbMeasr')
+        h['Kaon_ProbMeasr'] = createRatio(h['Kaon_SmearedMass'],h['Total_SmearedMass'],'Kaon_ProbMeasr')
         
-        #fit_mu = ROOT.TF1('fit_mu','pol10',0,1.8)
-        #fit_mu.SetLineColor(4)
-        #fit_ka = ROOT.TF1('fit_ka','pol10',0,1.8)
-        #fit_ka.SetLineColor(2)
-        #Graph_mu.Fit('fit_mu')
-        #Graph_ka.Fit('fit_ka')
+        del h['Muon_SmearedMass']   # deletes histograms which are no longer needed
+        del h['Kaon_SmearedMass']
+        del h['Total_SmearedMass']
 
-        combo = ROOT.TMultiGraph()
-        combo.Add(Graph_ka)
-        combo.Add(Graph_mu)
-        combo.SetTitle('Probability of identifying muon (blue) and kaon (red); Mass / [GeV/c2]; Probability')
-        h['graph_mu'] = Graph_mu
-        h['graph_ka'] = Graph_ka
-        h['combo'] = combo
-
-        makePlots_KaMu()   # choice = 0
+        makePlots_KaMu()
         
 def finStateMuKa_exc():
     if sTree.GetBranch("FitTracks"):
@@ -965,6 +968,7 @@ def finStateMuKa_exc():
         decay2count_kaon0 = 0   # decay 2: N --> K*+ mu- --> K0 pi+ mu-
         decay2count_pion = 0
         veto = 9*[0]
+        photon_count = 0
         for n in range(nEvents):   # loops over events
             rc = sTree.GetEntry(n)   # loads tree entry
             daughter_record1 = []
@@ -976,8 +980,8 @@ def finStateMuKa_exc():
                 if abs(true_muon.GetPdgCode()) == 13:   # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()   # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]   # obtains mother particle data
-                    check,veto = track_checks(index,muPartkey,true_muon,reco_part,veto,0)   # performs various checks (i.e. vertex position, fiducial volume,...)
-                    if not check == 0: continue
+                    #check,veto = track_checks(index,muPartkey,true_muon,reco_part,veto,0)   # performs various checks (i.e. vertex position, fiducial volume,...)
+                    #if not check == 0: continue
                     
                     if true_mother.GetPdgCode() == 9900015:
 
@@ -992,10 +996,10 @@ def finStateMuKa_exc():
                                 true_kaonEx = sTree.MCTrack[kaonMotherkey]   # obtains mother excited kaon data
                                 if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is excited charged kaon
                                     kaonExMotherkey = true_kaonEx.GetMotherId()           
-                                    true_mother_N = sTree.MCTrack[kaonExMotherkey]
-                                    if kaonExMotherkey == muonMotherkey:   # checks if mother keys are the same
-                                        check,veto = track_checks(index2,Partkey,true_daughter,reco_part2,veto,0)
-                                        if not check == 0: continue  # performs various checks (i.e. vertex position, fiducial volume,...)
+                                    true_motherN = sTree.MCTrack[kaonExMotherkey]
+                                    if kaonExMotherkey == muonMotherkey and true_motherN.GetPdgCode() == 9900015:   # checks if mother keys are the same
+                                        #check,veto = track_checks(index2,Partkey,true_daughter,reco_part2,veto,0)
+                                        #if not check == 0: continue  # performs various checks (i.e. vertex position, fiducial volume,...)
                                         decay1count_kaon += 1
                             #--------------------------------------------------------------------------------------------------------------
                             if true_daughter.GetPdgCode() == 11:   # checks particle is electron
@@ -1008,10 +1012,17 @@ def finStateMuKa_exc():
                                         if abs(true_kaonEx.GetPdgCode()) == 323:   # excited charged kaon
                                             true_motherN = sTree.MCTrack[true_kaonEx.GetMotherId()]
                                             if kaonExMotherkey == muonMotherkey and true_motherN.GetPdgCode() == 9900015:   # checks if mother keys are the same
-                                                check,veto = track_checks(index2,Partkey,true_daughter,reco_part2,veto,0)
-                                                if not check == 0: continue   # performs various checks (i.e. vertex position, fiducial volume,...)
+                                                #print(true_daughter.GetMotherId())
+                                                #check,veto = track_checks(index2,Partkey,true_daughter,reco_part2,veto,0)
+                                                #if not check == 0: continue   # performs various checks (i.e. vertex position, fiducial volume,...)
                                                 decay1count_pion0 += 1
                                                 daughter_record1.append(true_daughter.GetPdgCode())
+
+                            for hit in sTree.EcalPoint:
+                                if hit.GetPdgCode() == 22:   # photon
+                                    photon_TrackID = hit.GetTrackID()
+                                    if photon_TrackID == 8:
+                                        photon_count += 1
 
                             #===============================================DECAY=2========================================================
 
@@ -1024,10 +1035,10 @@ def finStateMuKa_exc():
                                     if true_kaon2.GetPdgCode() == 310 or abs(true_kaon2.GetPdgCode()) == 130:
                                         true_kaonEx = sTree.MCTrack[true_kaon2.GetMotherId()]
                                         if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is charged excited kaon   
-                                            true_mother_N = sTree.MCTrack[true_kaonEx.GetMotherId()]
-                                            if kaonExMotherkey == muonMotherkey:   # checks if mother keys are the same
-                                                check,veto = track_checks(index2,Partkey,true_daughter,reco_part2,veto,0)
-                                                if not check == 0: continue  # performs various checks (i.e. vertex position, fiducial volume,...)
+                                            true_motherN = sTree.MCTrack[true_kaonEx.GetMotherId()]
+                                            if kaonExMotherkey == muonMotherkey and true_motherN.GetPdgCode() == 9900015:   # checks if mother keys are the same
+                                                #check,veto = track_checks(index2,Partkey,true_daughter,reco_part2,veto,0)
+                                                #if not check == 0: continue  # performs various checks (i.e. vertex position, fiducial volume,...)
                                                 decay2count_kaon0 += 1
                                                 daughter_record2.append(true_daughter.GetPdgCode())
 
@@ -1040,20 +1051,21 @@ def finStateMuKa_exc():
                                     kaonExMotherkey = true_kaonEx.GetMotherId()  
                                     true_motherN = sTree.MCTrack[kaonExMotherkey]
                                     if kaonExMotherkey == muonMotherkey and true_motherN.GetPdgCode() == 9900015:   # checks if mother keys are the same
-                                        check,veto = track_checks(index2,Partkey,true_daughter,reco_part2,veto,0)
-                                        if not check == 0: continue   # performs various checks (i.e. vertex position, fiducial volume,...)
+                                        #check,veto = track_checks(index2,Partkey,true_daughter,reco_part2,veto,0)
+                                        #if not check == 0: continue   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         decay2count_pion += 1
                             
                             #==============================================================================================================
-
+        print(photon_count)
         print('\t' + str(decay1count_kaon) + ' charged kaons detected')
         print('\t' + str(decay1count_pion0) + ' neutral pions detected\n')
 
         print('\t' + str(decay2count_pion) + ' charged pions detected')
-        print('\t' + str(decay2count_kaon0) + ' neutral kaons detected\n')   # choice = 1
+        print('\t' + str(decay2count_kaon0) + ' neutral kaons detected\n')       
 
 def finStateTest():
     if sTree.GetBranch("FitTracks"):
+        print('\nRunning analysis for final state K*+- Mu-+ :\n')
         ut.bookHist(h,'RPV_reco_mass','Reconstructed Neutralino Mass',300,0.5,1.5)
         ut.bookHist(h,'Kaon_reco','Reconstructed Neutral Kaon Mass',200,0.4,0.6)
         ut.bookHist(h,'Kaon_mom_reco','Reconstructed Neutral Kaon Momentum',50,0,100)
@@ -1062,160 +1074,180 @@ def finStateTest():
         veto = 9*[0]
         for n in range(nEvents):   # loops over events
             rc = sTree.GetEntry(n)   # loads tree entry
+            search = 0
+            event = True
 
             #-----------------------------------------------TRACK-LOOPS------------------------------------------------
 
             for index,reco_part in enumerate(sTree.FitTracks):   # loops over index and data of track particles                                   
-                piPartkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
-                true_pion = sTree.MCTrack[piPartkey]   # gives MC particle data
-                if true_pion.GetPdgCode() == 211:   # checks particle is pion
-                    pionMotherkey = true_pion.GetMotherId()   # stores a number index of MC track of mother
-                    true_kaon = sTree.MCTrack[pionMotherkey]
-                    if abs(true_kaon.GetPdgCode()) == 310 or abs(true_kaon.GetPdgCode()) == 130:   # checks mother is NEUTRAL KAON
-                        true_kaon2 = sTree.MCTrack[true_kaon.GetMotherId()]
-                        if true_kaon2.GetPdgCode() == 310 or abs(true_kaon2.GetPdgCode()) == 130:
-                            true_kaonEx = sTree.MCTrack[true_kaon2.GetMotherId()]
-                            if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is charged excited kaon   
-                                true_motherN = sTree.MCTrack[true_kaonEx.GetMotherId()]
-                                if true_motherN.GetPdgCode() == 9900015:
-                                    event = True
-                                
-                                    for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track 
-                                        piPartkey2 = sTree.fitTrack2MC[index2]   # matches track to MC particle key
-                                        true_pion2 = sTree.MCTrack[piPartkey2]   # gives MC particle data
-                                        
-                                        if true_pion2.GetPdgCode() == -211:   # checks particle is oppositely charged pion
-                                            pionMotherkey2 = true_pion2.GetMotherId()   # stores a number index of MC track of mother
+                Partkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
+                true_part = sTree.MCTrack[Partkey]   # gives MC particle data
 
-                                            if pionMotherkey == pionMotherkey2:
+                if abs(true_part.GetPdgCode()) == 13:   # checks particle is muon
+                    true_muon = true_part
+                    reco_muon = reco_part
+                    muPartkey = Partkey
 
-                                                fit_status1 = reco_part.getFitStatus() 
-                                                fit_status2 = reco_part2.getFitStatus()
-                                                if fit_status1.isFitConverged() and fit_status2.isFitConverged():
-                                                    veto[0] += 1
-                                                else:
-                                                    #print('At least one of the track fits did not converge')
-                                                    break
+                    muonMotherkey = true_muon.GetMotherId()   # stores a number index of MC track of mother
+                    true_motherN = sTree.MCTrack[muonMotherkey]   # obtains mother particle data
+                    if true_motherN.GetPdgCode() == 9900015:
+
+                        fitstatus_muon = reco_muon.getFitStatus()
+                        if fitstatus_muon.isFitConverged():
+                            veto[0] += 1
+                        else:
+                            #print('At least one of the track fits did not converge')
+                            continue
+
+                        check,veto = track_checks(index,muPartkey,true_muon,reco_muon,veto,0)   # performs various checks (i.e. vertex position, fiducial volume,...)
+                        if not check == 0: event = False
+
+                        Muon_4Mom = SingleTrack_4Mom(index)
+                        search += 1
+
+                if abs(true_part.GetPdgCode()) == 211:
+                    true_pion = true_part
+                    reco_pion = reco_part
+                    piPartkey = Partkey
+
+                    pionMotherkey = true_pion.GetMotherId()
+                    true_kaonEx = sTree.MCTrack[pionMotherkey]
+                    if true_kaonEx.GetPdgCode() == 323:
+                        true_motherN = sTree.MCTrack[true_kaonEx.GetMotherId()]
+                        if true_motherN.GetPdgCode() == 9900015:
+
+                            fitstatus_pion = reco_pion.getFitStatus()
+                            if fitstatus_pion.isFitConverged():
+                                veto[0] += 1
+                            else:
+                                #print('At least one of the track fits did not converge')
+                                continue
+
+                            check,veto = track_checks(index,piPartkey,true_pion,reco_pion,veto,0)
+                            if check == -1: event = False
+
+                            Pion_4Mom = SingleTrack_4Mom(index)
+                            search += 1
+
+            if search == 2:
+
+                for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles                                   
+                    Partkey2 = sTree.fitTrack2MC[index2]   # matches track to MC particle key
+                    true_part2 = sTree.MCTrack[Partkey2]   # gives MC particle data
+                            
+                    if true_part2.GetPdgCode() == 211:   # checks particle is pion
+                        true_piplus = true_part2
+                        reco_piplus = reco_part2
+                        piplusPartkey = Partkey2
+                        piplusMotherkey = true_piplus.GetMotherId()   # stores a number index of MC track of mother
+                        true_kaon = sTree.MCTrack[piplusMotherkey]
+                        if abs(true_kaon.GetPdgCode()) == 310 or abs(true_kaon.GetPdgCode()) == 130:   # checks mother is NEUTRAL KAON
+                            true_kaon2 = sTree.MCTrack[true_kaon.GetMotherId()]
+                            if true_kaon2.GetPdgCode() == 310 or abs(true_kaon2.GetPdgCode()) == 130:                                     
+                                true_kaonEx = sTree.MCTrack[true_kaon2.GetMotherId()]
+                                if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is charged excited kaon   
+                                    true_motherN = sTree.MCTrack[true_kaonEx.GetMotherId()]
+                                    if true_motherN.GetPdgCode() == 9900015:
+
+                                        for index3,reco_part3 in enumerate(sTree.FitTracks):   # loops over index and data of track 
+                                            Partkey3 = sTree.fitTrack2MC[index3]   # matches track to MC particle key
+                                            true_part3 = sTree.MCTrack[Partkey3]   # gives MC particle data
+                                                    
+                                            if true_part3.GetPdgCode() == -211:   # checks particle is oppositely charged pion
+                                                true_piminus = true_part3
+                                                reco_piminus = reco_part3
+                                                piminusPartkey = Partkey3
+                                                piminusMotherkey = true_piminus.GetMotherId()   # stores a number index of MC track of mother
+                                                        
+                                                if piplusMotherkey == piminusMotherkey:
+
+                                                    fitstatus_piplus = reco_piplus.getFitStatus() 
+                                                    fitstatus_piminus = reco_piminus.getFitStatus()
+                                                    if fitstatus_piplus.isFitConverged() and fitstatus_piminus.isFitConverged():
+                                                        veto[0] += 1
+                                                    else:
+                                                        #print('At least one of the track fits did not converge')
+                                                        break
                                     
-                                                check,veto = track_checks(index,piPartkey,true_pion,reco_part,veto,0)   # performs various track checks
-                                                if check == -1: event = False
-                                                if event == True:   # if the first track was fine, check the other one (ensures event veto counting is correct)
-                                                    check,veto = track_checks(index2,piPartkey2,true_pion2,reco_part2,veto,0)
+                                                    check,veto = track_checks(index2,piplusPartkey,true_piplus,reco_piplus,veto,0)   # performs various track checks
                                                     if check == -1: event = False
+                                                    if event == True:   # if the first track was fine, check the other one (ensures event veto counting is correct)
+                                                        check,veto = track_checks(index3,piminusPartkey,true_piminus,reco_piminus,veto,0)
+                                                        if check == -1: event = False
 
-                                                #---------------------------------------------PARTICLE-DATA-----------------------------------------------------
+                                                    #---------------------------------------------PARTICLE-DATA-----------------------------------------------------
 
-                                                Kaon_4Mom = ROOT.TLorentzVector()   # declares variables as TLorentzVector class
-                                                Pionplus_4Mom = ROOT.TLorentzVector()
-                                                Pionminus_4Mom = ROOT.TLorentzVector()
-                                                Kaon_4Mom,Pionplus_4Mom,Pionminus_4Mom,X,Y,Z,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
-                                                if Kaon_4Mom == -1: 
-                                                    print('RedoVertexing extrapolation failed')
-                                                    break
+                                                    Kaon_4Mom,Pionplus_4Mom,Pionminus_4Mom,X,Y,Z,doca = RedoVertexing(index2,index3)   # uses RedoVertexing to iterate track fitting
+                                                    if Kaon_4Mom == -1: 
+                                                        print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
+                                                        break
                                     
-                                                if not doca < docaCut: 
-                                                    #print('distance of closest approach too large')
-                                                    veto[7] +=1
-                                                    event = False
+                                                    if not doca < docaCut: 
+                                                        #print('distance of closest approach too large')
+                                                        veto[7] +=1
+                                                        event = False
 
-                                                if event == False: break
+                                                    if event == False: break
 
-                                                Kaon_mass = Kaon_4Mom.M()   # reconstructed RPV mass
-                                                Kaon_reco_mom = Kaon_4Mom.P()   # reconstructed RPV momentum
-                                                reco_piplusP = Pionplus_4Mom.P()   # reconstructed kaon momentum
-                                                reco_piminusP = Pionminus_4Mom.P()   # reconstructed muon momentum
+                                                    Kaon_mass = Kaon_4Mom.M()   # reconstructed RPV mass
+                                                    Kaon_reco_mom = Kaon_4Mom.P()   # reconstructed RPV momentum
+                                                    reco_piplusP = Pionplus_4Mom.P()   # reconstructed kaon momentum
+                                                    reco_piminusP = Pionminus_4Mom.P()   # reconstructed muon momentum
 
-                                                h['Kaon_reco'].Fill(Kaon_mass)           
-                                                h['Kaon_mom_reco'].Fill(Kaon_reco_mom)                           
-                                                h['Piplus_mom'].Fill(reco_piplusP)
-                                                h['Piminus_mom'].Fill(reco_piminusP)
+                                                    h['Kaon_reco'].Fill(Kaon_mass)           
+                                                    h['Kaon_mom_reco'].Fill(Kaon_reco_mom)                           
+                                                    h['Piplus_mom'].Fill(reco_piplusP)
+                                                    h['Piminus_mom'].Fill(reco_piminusP)
 
-                                                event = True
-                                                for index3,reco_part3 in enumerate(sTree.FitTracks):   # loops over index and data of track particles  
-                                                    Partkey3 = sTree.fitTrack2MC[index3]   # matches track to MC particle key
-                                                    true_part3 = sTree.MCTrack[Partkey3]   # gives MC particle data
+                                                    KaonEx_4Mom = Kaon_4Mom + Pion_4Mom
+                                                    RPV_4Mom = KaonEx_4Mom + Muon_4Mom
+                                                    RPV_mass = RPV_4Mom.M()
 
-                                                    if abs(true_part3.GetPdgCode()) == 211:   # checks particle is a pion
-                                                        true_pion3 = true_part3
-                                                        pionMotherkey3 = true_pion3.GetMotherId()   # stores a number index of MC track of mother
+                                                    h['RPV_reco_mass'].Fill(RPV_mass)
 
-                                                        if pionMotherkey3 == true_kaon2.GetMotherId():
+loop = True
+while loop:
+    print_menu()
+    choice = input('Enter your choice [0-3]: ')
+     
+    if choice == 1:
+        finStateMuKa()
+        #-----------------------------------------OUTPUT------------------------------------------
+        hfile = inputFile.split(',')[0].replace('_rec','_RPV')  # Outputs histograms and ROOT file
+        if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
+        # do not write to eos, write to local directory 
+          tmp = hfile.split('/')
+          hfile = tmp[len(tmp)-1] 
+        ROOT.gROOT.cd()
+        ut.writeHists(h,hfile)
+        loop = False
 
-                                                            check,veto = track_checks(index3,Partkey3,true_part3,reco_part3,veto,0)
-                                                            if check == -1: continue
+    elif choice == 2:
+        finStateMuKa_exc()
+        #-------------------------------------------OUTPUT--------------------------------------------
+        hfile = inputFile.split(',')[0].replace('_rec','_RPV_Exc')  # Outputs histograms and ROOT file
+        if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
+        # do not write to eos, write to local directory 
+          tmp = hfile.split('/')
+          hfile = tmp[len(tmp)-1] 
+        ROOT.gROOT.cd()
+        ut.writeHists(h,hfile)
+        loop = False
 
-                                                            fittedstate = reco_part3.getFittedState()   # get reconstructed pion fitted state
-                                                            piM = true_pion3.GetMass()   # mass of MC pion
-                                                            piP = fittedstate.getMomMag()   # momentum in x
-                                                            piPx = fittedstate.getMom().x()   # momentum in y
-                                                            piPy = fittedstate.getMom().y()   # momentum in z
-                                                            piPz = fittedstate.getMom().z()   # momentum magnitude
-                                                            piE = ROOT.TMath.Sqrt((piM**2) + (piP**2))   # energy
-                                                            
-                                                            Pion_4Mom = ROOT.TLorentzVector()   # declares variable as TLorentzVector class
-                                                            Pion_4Mom.SetPxPyPzE(piPx,piPy,piPz,piE)   # inputs 4-vector elements
+    elif choice == 3:
+        finStateTest()
+        #-----------------------------------------OUTPUT-------------------------------------------
+        hfile = inputFile.split(',')[0].replace('_rec','_Test')  # Outputs histograms and ROOT file
+        if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
+        # do not write to eos, write to local directory 
+          tmp = hfile.split('/')
+          hfile = tmp[len(tmp)-1] 
+        ROOT.gROOT.cd()
+        ut.writeHists(h,hfile)
+        loop = False
 
-                                                    if abs(true_part3.GetPdgCode()) == 13:   # checks particle is a muon
-                                                        true_muon = true_part3
-                                                        muonMotherkey3 = true_muon.GetMotherId()
+    elif choice == 0:
+        print('\nExit selected\nSo long, and thanks for all the fish\n')
+        loop=False
 
-                                                        if muonMotherkey3 == true_kaonEx.GetMotherId():
-                                                            fittedstate = reco_part3.getFittedState()   # get reconstructed pion fitted state
-                                                            muM = true_muon.GetMass()   # mass of MC pion
-                                                            muP = fittedstate.getMomMag()   # momentum in x
-                                                            muPx = fittedstate.getMom().x()   # momentum in y
-                                                            muPy = fittedstate.getMom().y()   # momentum in z
-                                                            muPz = fittedstate.getMom().z()   # momentum magnitude
-                                                            muE = ROOT.TMath.Sqrt((muM**2) + (muP**2))   # energy
-
-                                                            Muon_4Mom = ROOT.TLorentzVector()   # declares variable as TLorentzVector class
-                                                            Muon_4Mom.SetPxPyPzE(muPx,muPy,muPz,muE)   # inputs 4-vector elements
-
-                                                KaonEx_4Mom = Kaon_4Mom + Pion_4Mom
-                                                RPV_4Mom = KaonEx_4Mom + Muon_4Mom
-                                                RPV_mass = RPV_4Mom.M()
-
-                                                h['RPV_reco_mass'].Fill(RPV_mass)
-
-        print('\n' + str(veto[0]) + ' pion pairs reconstructed')   # choice = 2
-
-choice = 0
-
-if choice == 0:
-
-    finStateMuKa()
-
-    hfile = inputFile.split(',')[0].replace('_rec','_RPV')  # Outputs histograms and ROOT file
-    if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
-    # do not write to eos, write to local directory 
-      tmp = hfile.split('/')
-      hfile = tmp[len(tmp)-1] 
-    ROOT.gROOT.cd()
-    ut.writeHists(h,hfile)
-
-elif choice == 1:
-
-    finStateMuKa_exc()
-
-    hfile = inputFile.split(',')[0].replace('_rec','_RPV_Exc')  # Outputs histograms and ROOT file
-    if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
-    # do not write to eos, write to local directory 
-      tmp = hfile.split('/')
-      hfile = tmp[len(tmp)-1] 
-    ROOT.gROOT.cd()
-    ut.writeHists(h,hfile)
-
-elif choice == 2:
-
-    finStateTest()
-
-    hfile = inputFile.split(',')[0].replace('_rec','_Test')  # Outputs histograms and ROOT file
-    if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
-    # do not write to eos, write to local directory 
-      tmp = hfile.split('/')
-      hfile = tmp[len(tmp)-1] 
-    ROOT.gROOT.cd()
-    ut.writeHists(h,hfile)
-
-else: print('\nNo analysis option selected')
-    
+    else: print('\nNo analysis option selected')
