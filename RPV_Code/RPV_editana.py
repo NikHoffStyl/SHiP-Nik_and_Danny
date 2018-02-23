@@ -12,7 +12,7 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 from array import array
-from ROOT import TCanvas, TColor, TGaxis, TH1F, TH1D, TPad, TGraph, TF1, TMultiGraph,TGraphErrors
+from ROOT import TCanvas, TColor, TGaxis, TH1F, TH1D, TPad, TGraph, TF1, TMultiGraph,TGraphErrors, THStack
 from ROOT import kBlack, kBlue, kRed, kFALSE, kSolar
 from ROOT import gROOT, gPad, gStyle
 from array import array
@@ -211,6 +211,7 @@ import TrackExtrapolateTool
 ########################################
 ############  DEFINITIONS  #############
 h = {}
+stack={}
 def create_Hists(HiddPart,part1,part2, part3):
     dictionList={part1:4, part2:2}
     partList = [part1,part2]
@@ -238,7 +239,7 @@ def create_Hists(HiddPart,part1,part2, part3):
         h[partName + 'DirDeltaTime'].SetLineColor(val)
         ut.bookHist(h,partName + 'StrawHits',partName + ' No. of hits in straw tubes',300,25,50)           #number of straw hits
         h[partName + 'StrawHits'].SetLineColor(val)
-        ut.bookHist(h,partName + 'StrawHitsMom',partName + ' z-momentum through straw tubes (for particular event)',500,20,21)#momenta of straw hits
+        ut.bookHist(h,partName + 'StrawHitsMom',partName + ' z-momentum through straw tubes (for particular event)',500,0,45)#momenta of straw hits
         h[partName + 'StrawHitsMom'].SetLineColor(val)
         ut.bookHist(h,partName + 'FlightLen','Straw-ECAL Straight Flight Lenght',300,11.375,11.42)         # flight Length
         h[partName + 'FlightLen'].SetLineColor(val)
@@ -270,6 +271,7 @@ def create_Hists(HiddPart,part1,part2, part3):
         h[partName + 'ProbMeasr'].SetLineColor(val)
                               
     h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass',85,array('d',edgesarray))     # Total mass
+    stack['StrawTime'] = THStack("hs",'Gaussian Straw t measurement')
 
     #################################
     ####  Neutralino Histograms  ####
@@ -291,7 +293,7 @@ def create_Hists(HiddPart,part1,part2, part3):
     ut.bookHist(h,'doca','Distance of closest approach between muon and kaon tracks',300,0,3)
     ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',300,0,50)
     ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared',300,0,3)
-    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',300,-100,100)
+    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',100,-4000,4000)
 
     #ut.bookHist(h,HiddPart + '_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
     #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
