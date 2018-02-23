@@ -211,7 +211,7 @@ import TrackExtrapolateTool
 ########################################
 ############  DEFINITIONS  #############
 h = {}
-stack={}
+#stack={}
 def create_Hists(HiddPart,part1,part2, part3):
     dictionList={part1:4, part2:2}
     partList = [part1,part2]
@@ -271,7 +271,7 @@ def create_Hists(HiddPart,part1,part2, part3):
         h[partName + 'ProbMeasr'].SetLineColor(val)
                               
     h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass',85,array('d',edgesarray))     # Total mass
-    stack['StrawTime'] = THStack("hs",'Gaussian Straw t measurement')
+    h['StrawTime'] = THStack("hs",'Gaussian Straw t measurement')
 
     #################################
     ####  Neutralino Histograms  ####
@@ -944,12 +944,16 @@ def makePlots2(HiddPart,part1,part2,part3):
     gPad.BuildLegend()
 
     cv = h[key + '_TV'].cd(2)
-    h[part1 + 'EcalTime'].SetXTitle('Time [ns]')
-    h[part1 + 'EcalTime'].SetYTitle('No. of Particles')
-    h[part1 + 'EcalTime'].Draw()
-    h[part2 + 'EcalTime'].Draw('same')
-    if not part3==None:
-        h[part3 + 'EcalTime'].Draw('same')
+    #h[part1 + 'EcalTime'].SetXTitle('Time [ns]')
+    #h[part1 + 'EcalTime'].SetYTitle('No. of Particles')
+    #h[part1 + 'EcalTime'].Draw()
+    #h[part2 + 'EcalTime'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'EcalTime'].Draw('same')
+    h['StrawTime'].Add(h[part1 + 'StrawTime'])
+    h['StrawTime'].Add(h[part2 + 'StrawTime'])
+    h['StrawTime'].Draw('nostack')
+    gPad.BuildLegend()
 
     cv = h[key + '_TV'].cd(3)
     h[part1 + 'DirDeltaTime'].SetXTitle('Time of Flight [ns]')
@@ -1197,4 +1201,5 @@ if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
   tmp = hfile.split('/')
   hfile = tmp[len(tmp)-1]                                   #occurs only for cern users
 ROOT.gROOT.cd()
-ut.writeHists(h,hfile) 
+ut.writeHists(h,hfile)
+#ut.writeHists(stack,hfile)
