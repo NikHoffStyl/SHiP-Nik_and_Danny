@@ -229,49 +229,109 @@ def create_Hists(HiddPart,part1,part2, part3):
     ####  Daughter Histograms  ####
     for partName,val in dictionList.items():
         #print(partName)
-        ut.bookHist(h,partName + 'StrawTime',partName + 'Gaussian Straw t measurement',300,321.7,323.5)    #straw time
+        ut.bookHist(h,partName + 'StrawTime',partName + 'Gaussian Straw time',300,321.7,323.5)             # straw time
         h[partName + 'StrawTime'].SetLineColor(val)
-        ut.bookHist(h,partName + 'EcalTime','Gaussian Ecal t measurement',300,359.7,361.2)                 #ecal time
+        h[partName + 'StrawTime'].SetXTitle('Time [ns]')
+        h[partName + 'StrawTime'].SetYTitle('No. of Particles')
+        ut.bookHist(h,partName + 'EcalTime',partName + 'Gaussian Ecal time',300,359.7,361.2)               # ecal time
         h[partName + 'EcalTime'].SetLineColor(val)
-        ut.bookHist(h,partName + 'DirDeltaTimeSmeared','Straw-ECAL Smeared Time of Flight (directly)',300,37.8,38.4)# time of flight
+        h[partName + 'EcalTime'].SetXTitle('Time [ns]')
+        h[partName + 'EcalTime'].SetYTitle('No. of Particles')
+        ut.bookHist(h,partName + 'DirDeltaTimeSmeared','Straw-ECAL Smeared Time of Flight (directly)',300,37.8,38.4)# smeared time of flight
         h[partName + 'DirDeltaTimeSmeared'].SetLineColor(val)
+        h[partName + 'DirDeltaTimeSmeared'].SetXTitle('Time of Flight [ns]')
+        h[partName + 'DirDeltaTimeSmeared'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'DirDeltaTime','Straw-ECAL Time of Flight (directly)',300,37.8,38.4)      # time of flight
         h[partName + 'DirDeltaTime'].SetLineColor(val)
+        h[partName + 'DirDeltaTime'].SetXTitle('Time of Flight [ns]')
+        h[partName + 'DirDeltaTime'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'StrawHits',partName + ' No. of hits in straw tubes',300,25,50)           #number of straw hits
         h[partName + 'StrawHits'].SetLineColor(val)
+        h[partName + 'StrawHits'].SetXTitle('Position [cm]')
+        h[partName + 'StrawHits'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'StrawHitsMom',partName + ' z-momentum through straw tubes (for particular event)',500,0,45)#momenta of straw hits
         h[partName + 'StrawHitsMom'].SetLineColor(val)
+        h[partName + 'StrawHitsMom'].SetXTitle('Position [cm]')
+        h[partName + 'StrawHitsMom'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'FlightLen','Straw-ECAL Straight Flight Lenght',300,11.375,11.42)         # flight Length
         h[partName + 'FlightLen'].SetLineColor(val)
+        h[partName + 'FlightLen'].SetXTitle('Flight Length [cm]')
+        h[partName + 'FlightLen'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'FlightLenImproved','Straw-ECAL Curved Flight Lenght ',300,11.375,11.42)  # corrected flight Length        
         h[partName + 'FlightLenImproved'].SetLineColor(val)
-        ut.bookHist(h,partName + 'FlightLenDelta','Difference between straight path and better approximation',300,0,0.001)#delta flight Length        
+        h[partName + 'FlightLenImproved'].SetXTitle('Flight Length [cm]')
+        h[partName + 'FlightLenImproved'].SetYTitle('No. of Particles')
+        ut.bookHist(h,partName + 'FlightLenDelta','Difference between straight path and better approximation',300,0,0.001)# delta flight Length        
         h[partName + 'FlightLenDelta'].SetLineColor(val)
-        ut.bookHist(h,partName + 'SpeedSmeared','Beta value',300,0.997,1.001)                              # speed
+        h[partName + 'FlightLenDelta'].SetXTitle('Delta Flight Length [cm]')
+        h[partName + 'FlightLenDelta'].SetYTitle('No. of Particles')
+        ut.bookHist(h,partName + 'SpeedSmeared','Smeared Beta value',300,0.997,1.001)                      # smeared speed
         h[partName + 'SpeedSmeared'].SetLineColor(val)
+        h[partName + 'SpeedSmeared'].SetXTitle('Smeared Beta value')
+        h[partName + 'SpeedSmeared'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'Speed','Beta value',300,0.997,1.001)                                     # speed
         h[partName + 'Speed'].SetLineColor(val)
+        h[partName + 'Speed'].SetXTitle('Beta value')
+        h[partName + 'Speed'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'StrawMom','Straw Momentum',300,-0.05,120.)                               # straw momentum
         h[partName + 'StrawMom'].SetLineColor(val)
+        h[partName + 'StrawMom'].SetXTitle('Straw Momentum [GeV/c]')
+        h[partName + 'StrawMom'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'EcalMom','Ecal Momentum',300,-0.05,120.)                                 # ecal  momentum
         h[partName + 'EcalMom'].SetLineColor(val)
+        h[partName + 'EcalMom'].SetXTitle('Ecal Momentum [GeV/c]')
+        h[partName + 'EcalMom'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'DeltaMom','Straw-Ecal Momentum',300,0.02,0.13)                           # delta momentum
         h[partName + 'DeltaMom'].SetLineColor(val)
+        h[partName + 'DeltaMom'].SetXTitle('Straw-Ecal Momentum [GeV/c]')
+        h[partName + 'DeltaMom'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'RecoMom','Reco Momentum',300,-0.05,120.)                                 # reco  momentum
         h[partName + 'RecoMom'].SetLineColor(val)
+        h[partName + 'RecoMom'].SetXTitle('Reco Momentum [GeV/c]')
+        h[partName + 'RecoMom'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'TrueMom','True Momentum',300,-0.05,120.)                                 # true  momentum
         h[partName + 'TrueMom'].SetLineColor(val)
+        h[partName + 'TrueMom'].SetXTitle('True Momentum [GeV/c]')
+        h[partName + 'TrueMom'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'RecoMass','Reco Mass',300,0.,0.6)                                        # reco  mass
         h[partName + 'RecoMass'].SetLineColor(val)
+        h[partName + 'RecoMass'].SetXTitle('Reco Mass [GeV/c2]')
+        h[partName + 'RecoMass'].SetYTitle('No. of Particles')
         ut.bookHist(h,partName + 'TrueMass','True Mass',300,0.,0.6)                                        # true  mass
-        h[partName + 'TrueMass'].SetLineColor(val)     
+        h[partName + 'TrueMass'].SetLineColor(val)
+        h[partName + 'TrueMass'].SetXTitle('True Mass [GeV/c2]')
+        h[partName + 'TrueMass'].SetYTitle('No. of Particles')
         h[partName + 'SmearedMass'] = TH1D(partName + 'SmearedMass','Smeared Mass',85,array('d',edgesarray))# smrd  mass
-        h[partName + 'SmearedMass'].SetLineColor(val)        
-        h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr','Probs identifying Muon',85,array('d',edgesarray))# ID Prob
+        h[partName + 'SmearedMass'].SetLineColor(val)
+        h[partName + 'SmearedMass'].SetXTitle('Smeared Mass [GeV/c2]')
+        h[partName + 'SmearedMass'].SetYTitle('No. of Particles')
+        h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr','Probs identifying ' + partName,85,array('d',edgesarray))# ID Prob
         h[partName + 'ProbMeasr'].SetLineColor(val)
+        h[partName + 'ProbMeasr'].SetXTitle('Mass [GeV/c2]')
+        h[partName + 'ProbMeasr'].SetYTitle('Probs identifying ' + partName)
                               
-    h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass',85,array('d',edgesarray))     # Total mass
-    h['StrawTime'] = THStack("hs",'Gaussian Straw t measurement')
+    h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass',85,array('d',edgesarray))                        # Total mass
+    h['StrawTime'] = THStack('StackStrawTime','Gaussian Straw t measurement')                                       # straw time
+    h['EcalTime'] = THStack('StackEcalTime','Gaussian Ecal t measurement')                                          # ecal time
+    h['DirDeltaTimeSmeared'] = THStack('StackDirDeltaTimeSmeared','Straw-ECAL Smeared Time of Flight (directly)')   # smeared time of flight
+    h['DirDeltaTime'] = THStack('StackDirDeltaTime','Straw-ECAL Time of Flight (directly)')                         # time of flight
+    h['StrawHits'] = THStack('StackStrawHits','No. of hits in straw tubes')                                         # number of straw hits
+    h['StrawHitsMom'] = THStack('StackStrawHitsMom','z-momentum through straw tubes (for particular event)')        # momenta of straw hits
+    h['FlightLen'] = THStack('StackFlightLen','Straw-ECAL Straight Flight Lenght')                                  # flight Length
+    h['FlightLenImproved'] = THStack('StackFlightLenImproved','Straw-ECAL Curved Flight Lenght')                    #corrected flight Length
+    h['FlightLenDelta'] = THStack('StackFlightLenDelta','Difference between straight path and better approximation')# delta flight Length
+    h['SpeedSmeared'] = THStack('StackSpeedSmeared','Smeared Beta value')                                           # smeared speed
+    h['Speed'] = THStack('StackSpeed','Beta value')                                                                 # speed
+    h['StrawMom'] = THStack('StackStrawMom','Straw Momentum')                                                       # straw momentum
+    h['EcalMom'] = THStack('StackEcalMom','Ecal Momentum')                                                          # ecal  momentum
+    h['DeltaMom'] = THStack('StackDeltaMom','Straw-Ecal Momentum')                                                  # delta momentum
+    h['RecoMom'] = THStack('StackRecoMom','Reco Momentum')                                                          # reco  momentum
+    h['TrueMom'] = THStack('StackTrueMom','True Momentum')                                                          # true  momentum
+    h['RecoMass'] = THStack('StackRecoMass','Reco Mass')                                                            # reco  mass
+    h['TrueMass'] = THStack('StackTrueMass','True Mass')                                                            # true  mass
+    h['SmearedMass'] = THStack('StackSmearedMass','Smeared Mass')                                                   # smrd  mass
+    h['ProbMeasr'] = THStack('StackProbMeasr','Probs identifying Muon')                                             # ID Prob
+
 
     #################################
     ####  Neutralino Histograms  ####
@@ -932,15 +992,21 @@ def makePlots2(HiddPart,part1,part2,part3):
     
     key='DAUGHTERS'
     title='Time and velocity plots'
-        
+    
     ut.bookCanvas(h,key + '_TV',title,nx=1300,ny=800,cx=3,cy=2)
     cv = h[key + '_TV'].cd(1)
-    h[part1 + 'StrawTime'].SetXTitle('Time [ns]')
-    h[part1 + 'StrawTime'].SetYTitle('No. of Particles')
-    h[part1 + 'StrawTime'].Draw()
-    h[part2 + 'StrawTime'].Draw('same')
+    #h[part1 + 'StrawTime'].SetXTitle('Time [ns]')
+    #h[part1 + 'StrawTime'].SetYTitle('No. of Particles')
+    #h[part1 + 'StrawTime'].Draw()
+    #h[part2 + 'StrawTime'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'StrawTime'].Draw('same')
+
+    h['StrawTime'].Add(h[part1 + 'StrawTime'])
+    h['StrawTime'].Add(h[part2 + 'StrawTime'])
     if not part3==None:
-        h[part3 + 'StrawTime'].Draw('same')
+        h['StrawTime'].Add(h[part3 + 'StrawTime'])
+    h['StrawTime'].Draw("nostack")
     gPad.BuildLegend()
 
     cv = h[key + '_TV'].cd(2)
@@ -950,62 +1016,109 @@ def makePlots2(HiddPart,part1,part2,part3):
     #h[part2 + 'EcalTime'].Draw('same')
     #if not part3==None:
     #    h[part3 + 'EcalTime'].Draw('same')
-    h['StrawTime'].Add(h[part1 + 'StrawTime'])
-    h['StrawTime'].Add(h[part2 + 'StrawTime'])
-    h['StrawTime'].Draw('nostack')
+
+    h['EcalTime'].Add(h[part1 + 'EcalTime'])
+    h['EcalTime'].Add(h[part2 + 'EcalTime'])
+    if not part3==None:
+        h['EcalTime'].Add(h[part3 + 'EcalTime'])
+    h['EcalTime'].Draw("nostack")
     gPad.BuildLegend()
+    
 
     cv = h[key + '_TV'].cd(3)
-    h[part1 + 'DirDeltaTime'].SetXTitle('Time of Flight [ns]')
-    h[part1 + 'DirDeltaTime'].SetYTitle('No. of Particles')
-    h[part1 + 'DirDeltaTime'].Draw()
-    h[part2 + 'DirDeltaTime'].Draw('same')
+    #h[part1 + 'DirDeltaTime'].SetXTitle('Time of Flight [ns]')
+    #h[part1 + 'DirDeltaTime'].SetYTitle('No. of Particles')
+    #h[part1 + 'DirDeltaTime'].Draw()
+    #h[part2 + 'DirDeltaTime'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'DirDeltaTime'].Draw('same')
+
+    h['DirDeltaTimeSmeared'].Add(h[part1 + 'DirDeltaTimeSmeared'])
+    h['DirDeltaTimeSmeared'].Add(h[part2 + 'DirDeltaTimeSmeared'])
     if not part3==None:
-        h[part3 + 'DirDeltaTime'].Draw('same')
+        h['DirDeltaTimeSmeared'].Add(h[part3 + 'DirDeltaTimeSmeared'])
+    h['DirDeltaTimeSmeared'].Draw("nostack")
+    gPad.BuildLegend()
 
     cv = h[key + '_TV'].cd(4)
-    h[part1 + 'FlightLen'].SetXTitle('Flight Length (cm)')
-    h[part1 + 'FlightLen'].SetYTitle('No. of Particles')
-    h[part1 + 'FlightLen'].Draw()
-    h[part2 + 'FlightLen'].Draw('same')
+    #h[part1 + 'FlightLen'].SetXTitle('Flight Length (cm)')
+    #h[part1 + 'FlightLen'].SetYTitle('No. of Particles')
+    #h[part1 + 'FlightLen'].Draw()
+    #h[part2 + 'FlightLen'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'FlightLen'].Draw('same')
+
+    h['FlightLen'].Add(h[part1 + 'FlightLen'])
+    h['FlightLen'].Add(h[part2 + 'FlightLen'])
     if not part3==None:
-        h[part3 + 'FlightLen'].Draw('same')
+        h['FlightLen'].Add(h[part3 + 'FlightLen'])
+    h['FlightLen'].Draw("nostack")
+    gPad.BuildLegend()
 
     cv = h[key + '_TV'].cd(5)
-    h[part1 + 'Speed'].SetXTitle('beta')
-    h[part1 + 'Speed'].SetYTitle('No. of Particles')
-    h[part1 + 'Speed'].Draw()
-    h[part2 + 'Speed'].Draw('same')
+    #h[part1 + 'Speed'].SetXTitle('beta')
+    #h[part1 + 'Speed'].SetYTitle('No. of Particles')
+    #h[part1 + 'Speed'].Draw()
+    #h[part2 + 'Speed'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'Speed'].Draw('same')
+
+    h['Speed'].Add(h[part1 + 'Speed'])
+    h['Speed'].Add(h[part2 + 'Speed'])
     if not part3==None:
-        h[part3 + 'Speed'].Draw('same')
+        h['Speed'].Add(h[part3 + 'Speed'])
+    h['Speed'].Draw("nostack")
+    gPad.BuildLegend()
 
     h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
 
     title='Momenta and mass plots'
     ut.bookCanvas(h,key + '_MOM', title , nx=1300, ny=800, cx=3, cy=2)
     cv = h[key + '_MOM'].cd(1)
-    h[part1 + 'StrawMom'].SetXTitle('Momentum [GeV/c]')
-    h[part1 + 'StrawMom'].SetYTitle('No. of Particles')
-    h[part1 + 'StrawMom'].Draw()
-    h[part2 + 'StrawMom'].Draw('same')
+    #h[part1 + 'StrawMom'].SetXTitle('Momentum [GeV/c]')
+    #h[part1 + 'StrawMom'].SetYTitle('No. of Particles')
+    #h[part1 + 'StrawMom'].Draw()
+    #h[part2 + 'StrawMom'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'StrawMom'].Draw('same')
+
+    h['StrawMom'].Add(h[part1 + 'StrawMom'])
+    h['StrawMom'].Add(h[part2 + 'StrawMom'])
     if not part3==None:
-        h[part3 + 'StrawMom'].Draw('same')
+        h['StrawMom'].Add(h[part3 + 'StrawMom'])
+    h['StrawMom'].Draw("nostack")
+    gPad.BuildLegend()
+
 
     cv = h[key + '_MOM'].cd(2)
-    h[part1 + 'EcalMom'].SetXTitle('Momentum [GeV/c]')
-    h[part1 + 'EcalMom'].SetYTitle('No. of Particles')
-    h[part1 + 'EcalMom'].Draw()
-    h[part2 + 'EcalMom'].Draw('same')
+    #h[part1 + 'EcalMom'].SetXTitle('Momentum [GeV/c]')
+    #h[part1 + 'EcalMom'].SetYTitle('No. of Particles')
+    #h[part1 + 'EcalMom'].Draw()
+    #h[part2 + 'EcalMom'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'EcalMom'].Draw('same')
+
+    h['EcalMom'].Add(h[part1 + 'EcalMom'])
+    h['EcalMom'].Add(h[part2 + 'EcalMom'])
     if not part3==None:
-        h[part3 + 'EcalMom'].Draw('same')
+        h['EcalMom'].Add(h[part3 + 'EcalMom'])
+    h['EcalMom'].Draw("nostack")
+    gPad.BuildLegend()
 
     cv = h[key + '_MOM'].cd(3)
-    h[part1 + 'RecoMom'].SetXTitle('Momentum [GeV/c]')
-    h[part1 + 'RecoMom'].SetYTitle('No. of Particles')
-    h[part1 + 'RecoMom'].Draw()
-    h[part2 + 'RecoMom'].Draw('same')
+    #h[part1 + 'RecoMom'].SetXTitle('Momentum [GeV/c]')
+    #h[part1 + 'RecoMom'].SetYTitle('No. of Particles')
+    #h[part1 + 'RecoMom'].Draw()
+    #h[part2 + 'RecoMom'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'RecoMom'].Draw('same')
+
+    h['RecoMom'].Add(h[part1 + 'RecoMom'])
+    h['RecoMom'].Add(h[part2 + 'RecoMom'])
     if not part3==None:
-        h[part3 + 'RecoMom'].Draw('same')
+        h['RecoMom'].Add(h[part3 + 'RecoMom'])
+    h['RecoMom'].Draw("nostack")
+    gPad.BuildLegend()
 
     #cv = h[key + '_MOM'].cd(4)
     #h[part1 + 'TrueMom'].SetXTitle('Momentum [GeV/c]')
@@ -1015,35 +1128,56 @@ def makePlots2(HiddPart,part1,part2,part3):
     #h[part2 + 'TrueMom'].Draw('same')
 
     cv = h[key + '_MOM'].cd(4)
-    h[part1 + 'DeltaMom'].SetXTitle('Momentum [GeV/c]')
-    h[part1 + 'DeltaMom'].SetYTitle('No. of Particles')
-    h[part1 + 'DeltaMom'].Draw()
-    h[part2 + 'DeltaMom'].Draw('same')
+    #h[part1 + 'DeltaMom'].SetXTitle('Momentum [GeV/c]')
+    #h[part1 + 'DeltaMom'].SetYTitle('No. of Particles')
+    #h[part1 + 'DeltaMom'].Draw()
+    #h[part2 + 'DeltaMom'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'DeltaMom'].Draw('same')
+
+    h['DeltaMom'].Add(h[part1 + 'DeltaMom'])
+    h['DeltaMom'].Add(h[part2 + 'DeltaMom'])
     if not part3==None:
-        h[part3 + 'DeltaMom'].Draw('same')
+        h['DeltaMom'].Add(h[part3 + 'DeltaMom'])
+    h['DeltaMom'].Draw("nostack")
+    gPad.BuildLegend()
 
     cv = h[key + '_MOM'].cd(5)
-    h[part1 + 'RecoMass'].SetXTitle('Mass [GeV/c2]')
-    h[part1 + 'RecoMass'].SetYTitle('No. of Particles')
-    h[part1 + 'RecoMass'].Draw()
-    h[part2 + 'RecoMass'].Draw('same')
+    #h[part1 + 'RecoMass'].SetXTitle('Mass [GeV/c2]')
+    #h[part1 + 'RecoMass'].SetYTitle('No. of Particles')
+    #h[part1 + 'RecoMass'].Draw()
+    #h[part2 + 'RecoMass'].Draw('same')
+    #if not part3==None:
+    #    h[part3 + 'RecoMass'].Draw('same')
+
+    h['RecoMass'].Add(h[part1 + 'RecoMass'])
+    h['RecoMass'].Add(h[part2 + 'RecoMass'])
     if not part3==None:
-        h[part3 + 'RecoMass'].Draw('same')
+        h['RecoMass'].Add(h[part3 + 'RecoMass'])
+    h['RecoMass'].Draw("nostack")
+    gPad.BuildLegend()
 
     cv = h[key + '_MOM'].cd(6)
     #if part2 == 'K+/-':fitName='landau'
     h[part1 + 'SmearedMass'].SetXTitle('Mass [GeV/c2]')
     h[part1 + 'SmearedMass'].SetYTitle('No. of Particles')
-    h[part1 + 'SmearedMass'].Draw()
+    #h[part1 + 'SmearedMass'].Draw()
     h[part1 + 'SmearedMass'].Fit("landau")
     h[part1 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
-    h[part2 + 'SmearedMass'].Draw('same')
+    #h[part2 + 'SmearedMass'].Draw('same')
     h[part2 + 'SmearedMass'].Fit('landau')
     h[part2 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
     if not part3==None:
-        h[part3 + 'SmearedMass'].Draw('same')
+        #h[part3 + 'SmearedMass'].Draw('same')
         h[part3 + 'SmearedMass'].Fit('landau')
         h[part3 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
+
+    h['SmearedMass'].Add(h[part1 + 'SmearedMass'])
+    h['SmearedMass'].Add(h[part2 + 'SmearedMass'])
+    if not part3==None:
+        h['SmearedMass'].Add(h[part3 + 'SmearedMass'])
+    h['SmearedMass'].Draw("nostack")
+    gPad.BuildLegend()
 
     h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
     if part3==None:
