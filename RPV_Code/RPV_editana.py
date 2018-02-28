@@ -6,7 +6,7 @@
 
 #from __future__ import print_function
 import ROOT,os,sys,getopt
-import rootUtils as ut
+#import rootUtils as ut
 import shipunit as u
 from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
@@ -229,45 +229,45 @@ def create_Hists(HiddPart,part1,part2, part3):
     ####  Daughter Histograms  ####
     for partName,val in dictionList.items():
         #print(partName)
-        ut.bookHist(h,partName + 'StrawTime',partName + ' ; ' + partName + ' Straw Time [ns] ; No. of Particles',300,321.7,323.5)                                          # straw time
+        h[partName + 'StrawTime'] = TH1D(partName + 'StrawTime',partName + ' ; ' + partName + ' Straw Time [ns] ; No. of Particles',300,321.7,323.5)                       # straw time
         h[partName + 'StrawTime'].SetLineColor(val)
-        ut.bookHist(h,partName + 'EcalTime',partName + ' ; ' + partName + ' Ecal Time [ns] ; No. of Particles',300,359.7,361.2)                                            # ecal time
+        h[partName + 'EcalTime'] = TH1D(partName + 'EcalTime',partName + ' ; ' + partName + ' Ecal Time [ns] ; No. of Particles',300,359.7,361.2)                          # ecal time
         h[partName + 'EcalTime'].SetLineColor(val)
-        ut.bookHist(h,partName + 'DirDeltaTimeSmeared',partName + ' ; ' + partName + ' Straw-ECAL Smeared Time of Flight (directly) [ns] ; No. of Particles',300,37.8,38.4)# smeared time of flight
+        h[partName + 'DirDeltaTimeSmeared'] = TH1D(partName + 'DirDeltaTimeSmeared',partName + ' ; ' + partName + ' Straw-ECAL Smeared Time of Flight (directly) [ns] ; No. of Particles',300,37.8,38.4)# smeared time of flight
         h[partName + 'DirDeltaTimeSmeared'].SetLineColor(val)
-        ut.bookHist(h,partName + 'DirDeltaTime',partName + ' ; ' + partName + ' Straw-ECAL Time of Flight (directly) [ns] ; No. of Particles',300,37.8,38.4)               # time of flight
+        h[partName + 'DirDeltaTime'] = TH1D(partName + 'DirDeltaTime',partName + ' ; ' + partName + ' Straw-ECAL Time of Flight (directly) [ns] ; No. of Particles',300,37.8,38.4)# time of flight
         h[partName + 'DirDeltaTime'].SetLineColor(val)
-        ut.bookHist(h,partName + 'StrawHits',partName + ' ; ' + partName + ' No. of hits in straw tubes ; Position [cm]',300,25,50)                                        #number of straw hits
+        h[partName + 'StrawHits'] = TH1D(partName + 'StrawHits',partName + ' ; ' + partName + ' No. of hits in straw tubes ; Position [cm]',300,25,50)                     #number of straw hits
         h[partName + 'StrawHits'].SetLineColor(val)
-        ut.bookHist(h,partName + 'StrawHitsMom',partName + ' ; ' + partName + ' z-momentum through straw tubes (for particular event) [GeV/c] ; No. of Hits',500,0,45)     #momenta of straw hits
+        h[partName + 'StrawHitsMom'] = TH1D(partName + 'StrawHitsMom',partName + ' ; ' + partName + ' z-momentum through straw tubes (for particular event) [GeV/c] ; No. of Hits',500,0,45)     #momenta of straw hits
         h[partName + 'StrawHitsMom'].SetLineColor(val)
-        ut.bookHist(h,partName + 'FlightLen',partName + ' ; ' + partName + ' Straw-ECAL Straight Flight Lenght [cm] ; No. of Particles',300,11.375,11.42)                  # flight Length
+        h[partName + 'FlightLen'] = TH1D(partName + 'FlightLen',partName + ' ; ' + partName + ' Straw-ECAL Straight Flight Lenght [cm] ; No. of Particles',300,11.375,11.42)# flight Length
         h[partName + 'FlightLen'].SetLineColor(val)
-        ut.bookHist(h,partName + 'FlightLenImproved',partName + ' ; ' + partName + ' Straw-ECAL Curved Flight Lenght [cm] ;  No. of Particles',300,11.375,11.42)            # corrected flight Length        
+        h[partName + 'FlightLenImproved'] = TH1D(partName + 'FlightLenImproved',partName + ' ; ' + partName + ' Straw-ECAL Curved Flight Lenght [cm] ;  No. of Particles',300,11.375,11.42)      # corrected flight Length        
         h[partName + 'FlightLenImproved'].SetLineColor(val)
-        ut.bookHist(h,partName + 'FlightLenDelta',partName + ' ; ' + partName + ' Difference between straight path and better approximation [cm] ; No. of Particles',300,0,0.001)# delta flight Length        
+        h[partName + 'FlightLenDelta'] = TH1D(partName + 'FlightLenDelta',partName + ' ; ' + partName + ' Difference between straight path and better approximation [cm] ; No. of Particles',300,0,0.001)# delta flight Length        
         h[partName + 'FlightLenDelta'].SetLineColor(val)
-        ut.bookHist(h,partName + 'SpeedSmeared',partName + ' ; ' + partName + ' Smeared Beta value ; No. of Particles',300,0.997,1.001)                                     # smeared speed
+        h[partName + 'SpeedSmeared'] = TH1D(partName + 'SpeedSmeared',partName + ' ; ' + partName + ' Smeared Beta value ; No. of Particles',300,0.997,1.001)               # smeared speed
         h[partName + 'SpeedSmeared'].SetLineColor(val)
-        ut.bookHist(h,partName + 'Speed',partName + ' ; ' + partName + ' Beta value ; No. of Particles',300,0.997,1.001)                                                    # speed
+        h[partName + 'Speed'] = TH1D(partName + 'Speed',partName + ' ; ' + partName + ' Beta value ; No. of Particles',300,0.997,1.001)                                     # speed
         h[partName + 'Speed'].SetLineColor(val)
-        ut.bookHist(h,partName + 'StrawMom',partName + ' ; ' + partName + ' Straw Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                                      # straw momentum
+        h[partName + 'StrawMom'] = TH1D(partName + 'StrawMom',partName + ' ; ' + partName + ' Straw Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                    # straw momentum
         h[partName + 'StrawMom'].SetLineColor(val)
-        ut.bookHist(h,partName + 'EcalMom',partName + ' ; ' + partName + ' Ecal Momentum [GeV/c]; No. of Particles',300,-0.05,120.)                                         # ecal  momentum
+        h[partName + 'EcalMom'] = TH1D(partName + 'EcalMom',partName + ' ; ' + partName + ' Ecal Momentum [GeV/c]; No. of Particles',300,-0.05,120.)                        # ecal  momentum
         h[partName + 'EcalMom'].SetLineColor(val)
-        ut.bookHist(h,partName + 'DeltaMom',partName + ' ; ' + partName + ' Straw-Ecal Momentum [GeV/c]; No. of Particles',300,0.02,0.13)                                   # delta momentum
+        h[partName + 'DeltaMom'] = TH1D(partName + 'DeltaMom',partName + ' ; ' + partName + ' Straw-Ecal Momentum [GeV/c]; No. of Particles',300,0.02,0.13)                 # delta momentum
         h[partName + 'DeltaMom'].SetLineColor(val)
-        ut.bookHist(h,partName + 'RecoMom',partName + ' ; ' + partName + ' Reco Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                                        # reco  momentum
+        h[partName + 'RecoMom'] = TH1D(partName + 'RecoMom',partName + ' ; ' + partName + ' Reco Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                       # reco  momentum
         h[partName + 'RecoMom'].SetLineColor(val)
-        ut.bookHist(h,partName + 'TrueMom',partName + ' ; ' + partName + ' True Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                                        # true  momentum
+        h[partName + 'TrueMom'] = TH1D(partName + 'TrueMom',partName + ' ; ' + partName + ' True Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                       # true  momentum
         h[partName + 'TrueMom'].SetLineColor(val)
-        ut.bookHist(h,partName + 'RecoMass',partName + ' ; ' + partName + ' Reco Mass [GeV/c2]; No. of Particles',300,0.,0.6)                                               # reco  mass
+        h[partName + 'RecoMass'] = TH1D(partName + 'RecoMass',partName + ' ; ' + partName + ' Reco Mass [GeV/c2]; No. of Particles',300,0.,0.6)                             # reco  mass
         h[partName + 'RecoMass'].SetLineColor(val)
-        ut.bookHist(h,partName + 'TrueMass',partName + ' ; ' + partName + ' True Mass [GeV/c2] ; No. of Particles',300,0.,0.6)                                              # true  mass
+        h[partName + 'TrueMass'] = TH1D(partName + 'TrueMass',partName + ' ; ' + partName + ' True Mass [GeV/c2] ; No. of Particles',300,0.,0.6)                            # true  mass
         h[partName + 'TrueMass'].SetLineColor(val)
         h[partName + 'SmearedMass'] = TH1D(partName + 'SmearedMass',partName + ' ; ' + partName + ' Smeared Mass [GeV/c2]; No. of Particles',85,array('d',edgesarray))      # smrd  mass
         h[partName + 'SmearedMass'].SetLineColor(val)
-        h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr',partName + ' ; Mass [GeV/c2] ; Prob(particle = ' + partName + ')',85,array('d',edgesarray))                     # ID Prob
+        h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr',partName + ' ; Mass [GeV/c2] ; Prob(particle = ' + partName + ')',85,array('d',edgesarray))                 # ID Prob
         h[partName + 'ProbMeasr'].SetLineColor(val)
                               
     h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass ; Smeared Mass [GeV/c2] ; No. of Particles',85,array('d',edgesarray))                             # Total mass
@@ -295,25 +295,25 @@ def create_Hists(HiddPart,part1,part2, part3):
 
     #################################
     ####  Neutralino Histograms  ####
-    ut.bookHist(h,HiddPart + 'TrueMass','Monte Carlo Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.99,1.01)                                              # true mass
+    h[HiddPart + 'TrueMass'] = TH1D(HiddPart + 'TrueMass','Monte Carlo Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.99,1.01)                            # true mass
     h[HiddPart + 'TrueMass'].SetLineColor(1)
-    ut.bookHist(h,HiddPart + 'RecoMass','Reconstructed Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.97,1.03)                                            # reco mass
+    h[HiddPart + 'RecoMass'] = TH1D(HiddPart + 'RecoMass','Reconstructed Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.97,1.03)                          # reco mass
     h[HiddPart + 'RecoMass'].SetLineColor(1)
-    ut.bookHist(h,HiddPart + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum [GeV/c] ; No. of Particles',100,0.,180.)                                      # true momentum 
+    h[HiddPart + 'TrueMom'] = TH1D(HiddPart + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum [GeV/c] ; No. of Particles',100,0.,180.)                     # true momentum 
     h[HiddPart + 'TrueMom'].SetLineColor(1)
-    ut.bookHist(h,HiddPart + 'RecoMom','Reconstructed Momentum ; Momentum [GeV/c] ; No. of Particles',300,0.,180.)                                                  # reco momentum
+    h[HiddPart + 'RecoMom'] = TH1D(HiddPart + 'RecoMom','Reconstructed Momentum ; Momentum [GeV/c] ; No. of Particles',300,0.,180.)                                 # reco momentum
     h[HiddPart + 'RecoMom'].SetLineColor(1)
-    ut.bookHist(h,HiddPart + 'DeltaMom','True/Reco Momentum Difference ; Momentum Difference [GeV/c] ; No. of Particles',300,-3.,3)                                 # true-reco momentum difference
+    h[HiddPart + 'DeltaMom'] = TH1D(HiddPart + 'DeltaMom','True/Reco Momentum Difference ; Momentum Difference [GeV/c] ; No. of Particles',300,-3.,3)               # true-reco momentum difference
     h[HiddPart + 'DeltaMom'].SetLineColor(1)
 
     #######################
     ####  Veto Checks  ####
-    ut.bookHist(h,'IP_target','Impact parameter to target; Impact Parameter [cm]; Frequency',300,0,10)
-    ut.bookHist(h,'ecalE','Energy deposited in ECAL ; Energy [GeV/c2] ; Frequency',300,0,100)
-    ut.bookHist(h,'doca','Distance of closest approach between muon and kaon tracks ; Distance [cm] ; Frequency',300,0,3)
-    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf) ; ndf ; No. of tracks',300,0,50)
-    ut.bookHist(h,'Chi2','Fitted Tracks Chi Squared ; Reduced Chi Squared ; Frequency',300,0,3)
-    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate ; Z  [cm] ; Frequency',100,-4000,4000)
+    h['IP_target'] = TH1D('IP_target','Impact parameter to target; Impact Parameter [cm]; Frequency',300,0,10)
+    h['ecalE'] = TH1D('ecalE','Energy deposited in ECAL ; Energy [GeV/c2] ; Frequency',300,0,100)
+    h['doca'] = TH1D('doca','Distance of closest approach between muon and kaon tracks ; Distance [cm] ; Frequency',300,0,3)
+    h['nmeas'] = TH1D('nmeas','No. of measurements in fitted tracks (ndf) ; ndf ; No. of tracks',300,0,50)
+    h['Chi2'] = TH1D('Chi2','Fitted Tracks Chi Squared ; Reduced Chi Squared ; Frequency',300,0,3)
+    h['recovertex'] = TH1D('recovertex','Reconstructed neutralino decay vertex z-coordinate ; Z  [cm] ; Frequency',100,-4000,4000)
 
     #ut.bookHist(h,HiddPart + '_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
     #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
@@ -871,14 +871,14 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                     #print(reco_part2)
                                     p3MotherTrueMass = true_mother.GetMass()               # get Neutralino/final states mother mass
                                     p3MotherTrueMom = true_mother.GetP()                   # get Neutralino/final states mother mom
-                                    check3,p3_chi2,d2toPionveto = track_checks(index2,true_part2,reco_part2,d2toPionveto)
+                                    check3,d2toPionveto = track_checks(index2, p2Partkey,true_part2,reco_part2,d2toPionveto,1)
                                     if not check3 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                                         continue
                                     d2toPionEventsAfterChecks+=1
                                     
                                     part3_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
                                     HiddPart_LVec = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
-                                    HiddPart_LVec,daught1_LVec,part3_LVec,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
+                                    HiddPart_LVec,daught1_LVec,part3_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
                                     if HiddPart_LVec == -1: continue
                                     if doca > 2.: 
                                         #print('distance of closest approach too large')
@@ -903,7 +903,7 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                     h[HiddPart + 'TrueMom'].Fill(p3MotherTrueMom)
                                     h[HiddPart + 'RecoMass'].Fill(HiddPart_mass)                        
                                     h[HiddPart + 'RecoMom'].Fill(HiddPart_recoMom)                
-                                    h['Chi2'].Fill(p3_chi2)                             
+                                    #h['Chi2'].Fill(p3_chi2)                             
                                     h[HiddPart + 'DeltaMom'].Fill(mom_diff)
                                     h[part3 + 'RecoMom'].Fill(p3P)
                                     h[part3 + 'RecoMass'].Fill(p3M)
@@ -951,9 +951,10 @@ graph = {}
 def makePlots2(HiddPart,part1,part2,part3):
     
     key='DAUGHTERS'
+
     title='Time and velocity plots'
-    
-    ut.bookCanvas(h,key + '_TV',title,nx=1300,ny=800,cx=3,cy=2)
+    h[key + '_TV']=TCanvas(key + '_TV',title,1300,800)
+    h[key + '_TV'].Divide(3,2)
     cv = h[key + '_TV'].cd(1)
     h['StrawTime'].Add(h[part1 + 'StrawTime'])
     h['StrawTime'].Add(h[part2 + 'StrawTime'])
@@ -990,10 +991,11 @@ def makePlots2(HiddPart,part1,part2,part3):
         h['Speed'].Add(h[part3 + 'Speed'])
     h['Speed'].Draw("nostack")
 
-    #h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
+    h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
 
     title='Momenta and mass plots'
-    ut.bookCanvas(h,key + '_MOM', title , nx=1300, ny=800, cx=3, cy=2)
+    h[key + '_MOM']=TCanvas(key + '_MOM',title,1300,800)
+    h[key + '_MOM'].Divide(3,2)
     cv = h[key + '_MOM'].cd(1)
     h['StrawMom'].Add(h[part1 + 'StrawMom'])
     h['StrawMom'].Add(h[part2 + 'StrawMom'])
@@ -1045,14 +1047,15 @@ def makePlots2(HiddPart,part1,part2,part3):
         h['SmearedMass'].Add(h[part3 + 'SmearedMass'])
     h['SmearedMass'].Draw("nostack")
 
-    #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
+    h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
 
     if part3==None:
         partString=''
     else:
         partString=' or pion'
     title='Probability Plots'
-    ut.bookCanvas(h,key + '_PROB',title,nx=1300,ny=800,cx=3,cy=2)
+    h[key + '_PROB'] = TCanvas(key + '_PROB',title,1300,800)
+    h[key + '_PROB'].Divide(3,2)
     cv = h[key + '_PROB'].cd(1)
     h[part1 + 'ProbMeasr'].SetMarkerColor(38)
     polyFit1.SetLineColor(4)
