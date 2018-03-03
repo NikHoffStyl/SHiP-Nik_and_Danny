@@ -973,7 +973,7 @@ def finStateMuKa():
                                         veto[0] += 1
                                     else:
                                         #print('At least one of the track fits did not converge')
-                                        break
+                                        continue
                                     
                                     check,veto = track_checks(index,veto,1)   # performs various track checks
                                     if check == -1: event = False
@@ -1010,9 +1010,9 @@ def finStateMuKa():
                                     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
                                     ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
 
-                                    #Decay_T = true_muon.GetStartT()
+                                    #NDecay_T = true_muon.GetStartT()
                                     #RPV_Pos = ROOT.TLorentzVector()
-                                    #RPV_Pos.SetXYZT(Decay_X,Decay_Y,Decay_Z,Decay_T)
+                                    #RPV_Pos.SetXYZT(NDecay_X,NDecay_Y,NDecay_Z,NDecay_T)
                                     #tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
                                     #ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)
 
@@ -1022,7 +1022,7 @@ def finStateMuKa():
                                         veto[8] += 1
                                         event = False
 
-                                    if event == False: break
+                                    if event == False: continue
 
                                     RPV_truemass = true_mother.GetMass()   # RPV neutralino mass
                                     RPV_truemom = true_mother.GetP()   # RPV neutralino momentum
@@ -1251,9 +1251,9 @@ def finStateMuKa_exc():
                                                                                 check,B_veto = track_checks(index2,B_veto,1)
                                                                                 if check == -1: event = False
                                                                             if event == True:
-                                                                                check,B_veto = track_checks(index3,B_veto,1)   # performs various track checks
+                                                                                check,B_veto = track_checks(index3,B_veto,1)
                                                                                 if check == -1: event = False
-                                                                            if event == True:   # if the first track was fine, check the other one (ensures event veto counting is correct)
+                                                                            if event == True:
                                                                                 check,B_veto = track_checks(index4,B_veto,1)
                                                                                 if check == -1: event = False
 
@@ -1291,9 +1291,9 @@ def finStateMuKa_exc():
                                                                             tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
                                                                             ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
                                     
-                                                                            #T = true_muon.GetStartT()
+                                                                            #Decay_T = true_muon.GetStartT()
                                                                             #RPV_Pos = ROOT.TLorentzVector()
-                                                                            #RPV_Pos.SetXYZT(X,Y,Z,T)
+                                                                            #RPV_Pos.SetXYZT(Decay_X,Decay_Y,Decay_Z,Decay_T)
                                                                             #tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
                                                                             #ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)
 
@@ -1332,7 +1332,7 @@ def finStateMuKa_exc():
         print('\n\t' + str(B_veto[0]) + ' charged final states reconstructed for this decay mode')
         print('\t' + str(accepted) + ' not rejected')
         print('\t' + str(rejected) + ' rejected:')
-        print('\t\t' + str(B_veto[0] - B_veto[6]) + ' events with neutralino decay vertex inside fiducial volume (' + str(B_veto[6]) + ' event vetos)')
+        print('\t\t' + str(B_veto[0] - B_veto[6]) + ' events with K0 decay vertex inside fiducial volume (' + str(B_veto[6]) + ' event vetos)')
         print('\t\t' + str(B_veto[0] - B_veto[1]) + ' events with all tracks within fiducial volume (' + str(B_veto[1]) + ' event vetos)')
         print('\t\t' + str(B_veto[0] - B_veto[2]) + ' events with all tracks no. of measurements > ' + str(measCut) + ' (' + str(B_veto[2]) + ' event vetos)')
         print('\t\t' + str(B_veto[0] - B_veto[3]) + ' events with all tracks chi squared < ' + str(chi2Cut) + ' (' + str(B_veto[3]) + ' event vetos)')
@@ -1356,7 +1356,7 @@ def finStateMuKa_exc():
 loop = True
 while loop:
     print_menu()
-    choice = input('Enter your choice [0-3]: ')
+    choice = input('Enter your choice [0-2]: ')
      
     if choice == 1:
         finStateMuKa()
