@@ -15,9 +15,9 @@ theDPepsilon = 0.00000008
 
 mcEngine     = "TGeant4"
 simEngine    = "Pythia8"  # "Genie" # Ntuple
-nEvents      = 15000
+nEvents      = 1000
 firstEvent   = 0
-inclusive    = "c"    # True = all processes if "c" only ccbar -> HNL, if "b" only bbar -> HNL, and for darkphotons: if meson = production through meson decays, pbrem = proton bremstrahlung, to do: QCD prod.
+inclusive    = "meson"    # True = all processes if "c" only ccbar -> HNL, if "b" only bbar -> HNL, and for darkphotons: if meson = production through meson decays, pbrem = proton bremstrahlung, to do: QCD prod.
 deepCopy     = False  # False = copy only stable particles to stack, except for HNL events
 MCTracksWithHitsOnly   = False  # copy particles which produced a hit and their history
 MCTracksWithEnergyCutOnly = True # copy particles above a certain kin energy cut
@@ -25,8 +25,8 @@ MCTracksWithHitsOrEnergyCut = False # or of above, factor 2 file size increase c
 
 charmonly    = False  # option to be set with -A to enable only charm decays, charm x-sec measurement  
 HNL          = False
-DarkPhoton   = False
-RPVSUSY      = True
+DarkPhoton   = True
+RPVSUSY      = False
 RPVSUSYbench = 1
 
 eventDisplay = False
