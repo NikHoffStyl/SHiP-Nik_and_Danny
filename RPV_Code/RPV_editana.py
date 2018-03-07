@@ -12,70 +12,66 @@ from ShipGeoConfig import ConfigRegistry
 from rootpyPickler import Unpickler
 from decorators import *
 from array import array
-from ROOT import TCanvas, TColor, TGaxis, TH1F, TH1D, TPad, TGraph, TF1, TMultiGraph,TGraphErrors, THStack, TFile
-from ROOT import kBlack, kBlue, kRed, kGreen, kFALSE, kSolar, kGray, kMagenta
-from ROOT import gROOT, gPad, gStyle
-from array import array
 import shipRoot_conf
+import numpy as np
 import shipDet_conf
 import shipVeto
-from inspect import currentframe
-import numpy as np
-import datetime
 shipRoot_conf.configure()
+
+from ROOT import TCanvas, TH1D, TF1, TMultiGraph,TGraphErrors, THStack, TFile
+from ROOT import kBlack, kBlue, kRed, kGreen, kGray, kMagenta
+from ROOT import gROOT, gPad, gStyle
+from inspect import currentframe
+import datetime
+
 
 debug = False
 loop=True 
-chi2CutOff  = 4.
 PDG = ROOT.TDatabasePDG.Instance()
+inputFile  = None
+geoFile    = None
+dy         = None
+nEvents    = 9999999
 fiducialCut = True
 chi2Cut  = 4
 measCut = 25
-ecalCut = 0.150
-measCutFK = 25
-measCutPR = 22
-docaCut = 2.
-ipCut = 250
+ecalCut = 0.150 #GeV
+docaCut = 2. #cm
+ipCut = 250 #cm
 
-c = 2.99792458*(10**8)
-e = 2.718281828459   # Euler's number
-currentDate = datetime.datetime.now().strftime("%y_%m_%d_%H%M")
-polyFit1 = TF1("polyFit1","pol3")
-polyFit2 = TF1("polyFit2","pol3")
+#e = 2.718281828459   # Euler's number
+currentDate = datetime.datetime.now().strftime('%y_%m_%d_%H%M')
+polyFit1 = TF1('polyFit1','pol3')
+polyFit2 = TF1('polyFit2','pol3')
 
-def inputOptsArgs():
-    inputFile  = None
-    geoFile    = None
-    dy         = None
-    nEvents    = 9999999
-    try:
-            opts, args = getopt.getopt(sys.argv[1:], "n:f:g:Y", ["nEvents=","geoFile="])#command line options
-    except getopt.GetoptError:
-            # print help information and exit:
-            print (' enter file name')
-            sys.exit()
-    for o, a in opts:
-            if o in ("-f",):
-                inputFile = a           #does this
-            if o in ("-g", "--geoFile",):
-                geoFile = a             #does this
-            if o in ("-Y",):
-                dy = float(a)           #doesnt do this
-            if o in ("-n", "--nEvents=",):
-                nEvents = int(a)        #doesnt do this
-    return a, dy, geoFile, inputFile, nEvents, o
-a, dy, geoFile, inputFile, nEvents, o = inputOptsArgs()
+##############################################
+#####  SETS INPUT OPTIONS AND ARGUMENTS  #####
+try:
+        opts, args = getopt.getopt(sys.argv[1:], 'n:f:g:Y', ['nEvents=','geoFile='])#command line options
+except getopt.GetoptError:
+        # print help information and exit:
+        print (' enter file name')
+        sys.exit()
+for o, a in opts:
+        if o in ('-f',):
+            inputFile = a           #does this
+        if o in ('-g', '--geoFile',):
+            geoFile = a             #does this
+        if o in ('-Y',):
+            dy = float(a)           #doesnt do this
+        if o in ('-n', '--nEvents=',):
+            nEvents = int(a)        #doesnt do this
 
 ###############################################
 ########## SETS TREE FROM INPUT FILE ##########
 if not inputFile.find(',')<0 :
-    sTree = ROOT.TChain("cbmsim") 
+    sTree = ROOT.TChain('cbmsim') 
     for x in inputFile.split(','):
-        if x[0:4] == "/eos":         #doesnt do this
-            sTree.AddFile("root://eoslhcb.cern.ch/"+x)
+        if x[0:4] == '/eos':         #doesnt do this
+            sTree.AddFile('root://eoslhcb.cern.ch/'+x)
         else: sTree.AddFile(x)       #doesnt do this
-elif inputFile[0:4] == "/eos":       #doesnt do this
-    eospath = "root://eoslhcb.cern.ch/"+inputFile
+elif inputFile[0:4] == '/eos':       #doesnt do this
+    eospath = 'root://eoslhcb.cern.ch/'+inputFile
     f = ROOT.TFile.Open(eospath)
     sTree = f.cbmsim
 else:                                #does this
@@ -86,8 +82,8 @@ else:                                #does this
 ########## LOAD ECAL GEOMETRY #########
 if not geoFile:
  geoFile = inputFile.replace('ship.','geofile_full.').replace('_rec.','.')  #doesnt do this
-if geoFile[0:4] == "/eos":                                                  #doesnt do this
-  eospath = "root://eoslhcb.cern.ch/"+geoFile
+if geoFile[0:4] == '/eos':                                                  #doesnt do this
+  eospath = 'root://eoslhcb.cern.ch/'+geoFile
   fgeo = ROOT.TFile.Open(eospath)
 else:                                                                       #does this
     fgeo = ROOT.TFile(geoFile)
@@ -96,9 +92,9 @@ sGeo = fgeo.FAIRGeom
 if not fgeo.FindKey('ShipGeo'):                 #doesnt do this
  # old geofile, missing Shipgeo dictionary
  if sGeo.GetVolume('EcalModule3') :  
-     ecalGeoFile = "ecal_ellipse6x12m2.geo"     #doesnt do this
+     ecalGeoFile = 'ecal_ellipse6x12m2.geo'     #doesnt do this
  else: 
-     ecalGeoFile = "ecal_ellipse5x10m2.geo"     #doesnt do this
+     ecalGeoFile = 'ecal_ellipse5x10m2.geo'     #doesnt do this
  print ('found ecal geo for ',ecalGeoFile)
  # re-create geometry and mag. field
  if not dy:
@@ -108,7 +104,7 @@ if not fgeo.FindKey('ShipGeo'):                 #doesnt do this
     dy = float( tmp[1]+'.'+tmp[2] )             #doesnt do this
   except:
     dy = 10.                                    #doesnt do this
- ShipGeo = ConfigRegistry.loadpy("$FAIRSHIP/geometry/geometry_config.py", Yheight = dy, EcalGeoFile = ecalGeoFile )
+ ShipGeo = ConfigRegistry.loadpy('$FAIRSHIP/geometry/geometry_config.py', Yheight = dy, EcalGeoFile = ecalGeoFile )
 else:                                           #does this
  # new geofile, load Shipgeo dictionary written by run_simScript.py
   upkl    = Unpickler(fgeo)
@@ -154,43 +150,43 @@ z_ecalBack  = z_ecal + top.GetNode('Ecal_1').GetVolume().GetShape().GetDZ()
 # initialize ecalStructure
 caloTasks = []
 sTree.GetEvent(0)
-ecalGeo = ecalGeoFile+'z'+str(ShipGeo.ecal.z)+".geo"
-if not ecalGeo in os.listdir(os.environ["FAIRSHIP"]+"/geometry"): shipDet_conf.makeEcalGeoFile(ShipGeo.ecal.z,ShipGeo.ecal.File)
-ecalFiller = ROOT.ecalStructureFiller("ecalFiller", 0,ecalGeo)
+ecalGeo = ecalGeoFile+'z'+str(ShipGeo.ecal.z)+'.geo'
+if not ecalGeo in os.listdir(os.environ['FAIRSHIP']+'/geometry'): shipDet_conf.makeEcalGeoFile(ShipGeo.ecal.z,ShipGeo.ecal.File)
+ecalFiller = ROOT.ecalStructureFiller('ecalFiller', 0,ecalGeo)
 ecalFiller.SetUseMCPoints(ROOT.kTRUE)
 ecalFiller.StoreTrackInformation()
 ecalStructure = ecalFiller.InitPython(sTree.EcalPointLite)
 caloTasks.append(ecalFiller)
-if sTree.GetBranch("EcalReconstructed"):
+if sTree.GetBranch('EcalReconstructed'):
  calReco = False
  sTree.GetEvent(0)
  ecalReconstructed = sTree.EcalReconstructed
 else:
  calReco = True
- print ("setup calo reconstruction of ecalReconstructed objects")
+ print ('setup calo reconstruction of ecalReconstructed objects')
 # Calorimeter reconstruction
  #GeV -> ADC conversion
- ecalDigi=ROOT.ecalDigi("ecalDigi",0)
- ecalPrepare=ROOT.ecalPrepare("ecalPrepare",0)
+ ecalDigi=ROOT.ecalDigi('ecalDigi',0)
+ ecalPrepare=ROOT.ecalPrepare('ecalPrepare',0)
  ecalStructure     = ecalFiller.InitPython(sTree.EcalPointLite)
  ecalDigi.InitPython(ecalStructure)
  caloTasks.append(ecalDigi)
  ecalPrepare.InitPython(ecalStructure)
  caloTasks.append(ecalPrepare)
  # Cluster calibration
- ecalClusterCalib=ROOT.ecalClusterCalibration("ecalClusterCalibration", 0)
+ ecalClusterCalib=ROOT.ecalClusterCalibration('ecalClusterCalibration', 0)
  #4x4 cm cells
- ecalCl3PhS=ROOT.TFormula("ecalCl3PhS", "[0]+x*([1]+x*([2]+x*[3]))")
+ ecalCl3PhS=ROOT.TFormula('ecalCl3PhS', '[0]+x*([1]+x*([2]+x*[3]))')
  ecalCl3PhS.SetParameters(6.77797e-04, 5.75385e+00, 3.42690e-03, -1.16383e-04)
  ecalClusterCalib.SetStraightCalibration(3, ecalCl3PhS)
- ecalCl3Ph=ROOT.TFormula("ecalCl3Ph", "[0]+x*([1]+x*([2]+x*[3]))+[4]*x*y+[5]*x*y*y")
+ ecalCl3Ph=ROOT.TFormula('ecalCl3Ph', '[0]+x*([1]+x*([2]+x*[3]))+[4]*x*y+[5]*x*y*y')
  ecalCl3Ph.SetParameters(0.000750975, 5.7552, 0.00282783, -8.0025e-05, -0.000823651, 0.000111561)
  ecalClusterCalib.SetCalibration(3, ecalCl3Ph)
 #6x6 cm cells
- ecalCl2PhS=ROOT.TFormula("ecalCl2PhS", "[0]+x*([1]+x*([2]+x*[3]))")
+ ecalCl2PhS=ROOT.TFormula('ecalCl2PhS', '[0]+x*([1]+x*([2]+x*[3]))')
  ecalCl2PhS.SetParameters(8.14724e-04, 5.67428e+00, 3.39030e-03, -1.28388e-04)
  ecalClusterCalib.SetStraightCalibration(2, ecalCl2PhS)
- ecalCl2Ph=ROOT.TFormula("ecalCl2Ph", "[0]+x*([1]+x*([2]+x*[3]))+[4]*x*y+[5]*x*y*y")
+ ecalCl2Ph=ROOT.TFormula('ecalCl2Ph', '[0]+x*([1]+x*([2]+x*[3]))+[4]*x*y+[5]*x*y*y')
  ecalCl2Ph.SetParameters(0.000948095, 5.67471, 0.00339177, -0.000122629, -0.000169109, 8.33448e-06)
  ecalClusterCalib.SetCalibration(2, ecalCl2Ph)
  caloTasks.append(ecalClusterCalib)
@@ -203,21 +199,17 @@ else:
  ecalReconstructed = ecalReco.InitPython(sTree.EcalClusters, ecalStructure, ecalCalib)
  ecalMatch.InitPython(ecalStructure, ecalReconstructed, sTree.MCTrack)
 
-#########  END CREATE GEOMETRY #########
-########################################
 
 import TrackExtrapolateTool
 
-########################################
-############  DEFINITIONS  #############
+#######################################
+##########  HIST FUNCTIONS  ###########
 h = {}
-#stack={}
-def create_Hists(HiddPart,part1,part2, part3):
-    dictionList={part1:[kBlue+3,kBlue-2], part2:[kRed+3,kRed-2]}
-    partList = [part1,part2]
-    if not part3 == None:
-        partList.append(part3)
-        dictionList.update({part3:[kGreen+4,kGreen+3]})
+graph = {}
+def create_Hists(partList):
+    dictionList={partList[1]:[kBlue+3,kBlue-2], partList[2]:[kRed+3,kRed-2]}
+    if not partList[3] == None:
+        dictionList.update({partList[3]:[kGreen+4,kGreen+3]})
     edgesarray=[]
     edgesarray.append(0)
     for binNumber in range(0,40):
@@ -318,30 +310,30 @@ def create_Hists(HiddPart,part1,part2, part3):
 
     #################################
     ####  Neutralino Histograms  ####
-    h[HiddPart + 'TrueMass'] = TH1D(HiddPart + 'TrueMass','Monte Carlo Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.99,1.01)                            # true mass
-    h[HiddPart + 'TrueMass'].SetLineColor(1)
-    h[HiddPart + 'TrueMass'].SetFillColor(kGray+2)
-    h[HiddPart + 'RecoMass'] = TH1D(HiddPart + 'RecoMass','Reconstructed Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.97,1.03)                          # reco mass
-    h[HiddPart + 'RecoMass'].SetLineColor(1)
-    h[HiddPart + 'RecoMass'].SetFillColor(kGray+2)
-    h[HiddPart + 'TrueMom'] = TH1D(HiddPart + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum [GeV/c] ; No. of Particles',100,0.,180.)                     # true momentum 
-    h[HiddPart + 'TrueMom'].SetLineColor(1)
-    h[HiddPart + 'TrueMom'].SetFillColor(kGray+2)
-    h[HiddPart + 'RecoMom'] = TH1D(HiddPart + 'RecoMom','Reconstructed Momentum ; Momentum [GeV/c] ; No. of Particles',300,0.,180.)                                 # reco momentum
-    h[HiddPart + 'RecoMom'].SetLineColor(1)
-    h[HiddPart + 'RecoMom'].SetFillColor(kGray+2)
-    h[HiddPart + 'DeltaMom'] = TH1D(HiddPart + 'DeltaMom','True/Reco Momentum Difference ; Momentum Difference [GeV/c] ; No. of Particles',300,-3.,3)               # true-reco momentum difference
-    h[HiddPart + 'DeltaMom'].SetLineColor(1)
-    h[HiddPart + 'DeltaMom'].SetFillColor(kGray+2)
-    h[HiddPart + 'Beta'] = TH1D(HiddPart + 'Beta','Reconstructed Neutralino Beta in Z-direction; Beta; No. of Particles',100,0.994,1)
-    h[HiddPart + 'Beta'].SetLineColor(1)
-    h[HiddPart + 'Beta'].SetFillColor(kGray+2)
-    h[HiddPart + 'Gamma'] = TH1D(HiddPart + 'Gamma','Reconstructed Neutralino Gamma in Z-direction; Gamma; No. of Particles',100,0,200)
-    h[HiddPart + 'Gamma'].SetLineColor(1)
-    h[HiddPart + 'Gamma'].SetFillColor(kGray+2)
-    h[HiddPart + 'Theta'] = TH1D(HiddPart + 'Theta','Angle between neutralino momentum and beam line; Theta / [mrad]; No. of Particles',100,0,50)
-    h[HiddPart + 'Theta'].SetLineColor(1)
-    h[HiddPart + 'Theta'].SetFillColor(kGray+2)
+    h[partList[0] + 'TrueMass'] = TH1D(partList[0] + 'TrueMass','Monte Carlo Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.99,1.01)                            # true mass
+    h[partList[0] + 'TrueMass'].SetLineColor(1)
+    h[partList[0] + 'TrueMass'].SetFillColor(kGray+2)
+    h[partList[0] + 'RecoMass'] = TH1D(partList[0] + 'RecoMass','Reconstructed Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.97,1.03)                          # reco mass
+    h[partList[0] + 'RecoMass'].SetLineColor(1)
+    h[partList[0] + 'RecoMass'].SetFillColor(kGray+2)
+    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum [GeV/c] ; No. of Particles',100,0.,180.)                     # true momentum 
+    h[partList[0] + 'TrueMom'].SetLineColor(1)
+    h[partList[0] + 'TrueMom'].SetFillColor(kGray+2)
+    h[partList[0] + 'RecoMom'] = TH1D(partList[0] + 'RecoMom','Reconstructed Momentum ; Momentum [GeV/c] ; No. of Particles',300,0.,180.)                                 # reco momentum
+    h[partList[0] + 'RecoMom'].SetLineColor(1)
+    h[partList[0] + 'RecoMom'].SetFillColor(kGray+2)
+    h[partList[0] + 'DeltaMom'] = TH1D(partList[0] + 'DeltaMom','True/Reco Momentum Difference ; Momentum Difference [GeV/c] ; No. of Particles',300,-3.,3)               # true-reco momentum difference
+    h[partList[0] + 'DeltaMom'].SetLineColor(1)
+    h[partList[0] + 'DeltaMom'].SetFillColor(kGray+2)
+    h[partList[0] + 'Beta'] = TH1D(partList[0] + 'Beta','Reconstructed Neutralino Beta in Z-direction; Beta; No. of Particles',100,0.994,1)
+    h[partList[0] + 'Beta'].SetLineColor(1)
+    h[partList[0] + 'Beta'].SetFillColor(kGray+2)
+    h[partList[0] + 'Gamma'] = TH1D(partList[0] + 'Gamma','Reconstructed Neutralino Gamma in Z-direction; Gamma; No. of Particles',100,0,200)
+    h[partList[0] + 'Gamma'].SetLineColor(1)
+    h[partList[0] + 'Gamma'].SetFillColor(kGray+2)
+    h[partList[0] + 'Theta'] = TH1D(partList[0] + 'Theta','Angle between neutralino momentum and beam line; Theta / [mrad]; No. of Particles',100,0,50)
+    h[partList[0] + 'Theta'].SetLineColor(1)
+    h[partList[0] + 'Theta'].SetFillColor(kGray+2)
 
     #######################
     ####  Veto Checks  ####
@@ -367,17 +359,358 @@ def create_Hists(HiddPart,part1,part2, part3):
     #ut.bookHist(h,'photonE','Photon Energy Distribution in ECAL',150,0,100)
 
 
-    #ut.bookHist(h,HiddPart + '_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
+    #ut.bookHist(h,partList[0] + '_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
     #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
     #ut.bookHist(h,'smearedmass1','Time Smeared Neutralino Mass',500,0.,2.)
     #ut.bookHist(h,'smearedmass2','Time Smeared Neutralino Mass',500,0.,2.)
     #ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum P1(red) P2(blue)',500,0.,300.)
     #ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
 
-    print("Created Histograms")
+    print('Created Histograms')
     print(partList)
     print('\n')
 
+def createHists_DarkPhot():
+    # Canvas 1
+    ut.bookHist(h,'DP_recomass','Reconstructed Dark Photon Mass',500,0,0.4)   # reconstructed mass
+    ut.bookHist(h,'DP_truemom','True Dark Photon Momentum',100,0.,300.)   # true momentum distribution
+    ut.bookHist(h,'DP_recomom','Reconstructed Dark Photon Momentum',100,0.,300)   # reconstructed momentum distribution
+    ut.bookHist(h,'DP_mom_diff','True/Reco Dark Photon Momentum Difference',100,-3.,3)   # true/reco momentum difference
+    ut.bookHist(h,'DP_beta','Reconstructed Dark Photon Beta in Z-direction',100,0.994,1)
+    ut.bookHist(h,'DP_gamma','Reconstructed Dark Photon Gamma in Z-direction',100,0,200)
+    ut.bookHist(h,'DP_theta','Angle between Dark Photon Momentum and Beam Line',100,0,50)
+
+    # Canvas 2
+    ut.bookHist(h,'eplus_truemom','True e+ Momentum',100,0.,140.)   # RPV muon daughter reco momentum
+    ut.bookHist(h,'eminus_truemom','True e- Momentum',100,0.,140.)   # RPV pion daughter reco momentum
+    ut.bookHist(h,'eplus_recomom','Reconstructed e+ Momentum',100,0.,140.)   # RPV muon daughter true momentum
+    ut.bookHist(h,'eminus_recomom','Reconstructed e- Momentum',100,0.,140.)   # RPV pion daughter true momentum
+
+    # Canvas 3
+    ut.bookHist(h,'IP_target','Impact parameter to target',120,0,10)
+    ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
+    ut.bookHist(h,'doca','Distance of closest approach between tracks',150,0,3)
+    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
+    ut.bookHist(h,'Chi2','Fitted Tracks Reduced Chi Squared',150,0,3)
+    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',100,-4000,4000)
+
+def makePlots2(partList):
+    
+    key='DAUGHTERS'
+
+    title='Time and velocity plots'
+    h[key + '_TV']=TCanvas(key + '_TV',title,1300,800)
+    h[key + '_TV'].Divide(3,2)
+    cv = h[key + '_TV'].cd(1)
+    h['StrawTime'].Add(h[partList[1] + 'StrawTime'])
+    h['StrawTime'].Add(h[partList[2] + 'StrawTime'])
+    if not partList[3]==None:
+        h['StrawTime'].Add(h[partList[3] + 'StrawTime'])
+    h['StrawTime'].Draw('nostack')
+
+    cv = h[key + '_TV'].cd(2)
+    h['EcalTime'].Add(h[partList[1] + 'EcalTime'])
+    h['EcalTime'].Add(h[partList[2] + 'EcalTime'])
+    if not partList[3]==None:
+        h['EcalTime'].Add(h[partList[3] + 'EcalTime'])
+    h['EcalTime'].Draw('nostack')
+    
+
+    cv = h[key + '_TV'].cd(3)
+    h['DirDeltaTimeSmeared'].Add(h[partList[1] + 'DirDeltaTimeSmeared'])
+    h['DirDeltaTimeSmeared'].Add(h[partList[2] + 'DirDeltaTimeSmeared'])
+    if not partList[3]==None:
+        h['DirDeltaTimeSmeared'].Add(h[partList[3] + 'DirDeltaTimeSmeared'])
+    h['DirDeltaTimeSmeared'].Draw('nostack')
+
+    cv = h[key + '_TV'].cd(4)
+    h['FlightLen'].Add(h[partList[1] + 'FlightLen'])
+    h['FlightLen'].Add(h[partList[2] + 'FlightLen'])
+    if not partList[3]==None:
+        h['FlightLen'].Add(h[partList[3] + 'FlightLen'])
+    h['FlightLen'].Draw('nostack')
+
+    cv = h[key + '_TV'].cd(5)
+    h['Speed'].Add(h[partList[1] + 'Speed'])
+    h['Speed'].Add(h[partList[2] + 'Speed'])
+    if not partList[3]==None:
+        h['Speed'].Add(h[partList[3] + 'Speed'])
+    h['Speed'].Draw('nostack')
+
+    #h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
+
+    title='Momenta and mass plots'
+    h[key + '_MOM']=TCanvas(key + '_MOM',title,1300,800)
+    h[key + '_MOM'].Divide(3,2)
+    cv = h[key + '_MOM'].cd(1)
+    h['StrawMom'].Add(h[partList[1] + 'StrawMom'])
+    h['StrawMom'].Add(h[partList[2] + 'StrawMom'])
+    if not partList[3]==None:
+        h['StrawMom'].Add(h[partList[3] + 'StrawMom'])
+    h['StrawMom'].Draw('nostack')
+
+
+    cv = h[key + '_MOM'].cd(2)
+    h['EcalMom'].Add(h[partList[1] + 'EcalMom'])
+    h['EcalMom'].Add(h[partList[2] + 'EcalMom'])
+    if not partList[3]==None:
+        h['EcalMom'].Add(h[partList[3] + 'EcalMom'])
+    h['EcalMom'].Draw('nostack')
+
+    cv = h[key + '_MOM'].cd(3)
+    h['RecoMom'].Add(h[partList[1] + 'RecoMom'])
+    h['RecoMom'].Add(h[partList[2] + 'RecoMom'])
+    if not partList[3]==None:
+        h['RecoMom'].Add(h[partList[3] + 'RecoMom'])
+    h['RecoMom'].Draw('nostack')
+    
+    cv = h[key + '_MOM'].cd(4)
+    h['DeltaMom'].Add(h[partList[1] + 'DeltaMom'])
+    h['DeltaMom'].Add(h[partList[2] + 'DeltaMom'])
+    if not partList[3]==None:
+        h['DeltaMom'].Add(h[partList[3] + 'DeltaMom'])
+    h['DeltaMom'].Draw('nostack')
+
+    cv = h[key + '_MOM'].cd(5)
+    h['RecoMass'].Add(h[partList[1] + 'RecoMass'])
+    h['RecoMass'].Add(h[partList[2] + 'RecoMass'])
+    if not partList[3]==None:
+        h['RecoMass'].Add(h[partList[3] + 'RecoMass'])
+    h['RecoMass'].Draw('nostack')
+
+    cv = h[key + '_MOM'].cd(6)
+    h[partList[1] + 'SmearedMass'].Fit('landau')
+    h[partList[1] + 'SmearedMass'].GetFunction('landau').SetLineColor(kBlack)
+    h[partList[2] + 'SmearedMass'].Fit('landau')
+    h[partList[2] + 'SmearedMass'].GetFunction('landau').SetLineColor(kBlack)
+    if not partList[3]==None:
+        h[partList[3] + 'SmearedMass'].Fit('landau')
+        h[partList[3] + 'SmearedMass'].GetFunction('landau').SetLineColor(kBlack)
+
+    h['SmearedMass'].Add(h[partList[1] + 'SmearedMass'])
+    h['SmearedMass'].Add(h[partList[2] + 'SmearedMass'])
+    if not partList[3]==None:
+        h['SmearedMass'].Add(h[partList[3] + 'SmearedMass'])
+    h['SmearedMass'].Draw('nostack')
+
+    #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
+
+    if partList[3]==None:
+        partString=''
+    else:
+        partString=' or pion'
+    title='Probability Plots'
+    h[key + '_PROB'] = TCanvas(key + '_PROB',title,1300,800)
+    h[key + '_PROB'].Divide(3,2)
+    cv = h[key + '_PROB'].cd(1)
+    h[partList[1] + 'ProbMeasr'].SetMarkerColor(38)
+    polyFit1.SetLineColor(4)
+    h[partList[1] + 'ProbMeasr'].Fit('polyFit1')
+    h[partList[1] + 'ProbMeasr'].Draw('E2')
+    h[partList[1] + 'ProbMeasr'].SetXTitle('Mass [GeV/c2]')
+    h[partList[1] + 'ProbMeasr'].SetYTitle('Prob( particle = muon )')
+    h[partList[1] + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+    cv = h[key + '_PROB'].cd(2)
+    h[partList[2] + 'ProbMeasr'].SetMarkerColor(46)
+    polyFit2.SetLineColor(2)
+    h[partList[2] + 'ProbMeasr'].Fit('polyFit2')
+    h[partList[2] + 'ProbMeasr'].Draw('E2')
+    h[partList[2] + 'ProbMeasr'].SetXTitle('Mass [GeV/c2]')
+    h[partList[2] + 'ProbMeasr'].SetYTitle('Prob( particle = kaon )')
+    h[partList[2] + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+    if not partList[3]==None:
+        cv = h[key + '_PROB'].cd(3)
+        h[partList[3] + 'ProbMeasr'].SetMarkerColor(8)
+        polyFit2.SetLineColor(3)
+        h[partList[3] + 'ProbMeasr'].Fit('polyFit2')
+        h[partList[3] + 'ProbMeasr'].Draw('E2')
+        h[partList[3] + 'ProbMeasr'].SetXTitle('Mass [GeV/c2]')
+        h[partList[3] + 'ProbMeasr'].SetYTitle('Prob( particle = pion )')
+        h[partList[3] + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+
+    cv = h[key + '_PROB'].cd(4)
+    graph['partIDProb'] = TMultiGraph()
+    graph['partIDProb'].SetName('Prob(correct ID paticle)')
+    x1, y1 = array( 'd' ), array( 'd' )
+    ex1, ey1 = array( 'd' ), array( 'd' )
+    x2, y2 = array( 'd' ), array( 'd' )
+    ex2, ey2 = array( 'd' ), array( 'd' )
+    if not partList[3]==None:
+        x3, y3 = array( 'd' ), array( 'd' )
+        ex3, ey3 = array( 'd' ), array( 'd' )
+    i=0
+    n=0
+    numBins = h[partList[1] + 'ProbMeasr'].GetNbinsX()
+    for i in range(numBins):
+        x1.append(h[partList[1] + 'ProbMeasr'].GetBinCenter(i))
+        ex1.append(0)
+        y1.append(h[partList[1] + 'ProbMeasr'].GetBinContent(i))
+        ey1.append(ROOT.TMath.Sqrt((h[partList[1] + 'ProbMeasr'].GetBinContent(i))/10))
+        x2.append(h[partList[2] + 'ProbMeasr'].GetBinCenter(i))
+        ex2.append(0)
+        y2.append(h[partList[2] + 'ProbMeasr'].GetBinContent(i))
+        ey2.append(ROOT.TMath.Sqrt((h[partList[1] + 'ProbMeasr'].GetBinContent(i))/10))
+        if not partList[3]==None:
+            x3.append(h[partList[3] + 'ProbMeasr'].GetBinCenter(i))
+            ex3.append(0)
+            y3.append(h[partList[3] + 'ProbMeasr'].GetBinContent(i))
+            ey3.append(ROOT.TMath.Sqrt((h[partList[1] + 'ProbMeasr'].GetBinContent(i))/10))
+        n=n+1
+    graph['1'] = TGraphErrors( n, x1, y1, ex1, ey1 )
+    graph['1'].SetName('Prob(ID = ' + partList[1] + ')')
+    graph['1'].SetTitle('Prob(ID = ' + partList[1] + ')')
+    graph['1'].GetYaxis().SetTitle( 'Prob(particle = muon)' )
+    graph['1'].SetLineColor( 4 )
+    graph['1'].SetLineWidth( 1 )
+    graph['1'].SetMarkerColor( 4 )
+    graph['1'].SetMarkerStyle( 20 )
+    graph['1'].SetMarkerSize(0.5)   
+    graph['2'] = TGraphErrors( n, x2, y2, ex2, ey2 )
+    graph['2'].SetName('Prob(ID = ' + partList[2] + ')')
+    graph['2'].SetTitle('Prob(ID = ' + partList[2] + ')')
+    graph['2'].GetYaxis().SetTitle( 'Prob(particle = kaon)' )
+    graph['2'].SetLineColor( 2 )
+    graph['2'].SetLineWidth( 1 )
+    graph['2'].SetMarkerColor( 2 )
+    graph['2'].SetMarkerStyle( 20 )
+    graph['2'].SetMarkerSize(0.5)
+    graph['partIDProb'].Add(graph['1'], 'PC')
+    graph['partIDProb'].Add(graph['2'], 'PC')
+    if not partList[3]==None:
+        graph['3'] = TGraphErrors( n, x3, y3, ex3, ey3 )
+        graph['3'].SetName('Prob(ID = ' + partList[3] + ')')
+        graph['3'].SetTitle('Prob(ID = ' + partList[3] + ')') 
+        graph['3'].GetYaxis().SetTitle( 'Prob(particle = pion)' )
+        graph['3'].SetLineColor( 3 )
+        graph['3'].SetLineWidth( 1 )
+        graph['3'].SetMarkerColor( 3 )
+        graph['3'].SetMarkerStyle( 20 )
+        graph['3'].SetMarkerSize(0.5)
+        graph['partIDProb'].Add(graph['3'], 'PC')
+    graph['partIDProb'].Draw('A pfc plc')#P PLC PFCPLC PFC
+    for ckey in graph:
+        graph[ckey].GetXaxis().SetTitle( 'Mass [GeV/c2]' )
+    graph['partIDProb'].GetYaxis().SetTitle( 'Prob(particle=(kaon or muon' + partString + '))' )
+    graph['partIDProb'].GetYaxis().SetTitleOffset(1.5)
+    graph['partIDProb'].GetXaxis().SetRangeUser(0,1.5)
+    gPad.BuildLegend()
+    h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
+
+def makePlots_DarkPhot():
+    ut.bookCanvas(h,key='DP',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
+    cv = h['DP'].cd(1)
+    h['DP_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
+    h['DP_recomass'].SetYTitle('No. of Particles')
+    h['DP_recomass'].SetLineColor(1)
+    h['DP_recomass'].Draw()
+    print('\nDark Photon mass Gaussian fit:\n')
+    fitSingleGauss('DP_recomass',0.1,0.3)
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP'].cd(2)
+    h['DP_truemom'].SetXTitle('Momentum / [GeV/c]')
+    h['DP_truemom'].SetYTitle('No. of Particles')
+    h['DP_truemom'].SetLineColor(2)
+    h['ths1'] = ROOT.THStack('DPmom','True & Reconstructed Dark Photon Momentum ; Momentum / [GeV/c] ; No. of Particles')
+    h['ths1'].Add(h['DP_truemom'])
+    h['ths1'].Add(h['DP_recomom'])
+    h['ths1'].Draw('nostack')
+    ROOT.gPad.BuildLegend()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP'].cd(3)
+    h['DP_mom_diff'].SetXTitle('Momentum Difference / [GeV/c]')
+    h['DP_mom_diff'].SetYTitle('No. of Particles')
+    h['DP_mom_diff'].SetLineColor(1)    
+    h['DP_mom_diff'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP'].cd(4)
+    h['DP_beta'].SetXTitle('Beta')
+    h['DP_beta'].SetYTitle('No. of Particles')
+    h['DP_beta'].SetLineColor(1)
+    h['DP_beta'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP'].cd(5)
+    h['DP_gamma'].SetXTitle('Gamma')
+    h['DP_gamma'].SetYTitle('No. of Particles')
+    h['DP_gamma'].SetLineColor(1)
+    h['DP_gamma'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP'].cd(6)
+    h['DP_theta'].SetXTitle('Theta / [mrad]')
+    h['DP_theta'].SetYTitle('No. of Particles')
+    h['DP_theta'].SetLineColor(1)
+    h['DP_theta'].Draw()
+    h['DP'].Print('DarkPhot.png')
+    #======================================================================================================================
+    ut.bookCanvas(h,key='ee',title='Results 2',nx=1000,ny=1000,cx=2,cy=2)
+    cv = h['ee'].cd(1)
+    h['eplus_truemom'].SetXTitle('Momentum / [GeV/c]')
+    h['eplus_truemom'].SetYTitle('No. of Particles')
+    h['eplus_truemom'].SetLineColor(2)
+    h['ths2'] = ROOT.THStack('Kamom','e+ True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
+    h['ths2'].Add(h['eplus_truemom'])
+    h['ths2'].Add(h['eplus_recomom'])
+    h['ths2'].Draw('nostack')
+    ROOT.gPad.BuildLegend()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['ee'].cd(2)
+    h['eminus_truemom'].SetXTitle('Momentum / [GeV/c]')
+    h['eminus_truemom'].SetYTitle('No. of Particles')
+    h['eminus_truemom'].SetLineColor(2)
+    h['ths3'] = ROOT.THStack('Mumom','e- True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
+    h['ths3'].Add(h['eminus_truemom'])
+    h['ths3'].Add(h['eminus_recomom'])
+    h['ths3'].Draw('nostack')
+    ROOT.gPad.BuildLegend()
+    h['ee'].Print('Electrons.png')
+    #======================================================================================================================
+    ut.bookCanvas(h,key='DP_Vetos',title='Results 3',nx=1500,ny=800,cx=3,cy=2)
+    cv = h['DP_Vetos'].cd(1)
+    h['IP_target'].SetXTitle('Impact Parameter / [cm]')
+    h['IP_target'].SetYTitle('Frequency')
+    h['IP_target'].SetLineColor(1)
+    h['IP_target'].SetFillColor(17)
+    h['IP_target'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP_Vetos'].cd(2)
+    h['ecalE'].SetXTitle('Energy / [GeV/c2]')
+    h['ecalE'].SetYTitle('Frequency')
+    h['ecalE'].SetLineColor(1)
+    h['ecalE'].SetFillColor(17)
+    h['ecalE'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP_Vetos'].cd(3)
+    h['doca'].SetXTitle('Distance / [cm]')
+    h['doca'].SetYTitle('Frequency')
+    h['doca'].SetLineColor(1)
+    h['doca'].SetFillColor(17)
+    h['doca'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP_Vetos'].cd(4)
+    h['nmeas'].SetXTitle('ndf')
+    h['nmeas'].SetYTitle('No. of tracks')
+    h['nmeas'].SetLineColor(1)
+    h['nmeas'].SetFillColor(17)
+    h['nmeas'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP_Vetos'].cd(5)
+    h['Chi2'].SetXTitle('Reduced Chi Squared')
+    h['Chi2'].SetYTitle('Frequency')
+    h['Chi2'].SetLineColor(1)
+    h['Chi2'].SetFillColor(17)
+    h['Chi2'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['DP_Vetos'].cd(6)
+    h['recovertex'].SetXTitle('Z / [cm]')
+    h['recovertex'].SetYTitle('Frequency')
+    h['recovertex'].SetLineColor(1)
+    h['recovertex'].SetFillColor(17)
+    h['recovertex'].Draw()
+    h['DP_Vetos'].Print('DP_Vetos.png')
+
+######################################
+#########  CHECKS FUNCTIONS  #########
 def dist2InnerWall(X,Y,Z):
   dist = 0
  # return distance to inner wall perpendicular to z-axis, if outside decayVolume return 0.
@@ -538,14 +871,17 @@ def SingleTrack_4Mom(t1):
 
     return LV
 
+######################################
+##########  TOOLS FUNCTIONS ##########
 def time_res(partMom,partName,partkey,eventN,succEventM):
     straw_time = None
     ecal_time = None
     deltaT = None
     true_part = sTree.MCTrack[partkey]   # finds MC particle
     pdg = true_part.GetPdgCode()   # identifies particles from PDG code
+    c = 2.99792458*(10**8)  #speed of light
 
-    if sTree.GetBranch("strawtubesPoint"):
+    if sTree.GetBranch('strawtubesPoint'):
         x_array = []
         y_array = []
         z_array = []
@@ -598,7 +934,7 @@ def time_res(partMom,partName,partkey,eventN,succEventM):
                 if eventN == succEventM:
                     h[partName + 'StrawHitsMom'].Fill(hit)   # kaon z-momentum through straw tubes for particular event
 
-        if sTree.GetBranch("EcalPoint"):
+        if sTree.GetBranch('EcalPoint'):
             ecal_time = 0
             if not straw_time <= 0:
                 for k,hits in enumerate(sTree.EcalPoint):
@@ -655,11 +991,10 @@ def time_res(partMom,partName,partkey,eventN,succEventM):
             h[partName + 'SmearedMass'].Fill(smearedM)
             h['TotalSmearedMass'].Fill(smearedM)  
 
-def track_checks(index,veto,vetoo,fill):
+def track_checks(index,veto,fill):
     check = 0
-    check2 = 0
     
-    partkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
+    partkey = sTree.fitTrack2MC[index]  
     true_part = sTree.MCTrack[partkey]
     reco_part = sTree.FitTracks[index]
 
@@ -667,7 +1002,6 @@ def track_checks(index,veto,vetoo,fill):
         #print('Track outside fiducial volume')
         veto[1] += 1
         check = -1
-        check2 = 1
 
     fit_status = reco_part.getFitStatus()
     if fit_status.isFitConverged():
@@ -675,20 +1009,16 @@ def track_checks(index,veto,vetoo,fill):
         if fill == 1: h['nmeas'].Fill(fit_nmeas)
         if not fit_nmeas > measCut:
             #print('Too few measurements')
-            veto[2] += 1
+            if check == 0: veto[2] += 1
             check = -1
-            if check2 == 0: vetoo[2] += 1
-            check2 = 1
 
         fit_rchi2 = fit_status.getChi2()                      
         fit_chi2 = (fit_rchi2/fit_nmeas)
         if fill == 1: h['Chi2'].Fill(fit_chi2)
         if not fit_chi2 < chi2Cut:
             #print('Chi squared value too high')
-            veto[3] += 1
+            if check == 0: veto[3] += 1
             check = -1
-            if check2 == 0: vetoo[3] += 1
-            check2 = 1
 
     if sTree.GetBranch('EcalPoint'):
         ecal_Etot = 0
@@ -700,10 +1030,8 @@ def track_checks(index,veto,vetoo,fill):
         if fill == 1: h['ecalE'].Fill(ecal_Etot)
         if not ecal_Etot > ecalCut:
             #print('Not enough energy deposited in the ECAL')
-            veto[4] += 1
+            if check == 0: veto[4] += 1
             check = -1
-            if check2 == 0: vetoo[4] += 1
-            check2 = 1
 
     if sTree.GetBranch('muonPoint'):
         if abs(true_part.GetPdgCode()) == 13:
@@ -714,28 +1042,26 @@ def track_checks(index,veto,vetoo,fill):
                     muonstation_z.append(hits.GetZ())
             if not len(muonstation_z) > 2:
                 #print('Did not leave hits in both the 1st and 2nd muon stations')
-                veto[5] += 1
+                if check == 0: veto[5] += 1
                 check = -1
-                if check2 == 0: vetoo[5] += 1
             else:
                 if not muonstation_z[0] == 4017.0: #first muon station position (cm)
-                    veto[5] += 1
-                    check = -1
-                    if check2 == 0: vetoo[5] += 1
+                    if check == 0: veto[5] += 1
+                    check =-1
 
-    return check,veto,vetoo
+    return check,veto
 
 def createRatio(h1, h2, histname):
     h3 = h1.Clone(histname)
     h3.SetMarkerStyle(20)
     h3.SetMarkerSize(0.7)
-    h3.SetTitle("")
+    h3.SetTitle('')
     h3.SetMinimum(0.8)
     h3.SetMaximum(1.35)
     # Set up plot for markers and errors
     h3.Sumw2()
     h3.SetStats(0)
-    h3.Divide(h1,h2,1,1,"B")
+    h3.Divide(h1,h2,1,1,'B')
     # Adjust y-axis settings
     y = h3.GetYaxis()
     y.SetRangeUser(-0.1,1.2)
@@ -747,101 +1073,47 @@ def createRatio(h1, h2, histname):
 
 nEvents = min(sTree.GetEntries(),nEvents)
 
-def finState2t1t2(HiddPart,daught1,daught2):
-    #HiddenPart = 'Neutralino'
-    #if daught1 == 'Mu':
-    #    daught1_PDG = 13
-    if  daught2 ==  'K+/-':
-        daught2_PDG = 321
-    elif daught2 == 'K*+/-':
-        daught2_PDG = 323
-    elif daught2 == 'K*0':
-        daught2_PDG = 313
-    if sTree.GetBranch("FitTracks"):
-        totalEvents=0
-        successful_events = []   # creates list of event numbers of desired decays
-        #daught1Events=0
-        d1vetoo=10*[0]
-        d1veto=10*[0]
-        #d1EventsAfterChecks=0
-        #k2muEvents=0
+########################################
+#########  ANALYSIS FUNCTIONS  #########
+def finStateMuKa():
+    if sTree.GetBranch('FitTracks'):
+        particleList=['Neutralino','Mu','K+/-',None]
+        create_Hists(particleList)
+        successful_events = []
+        muveto=10*[0]
         k2mu_MotherHP = 0
-        k2mu_Motherd2 = 0
-        #pi2muEvents=0
-        pi2mu_MotherHP = 0
-        pi2mu_Motherd2 = 0
-        HiddPartDaught1Events=0
+        NeutralinoMuEvents=0
         finStateEvents=0
-        #d2toKaonveto=10*[0]
-        d2toKaonveto=10*[0]
-        #d2toKaonEventsAfterChecks=0
-        daught2toPionEvents=0
-        d2toPionvetoo=10*[0]
-        d2toPionveto=10*[0]
-        d2toPionEventsAfterChecks=0
-        HP2ka_vetoo = 10*[0]
         HP2ka_veto = 10*[0]
-        d2ka_vetoo = 10*[0]
-        d2ka_veto = 10*[0]
-        HP2pi_vetoo = 10*[0]
-        HP2pi_veto = 10*[0]
-        d2pi_vetoo = 10*[0]
-        d2pi_veto = 10*[0]
-
         veto = 10*[0]
-        vetoo = 10*[0]
-        check2 = 0
         
-        for n in range(nEvents):    #loops over events
-            totalEvents+=1
-            rc = sTree.GetEntry(n)                              # load tree entry
-            event = True
+        for n in range(nEvents):    # loops over events
+            rc = sTree.GetEntry(n)    # load tree entry
 
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 fitstatus1 = reco_part.getFitStatus()
                 if fitstatus1.isFitConverged(): 
-                    d1Partkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
-                    true_daught1 = sTree.MCTrack[d1Partkey]               # gives MC particle data
+                    muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
+                    true_Mu = sTree.MCTrack[muPartkey]               # gives MC particle data
 
-                    if abs(true_daught1.GetPdgCode()) == 13:        # checks particle is muon
-                        #daught1Events+=1
-                        daught1MotherKey = true_daught1.GetMotherId()             # stores a number index of MC track of mother
-                        true_mother = sTree.MCTrack[daught1MotherKey]             # obtains mother particle data
+                    if abs(true_Mu.GetPdgCode()) == 13:        # checks particle is muon
+                        MuMotherKey = true_Mu.GetMotherId()             # stores a number index of MC track of mother
+                        true_mother = sTree.MCTrack[MuMotherKey]             # obtains mother particle data
 
-                        check, d1veto,d1vetoo = track_checks(index,d1veto,d1vetoo,0)
+                        check, muveto = track_checks(index,muveto,0)
                         if not check == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
                             continue
-                        #d1EventsAfterChecks+=1
 
                         if true_mother.GetPdgCode() == 321:     #checks mother is kaon
-                                d1GrannyKey = true_mother.GetMotherId()
-                                true_gran = sTree.MCTrack[d1GrannyKey]
-                                #k2muEvents+=1
+                                muGrannyKey = true_mother.GetMotherId()
+                                true_gran = sTree.MCTrack[muGrannyKey]
                                 if true_gran.GetPdgCode() == 9900015:
-                                    k2mu_MotherHP+=1
-                                    check,HP2ka_veto, HP2ka_vetoo = track_checks(index,HP2ka_veto, HP2ka_vetoo,0)
+                                    k2mu_MotherHP+=1 # kaon has decayed to a muon in flight
+                                    check,HP2ka_veto = track_checks(index,HP2ka_veto,0)
                                     if check == -1: HP2ka_veto[0] += 1 
-                                if true_gran.GetPdgCode() == daught2_PDG:
-                                    k2mu_Motherd2+=1
-                                    check,d2ka_veto, d2ka_vetoo = track_checks(index,d2ka_veto, d2ka_vetoo,0)
-                                    if check == -1: d2ka_veto[0] += 1 
 
-
-                        if true_mother.GetPdgCode() == 211:     # checks mother is pion
-                                d1GrannyKey = true_mother.GetMotherId()
-                                true_gran = sTree.MCTrack[d1GrannyKey]
-                                #pi2muEvents+=1
-                                if true_gran.GetPdgCode() == 9900015:
-                                    pi2mu_MotherHP+=1
-                                    check,HP2pi_veto, HP2pi_vetoo = track_checks(index,HP2pi_veto, HP2pi_vetoo,0)
-                                    if check == -1: HP2pi_veto[0] += 1 
-                                if true_gran.GetPdgCode() == daught2_PDG:
-                                    pi2mu_Motherd2+=1
-                                    check,d2pi_veto, d2pi_vetoo = track_checks(index,d2pi_veto, d2pi_vetoo,0)
-                                    if check == -1: d2pi_veto[0] += 1
-
-                        if true_mother.GetPdgCode() == 9900015:              # checks mother is hidden particle
-                            HiddPartDaught1Events+=1
+                        if true_mother.GetPdgCode() == 9900015:              # checks mother is Neutralino
+                            NeutralinoMuEvents+=1
                         
                             for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
                                 fit_status2 = reco_part2.getFitStatus()
@@ -851,535 +1123,581 @@ def finState2t1t2(HiddPart,daught1,daught2):
                                     part2MotherKey = true_part2.GetMotherId()            # stores a number index of MC track of mother
                                     true_mother = sTree.MCTrack[part2MotherKey]          # obtains mother particle data
                                     
-                                    if (part2MotherKey==daught1MotherKey and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
+                                    if (part2MotherKey==MuMotherKey and true_mother.GetPdgCode() == 9900015):#and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
                                         finStateEvents+=1
 
                                         ####################
                                         #####  CHECKS  #####                                        
                                         if fitstatus1.isFitConverged() and fit_status2.isFitConverged():
                                             veto[0] += 1
-                                        else:
-                                            #print('At least one of the track fits did not converge')
-                                            break
+                                        else: continue
                                     
-                                        check,veto, vetoo = track_checks(index,veto,vetoo,1)   # performs various track checks
-                                        if check == -1: 
-                                            break
-                                            #event = False
+                                        check,veto = track_checks(index,veto,1)   # performs various track checks
+                                        check,veto = track_checks(index2,veto,1)
 
-                                        if event == True:   # if the first track was fine, check the other one (ensures event veto counting is correct)
-                                            check,veto, vetoo = track_checks(index2,veto, vetoo,1)
-                                            if check == -1: 
-                                                break
-                                                #event = False
-                                    
-                                        
-                                        #daught1_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                                        #part2_LVec = ROOT.TLorentzVector()                   # declares variable as TLorentzVector class
-                                        #HiddPart_LVec = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
-                                        HiddPart_LVec,daught1_LVec,part2_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
-                                        if HiddPart_LVec == -1:
-                                            print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
+                                        Neutralino_LVec,Mu_LVec,part2_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
+                                        if Neutralino_LVec == -1 and not check == -1:
                                             veto[9] += 1
-                                            break
+                                            check = -1
+                                            continue
 
                                         h['recovertex'].Fill(Z)
-                                        if not isInFiducial(X,Y,Z):
-                                            #print('Neutralino decayed outside fiducial volume')
+                                        if not isInFiducial(X,Y,Z) and not check == -1:
                                             veto[6] += 1
-                                            break
-                                            #event = False
+                                            check = -1
                                     
                                         h['doca'].Fill(doca)
-                                        if not doca < docaCut: 
-                                            #print('distance of closest approach too large')
+                                        if not doca < docaCut and not check == -1:
                                             veto[7] +=1
-                                            break
-                                            #event = False
+                                            check = -1
                                         
                                         NProduction_X = true_mother.GetStartX()
                                         NProduction_Y = true_mother.GetStartY()
                                         NProduction_Z = true_mother.GetStartZ()
                                         NProduction_T = true_mother.GetStartT()
-                                        HiddPart_Pos = ROOT.TLorentzVector()
-                                        HiddPart_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
+                                        Neutralino_Pos = ROOT.TLorentzVector()
+                                        Neutralino_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
                                         tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
-                                        ip = ImpactParameter(tr,HiddPart_Pos,HiddPart_LVec)
+                                        ip = ImpactParameter(tr,Neutralino_Pos,Neutralino_LVec)
                                         h['IP_target'].Fill(ip)
-                                        if not ip < ipCut:
-                                            #print('neutralino impact parameter to target too large')
+                                        if not ip < ipCut and not check == -1:
                                             veto[8] += 1
-                                            break
-                                            #event = False
+                                            continue
 
-                                        if event == False: break
-                                        #d2toKaonEventsAfterChecks+=1
+                                        if check == -1: continue
 
 
                                         #######################
                                         ### Reco Properties ###
-                                        HiddPart_mass = HiddPart_LVec.M()
-                                        HiddPart_recoMom = HiddPart_LVec.P()
+                                        Neutralino_mass = Neutralino_LVec.M()
+                                        Neutralino_recoMom = Neutralino_LVec.P()
                                         p2M = part2_LVec.M()
                                         p2P = part2_LVec.P()
                                         p2E = part2_LVec.E()
-                                        d1M = daught1_LVec.M()
-                                        d1P = daught1_LVec.P()
-                                        d1E = daught1_LVec.E()
+                                        muM = Mu_LVec.M()
+                                        muP = Mu_LVec.P()
+                                        muE = Mu_LVec.E()
                                         #######################
                                         ### True Properties ###
                                         p2MotherTrueMass = true_mother.GetMass()
                                         p2MotherTrueMom = true_mother.GetP()             
                                         part2TrueMom = true_part2.GetP()
                                         part2TrueMass = true_part2.GetMass()
-                                        daught1TrueMom = true_daught1.GetP()
-                                        daught1TrueMass = true_daught1.GetMass()
+                                        MuTrueMom = true_Mu.GetP()
+                                        MuTrueMass = true_Mu.GetMass()
 
-                                        mom_diff = p2MotherTrueMom - HiddPart_recoMom
+                                        mom_diff = p2MotherTrueMom - Neutralino_recoMom
 
                                         part2='K+/-'
-                                        h[daught1 + 'TrueMom'].Fill(daught1TrueMom)
-                                        h[daught1 + 'TrueMass'].Fill(daught1TrueMass)
-                                        h[part2 + 'TrueMom'].Fill(part2TrueMom)
-                                        h[part2 + 'TrueMass'].Fill(part2TrueMass)
-                                        h[HiddPart + 'TrueMass'].Fill(p2MotherTrueMass)            
-                                        h[HiddPart + 'TrueMom'].Fill(p2MotherTrueMom)
-                                        h[HiddPart + 'RecoMass'].Fill(HiddPart_mass)                        
-                                        h[HiddPart + 'RecoMom'].Fill(HiddPart_recoMom)                
-                                        #h['Chi2'].Fill(d1_chi2)       
-                                        #h['Chi2'].Fill(p2_chi2)                             
-                                        h[HiddPart + 'DeltaMom'].Fill(mom_diff)
-                                        h[part2 + 'RecoMom'].Fill(p2P)
-                                        h[daught1 + 'RecoMom'].Fill(d1P)
-                                        h[part2 + 'RecoMass'].Fill(p2M)
-                                        h[daught1 + 'RecoMass'].Fill(d1M)
+                                        h['Mu' + 'TrueMom'].Fill(MuTrueMom)
+                                        h['Mu' + 'TrueMass'].Fill(MuTrueMass)
+                                        h['K+/-' + 'TrueMom'].Fill(part2TrueMom)
+                                        h['K+/-' + 'TrueMass'].Fill(part2TrueMass)
+                                        h['Neutralino' + 'TrueMass'].Fill(p2MotherTrueMass)            
+                                        h['Neutralino' + 'TrueMom'].Fill(p2MotherTrueMom)
+                                        h['Neutralino' + 'RecoMass'].Fill(Neutralino_mass)                        
+                                        h['Neutralino' + 'RecoMom'].Fill(Neutralino_recoMom)                            
+                                        h['Neutralino' + 'DeltaMom'].Fill(mom_diff)
+                                        h['K+/-' + 'RecoMom'].Fill(p2P)
+                                        h['Mu' + 'RecoMom'].Fill(muP)
+                                        h['K+/-' + 'RecoMass'].Fill(p2M)
+                                        h['Mu' + 'RecoMass'].Fill(muM)
 
-                                        HiddPart_Zmom = HiddPart_LVec.Pz()
-                                        HiddPart_Zbeta = 1/ROOT.TMath.Sqrt(1 + ((HiddPart_mass/HiddPart_Zmom)**2))
-                                        HiddPart_Zgamma = 1/(ROOT.TMath.Sqrt(1 - (HiddPart_Zbeta**2)))
-                                        cos_theta = HiddPart_Zmom/HiddPart_recoMom
+                                        Neutralino_Zmom = Neutralino_LVec.Pz()
+                                        Neutralino_Zbeta = 1/ROOT.TMath.Sqrt(1 + ((Neutralino_mass/Neutralino_Zmom)**2))
+                                        Neutralino_Zgamma = 1/(ROOT.TMath.Sqrt(1 - (Neutralino_Zbeta**2)))
+                                        cos_theta = Neutralino_Zmom/Neutralino_recoMom
                                         theta = 1000*(ROOT.TMath.ACos(cos_theta))   # angle between beam line and neutralino momentum (mrad)
 
-                                        h[HiddPart + 'Beta'].Fill(HiddPart_Zbeta)
-                                        h[HiddPart + 'Gamma'].Fill(HiddPart_Zgamma)
-                                        h[HiddPart + 'Theta'].Fill(theta)
+                                        h['Neutralino' + 'Beta'].Fill(Neutralino_Zbeta)
+                                        h['Neutralino' + 'Gamma'].Fill(Neutralino_Zgamma)
+                                        h['Neutralino' + 'Theta'].Fill(theta)
 
                                         successful_events.append(n)   # adds entries to the list
                                         m = successful_events[0]   # arbitrarily picks the first one as an example
 
-                                        time_res(d1P,daught1,d1Partkey,n,m)
-                                        time_res(p2P,part2,p2Partkey, n, m)
+                                        time_res(muP,'Mu',muPartkey,n,m)
+                                        time_res(p2P,'K+/-',p2Partkey, n, m)
+                                        
+    print(2*' ' + 80*'_')
+    accepted = len(successful_events)
+    rejected = veto[0] - accepted
+
+    print('\n\t' + str(n+1) +  ' total number of events')
+    print('\t' + str(NeutralinoMuEvents) + '  ' + 'Mu' + ' number of events (with ' + 'Neutralino' + ' mother)')
+    print('\t' + str(finStateEvents) + ' number of events produced final state ')
+    print('\t' + str(veto[0]) + ' events reconstructed for this decay mode')
+    accepted=veto[0] - veto[3]
+    print('\t\t' + str(veto[0] - veto[3]) + ' events with both tracks chi squared < ' + str(chi2Cut) + ' (' + str(veto[3]) + ' event vetos)')
+    accepted-=veto[2]
+    print('\t\t' + str(accepted) + ' events with both tracks no. of measurements > ' + str(measCut) + ' (' + str(veto[2]) + ' event vetos)')
+    accepted-=veto[6]
+    print('\t\t' + str(accepted) + ' events with neutralino decay vertex inside fiducial volume (' + str(veto[6]) + ' event vetos)')
+    accepted-=veto[1]
+    print('\t\t' + str(accepted) + ' events with both tracks within fiducial volume (' + str(veto[1]) + ' event vetos)')
+    accepted-=veto[4]
+    print('\t\t' + str(accepted) + ' events where both tracks leave > ' + str(ecalCut) + ' GeV in ECAL (' + str(veto[4]) + ' event vetos)')
+    accepted-=veto[5]
+    print('\t\t' + str(accepted) + ' events with hits in both the 1st and 2nd muon stations (' + str(veto[5]) + ' event vetos)')
+    accepted-=veto[7]
+    print('\t\t' + str(accepted) + ' events with DOCA between tracks < ' + str(docaCut) + ' cm (' + str(veto[7]) + ' event vetos)')
+    accepted-=veto[8]
+    print('\t\t' + str(accepted) + ' events with IP to target < ' + str(ipCut) + ' cm (' + str(veto[8]) + ' event vetos)')
+    print('\t' + str(veto[9]) + ' failed RedoVertexing extrapolations')
+    print('\t' + str(accepted) + ' events not rejected and '+ str(rejected) + ' events rejected.')
+    print('\t' + str(k2mu_MotherHP) + ' kaons (mother HP) decayed to muons before detection (' + str(k2mu_MotherHP-HP2ka_veto[0]) + ' after track checks)')
+    print(2*' ' + 80*'_'+ '\n')
+    h['Mu' + 'ProbMeasr'] = createRatio(h['Mu' + 'SmearedMass'],h['TotalSmearedMass'],'Mu' + 'ProbMeasr')
+    h['K+/-' + 'ProbMeasr'] = createRatio(h['K+/-' + 'SmearedMass'],h['TotalSmearedMass'],'K+/-' + 'ProbMeasr')
+    makePlots2(particleList)
+
+def finStateMuKa_exc():
+    if sTree.GetBranch('FitTracks'):
+        print('\nRunning analysis for final state K*+- Mu-+ :\n')
+        print('Decay A: N --> K*+- mu-+ --> K+- pi0 mu-+')
+        print('Decay B: N --> K*+- mu-+ --> K0 pi+- mu-+\n')
+        createHists_MuKa_exc()   # calls function to create histograms
+        successful_events = []   # creates list of event numbers of desired decays
+        A_veto = 10*[0]   # veto counter for decay A
+        B_veto = 10*[0]   # veto counter for decay B
+        pi_veto = 10*[0]   # creates list of veto counts for muons which decayed from pions from K* from neutrinalinos
+        pi_decaycheck = 0   # variable for counting when pions from K* from neutralinos decay to muons before detection
+
+        decayAcount_kaon = 0
+        decayAcount_pion0 = 0
+        decayBcount_pion = 0
+        decayBcount_kaon0 = 0 
+
+        for n in range(nEvents):   # loops over events
+            rc = sTree.GetEntry(n)   # loads tree entry
+            event = True
+            motherEcheck = []
+
+            #-----------------------------------------------TRACK-LOOPS------------------------------------------------
+
+            for index,reco_muon in enumerate(sTree.FitTracks):   # loops over index and data of track particles                                   
+                muPartkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
+                true_muon = sTree.MCTrack[muPartkey]   # gives MC particle data
+
+                if abs(true_muon.GetPdgCode()) == 13:   # checks particle is muon
+                    muonMotherkey = true_muon.GetMotherId()   # stores a number index of MC track of mother
+                    true_motherN = sTree.MCTrack[muonMotherkey]   # obtains mother particle data
+                    if true_motherN.GetPdgCode() == 9900015:
+
+                        fitstatus_muon = reco_muon.getFitStatus()
+                        if not fitstatus_muon.isFitConverged(): continue
+                        
+                        Muon_4Mom = SingleTrack_4Mom(index)
+
+                        for index2,reco_part in enumerate(sTree.FitTracks):   # loops over index and data of track 
+                            Partkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
+                            true_part = sTree.MCTrack[Partkey]   # gives MC particle data
+
+                            #===============================================DECAY=A========================================================
+
+                            if abs(true_part.GetPdgCode()) == 321:   # checks particle is CHARGED KAON
+                                true_kaon = true_part
+                                reco_kaon = reco_part
+                                kaPartkey = Partkey
+                                kaonMotherkey = true_kaon.GetMotherId()
+                                true_kaonEx = sTree.MCTrack[kaonMotherkey]
+                                if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is excited charged kaon
+                                    kaonExMotherkey = true_kaonEx.GetMotherId()           
+                                    true_motherN = sTree.MCTrack[kaonExMotherkey]
+                                    if kaonExMotherkey == muonMotherkey and true_motherN.GetPdgCode() == 9900015:   # checks if mother keys are the same
+
+                                        fitstatus_kaon = reco_kaon.getFitStatus()
+                                        if not fitstatus_kaon.isFitConverged(): continue
+                                        
+                                        check,A_veto = track_checks(index,A_veto,0)   # performs various checks
+                                        if check == -1: continue
+                                        
+                                        decayAcount_kaon += 1
+
+                            #--------------------------------------------------------------------------------------------------------------
+
+                                        for hit in sTree.EcalPoint:
+                                            if hit.GetPdgCode() == 22:   # looking for photon hits in the ECAL
+                                                TrackID = hit.GetTrackID()
                                                 
-                                if abs(true_part2.GetPdgCode()) == 211:     # checks particle is kaon
-                                    part3MotherKey = true_part2.GetMotherId()          # stores a number index of MC track of mother
-                                    true_mother = sTree.MCTrack[part3MotherKey]          # obtains mother particle data
-                                    
-                                    if true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-':                 # check if keys are the same
-                                        finStateEvents+=1
+                                                if TrackID == 7 or TrackID == 8:   # both correspond to the photons we are looking for (somehow)
+                                                    photon = sTree.MCTrack[TrackID]
+                                                    pion0 = sTree.MCTrack[photon.GetMotherId()]
+                                                    if pion0.GetPdgCode() == 111:   # photon mother is neutral pion
+                                                        pion0Motherkey = pion0.GetMotherId()
+                                                        kaonEx = sTree.MCTrack[pion0Motherkey]
+                                                        if kaonEx.GetPdgCode() == 323:   # neutral pion mother is excited kaon
+                                                            motherN = sTree.MCTrack[kaonEx.GetMotherId()]
+                                                            if pion0Motherkey == kaonMotherkey and motherN.GetPdgCode() == 9900015:
+                                                                motherEcheck.append(pion0.GetEnergy())
 
-                                        ####################
-                                        #####  CHECKS  #####                                        
-                                        if fitstatus1.isFitConverged() and fit_status2.isFitConverged():
-                                            veto[0] += 1
-                                        else:
-                                            #print('At least one of the track fits did not converge')
-                                            break
-                                    
-                                        check,veto, vetoo = track_checks(index,veto,vetoo,1)   # performs various track checks
-                                        if check == -1: 
-                                            break
-                                            #event = False
+                                        if len(motherEcheck) > 0: decayAcount_pion0 += 1
 
-                                        if event == True:   # if the first track was fine, check the other one (ensures event veto counting is correct)
-                                            check,veto, vetoo = track_checks(index2,veto, vetoo,1)
-                                            if check == -1: 
-                                                break
-                                                #event = False
-                                    
+                            #===============================================DECAY=B========================================================
+
+                            if abs(true_part.GetPdgCode()) == 13:
+                                true_mother = sTree.MCTrack[true_part.GetMotherId()]
+                                if abs(true_mother.GetPdgCode()) == 211:
+                                    motherKaExc = sTree.MCTrack[true_mother.GetMotherId()]
+                                    if abs(motherKaExc.GetPdgCode()) == 323:
+                                        fitstatus = reco_part.getFitStatus()
+                                        if fitstatus.isFitConverged():
+                                            motherN = sTree.MCTrack[motherKaExc.GetMotherId()]
+                                            if abs(motherN.GetPdgCode()) == 9900015:
+                                                pi_decaycheck += 1   # pion has decayed to muon in flight
+                                                check,pi_veto = track_checks(index2,pi_veto,0)
+                                                if check == -1: pi_veto[0] += 1
+                            
+                            if abs(true_part.GetPdgCode()) == 211:   # checks particle is CHARGED PION
+                                true_pion = true_part
+                                reco_pion = reco_part
+                                piPartkey = Partkey
+                                pionMotherkey = true_pion.GetMotherId()
+                                true_kaonEx = sTree.MCTrack[pionMotherkey]
+                                if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is excited charged kaon
+                                    kaonExMotherkey = true_kaonEx.GetMotherId()
+                                    true_motherN = sTree.MCTrack[kaonExMotherkey]
+                                    if kaonExMotherkey == muonMotherkey and true_motherN.GetPdgCode() == 9900015:
+
+                                        fitstatus_pion = reco_pion.getFitStatus()
+                                        if not fitstatus_pion.isFitConverged(): continue
+
+                                        check,pi_veto = track_checks(index2,pi_veto,0)   # just using pi_veto as we don't need it for counting
+                                        if check == 0: decayBcount_pion += 1   # doing track_checks here as well to make this count correct
                                         
-                                        #daught1_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                                        #part2_LVec = ROOT.TLorentzVector()                   # declares variable as TLorentzVector class
-                                        #HiddPart_LVec = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
-                                        HiddPart_LVec,daught1_LVec,part2_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
-                                        if HiddPart_LVec == -1:
-                                            print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
-                                            veto[9] += 1
-                                            break
+                                        Pion_4Mom = SingleTrack_4Mom(index2)
+                                            
+                            #--------------------------------------------------------------------------------------------------------------
 
-                                        h['recovertex'].Fill(Z)
-                                        if not isInFiducial(X,Y,Z):
-                                            #print('Neutralino decayed outside fiducial volume')
-                                            veto[6] += 1
-                                            break
-                                            #event = False
+                                        for index3,reco_piplus in enumerate(sTree.FitTracks):   # loops over index and data of track particles                                   
+                                            piplusPartkey = sTree.fitTrack2MC[index3]   # matches track to MC particle key
+                                            true_piplus = sTree.MCTrack[piplusPartkey]   # gives MC particle data
+                            
+                                            if true_piplus.GetPdgCode() == 211:   # checks particle is pion
+                                                piplusMotherkey = true_piplus.GetMotherId()   # stores a number index of MC track of mother
+                                                true_kaon = sTree.MCTrack[piplusMotherkey]
+                                                if abs(true_kaon.GetPdgCode()) == 310 or abs(true_kaon.GetPdgCode()) == 130:   # checks mother is NEUTRAL KAON
+                                                    true_kaon2 = sTree.MCTrack[true_kaon.GetMotherId()]
+                                                    if true_kaon2.GetPdgCode() == 310 or abs(true_kaon2.GetPdgCode()) == 130:                                     
+                                                        true_kaonEx = sTree.MCTrack[true_kaon2.GetMotherId()]
+                                                        if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is charged excited kaon   
+                                                            true_motherN = sTree.MCTrack[true_kaonEx.GetMotherId()]
+                                                            if true_motherN.GetPdgCode() == 9900015:
+
+                                                                for index4,reco_piminus in enumerate(sTree.FitTracks):   # loops over index and data of track 
+                                                                    piminusPartkey = sTree.fitTrack2MC[index4]   # matches track to MC particle key
+                                                                    true_piminus = sTree.MCTrack[piminusPartkey]   # gives MC particle data
+                                                    
+                                                                    if true_piminus.GetPdgCode() == -211:   # checks particle is oppositely charged pion
+                                                                        piminusMotherkey = true_piminus.GetMotherId()   # stores a number index of MC track of mother
+                                                        
+                                                                        if piplusMotherkey == piminusMotherkey:
+
+                                                                            fitstatus_piplus = reco_piplus.getFitStatus() 
+                                                                            fitstatus_piminus = reco_piminus.getFitStatus()
+                                                                            if fitstatus_piplus.isFitConverged() and fitstatus_piminus.isFitConverged():
+                                                                                B_veto[0] += 1
+                                                                            else:
+                                                                                #print('At least one of the track fits did not converge')
+                                                                                continue
+
+                                                                            check,B_veto = track_checks(index,B_veto,1)   # performs various track checks
+                                                                            if check == -1: event = False
+                                                                            if event == True: 
+                                                                                check,B_veto = track_checks(index2,B_veto,1)
+                                                                                if check == -1: event = False
+                                                                            if event == True:
+                                                                                check,B_veto = track_checks(index3,B_veto,1)
+                                                                                if check == -1: event = False
+                                                                            if event == True:
+                                                                                check,B_veto = track_checks(index4,B_veto,1)
+                                                                                if check == -1: event = False
+
+                                                                            #---------------------------------------------PARTICLE-DATA-----------------------------------------------------
+
+                                                                            Kaon_4Mom,Pionplus_4Mom,Pionminus_4Mom,Decay_X,Decay_Y,Decay_Z,doca = RedoVertexing(index3,index4)   # uses RedoVertexing to iterate track fitting
+                                                                            if Kaon_4Mom == -1: 
+                                                                                print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
+                                                                                B_veto[9] += 1
+                                                                                continue
+
+                                                                            KaonEx_4Mom = Kaon_4Mom + Pion_4Mom
+                                                                            RPV_4Mom = KaonEx_4Mom + Muon_4Mom
+
+                                                                            h['recovertex'].Fill(Decay_Z)
+                                                                            if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
+                                                                                #print('Neutralino decayed outside fiducial volume')
+                                                                                B_veto[6] += 1
+                                                                                event = False
+
+                                                                            h['doca'].Fill(doca)
+                                                                            if not doca < docaCut: 
+                                                                                #print('Distance of closest approach too large')
+                                                                                B_veto[7] +=1
+                                                                                event = False
+
+                                                                            NProduction_X = true_motherN.GetStartX()
+                                                                            NProduction_Y = true_motherN.GetStartY()
+                                                                            NProduction_Z = true_motherN.GetStartZ()
+                                                                            NProduction_T = true_motherN.GetStartT()
+                                                                            RPV_Pos = ROOT.TLorentzVector()
+                                                                            RPV_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
+                                                                            tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
+                                                                            ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
                                     
-                                        h['doca'].Fill(doca)
-                                        if not doca < docaCut: 
-                                            #print('distance of closest approach too large')
-                                            veto[7] +=1
-                                            break
-                                            #event = False
-                                        
-                                        NProduction_X = true_mother.GetStartX()
-                                        NProduction_Y = true_mother.GetStartY()
-                                        NProduction_Z = true_mother.GetStartZ()
-                                        NProduction_T = true_mother.GetStartT()
-                                        HiddPart_Pos = ROOT.TLorentzVector()
-                                        HiddPart_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
-                                        tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
-                                        ip = ImpactParameter(tr,HiddPart_Pos,HiddPart_LVec)
-                                        h['IP_target'].Fill(ip)
-                                        if not ip < ipCut:
-                                            #print('neutralino impact parameter to target too large')
-                                            veto[8] += 1
-                                            break
-                                            #event = False
+                                                                            #Decay_T = true_muon.GetStartT()
+                                                                            #RPV_Pos = ROOT.TLorentzVector()
+                                                                            #RPV_Pos.SetXYZT(Decay_X,Decay_Y,Decay_Z,Decay_T)
+                                                                            #tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
+                                                                            #ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)
 
-                                        if event == False: break
+                                                                            h['IP_target'].Fill(ip)
+                                                                            if not ip < ipCut:
+                                                                                #print('Neutralino impact parameter to target too large')
+                                                                                B_veto[8] += 1
+                                                                                event = False
 
-                                        #print(reco_part2)
-                                        p3MotherTrueMass = true_mother.GetMass()               # get Neutralino/final states mother mass
-                                        p3MotherTrueMom = true_mother.GetP()                   # get Neutralino/final states mother mom
-                                        check3,d2toPionveto, d2toPionvetoo = track_checks(index2,d2toPionveto, d2toPionvetoo,1)
-                                        if not check3 == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
-                                            continue
-                                        d2toPionEventsAfterChecks+=1
+                                                                            if event == False: continue
+
+                                                                            decayBcount_kaon0 += 1
+
+                                                                            Kaon_recomass = Kaon_4Mom.M()   # reconstructed neutral kaon mass
+                                                                            Kaon_recomom = Kaon_4Mom.P()   # reconstructed neutral kaon momentum
+                                                                            Kaon_truemom = true_kaon.GetP()
+                                                                            piplus_recomom = Pionplus_4Mom.P()   # reconstructed pi+ momentum
+                                                                            piminus_recomom = Pionminus_4Mom.P()   # reconstructed pi- momentum
+                                                                            h['Kaon_recomass'].Fill(Kaon_recomass)           
+                                                                            h['Kaon_recomom'].Fill(Kaon_recomom)
+                                                                            h['Kaon_truemom'].Fill(Kaon_truemom)
+                                                                            h['Piplus_recomom'].Fill(piplus_recomom)
+                                                                            h['Piminus_recomom'].Fill(piminus_recomom)
+
+                                                                            RPV_recomass = RPV_4Mom.M()
+                                                                            RPV_recomom = RPV_4Mom.P()
+                                                                            RPV_truemom = true_motherN.GetP()
+                                                                            h['RPV_recomass'].Fill(RPV_recomass)
+                                                                            h['RPV_recomom'].Fill(RPV_recomom)
+                                                                            h['RPV_truemom'].Fill(RPV_truemom)
+
+                                                                            successful_events.append(n)   # adds entries to the list
+
+        #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------                                 
+
+        accepted = len(successful_events)
+        rejected = B_veto[0] - accepted
+        print('\n\t' + str(B_veto[0]) + ' charged final states reconstructed for this decay mode')
+        print('\t' + str(accepted) + ' not rejected')
+        print('\t' + str(rejected) + ' rejected:')
+        print('\t\t' + str(B_veto[0] - B_veto[6]) + ' events with K0 decay vertex inside fiducial volume (' + str(B_veto[6]) + ' event vetos)')
+        print('\t\t' + str(B_veto[0] - B_veto[1]) + ' events with all tracks within fiducial volume (' + str(B_veto[1]) + ' event vetos)')
+        print('\t\t' + str(B_veto[0] - B_veto[2]) + ' events with all tracks no. of measurements > ' + str(measCut) + ' (' + str(B_veto[2]) + ' event vetos)')
+        print('\t\t' + str(B_veto[0] - B_veto[3]) + ' events with all tracks chi squared < ' + str(chi2Cut) + ' (' + str(B_veto[3]) + ' event vetos)')
+        print('\t\t' + str(B_veto[0] - B_veto[4]) + ' events where all tracks leave > ' + str(ecalCut) + ' GeV in ECAL (' + str(B_veto[4]) + ' event vetos)')
+        print('\t\t' + str(B_veto[0] - B_veto[5]) + ' events with hits in both the 1st and 2nd muon stations (' + str(B_veto[5]) + ' event vetos)')
+        print('\t\t' + str(B_veto[0] - B_veto[7]) + ' events with DOCA between tracks < ' + str(docaCut) + ' cm (' + str(B_veto[7]) + ' event vetos)')
+        print('\t\t' + str(B_veto[0] - B_veto[8]) + ' events with IP to target < ' + str(ipCut) + ' cm (' + str(B_veto[8]) + ' event vetos)')
+
+        print('\t' + str(B_veto[9]) + ' failed RedoVertexing extrapolations')
+        print('\t' + str(pi_decaycheck) + ' pions decayed to muons before detection (' + str(pi_decaycheck - pi_veto[0]) + ' after track checks)')
+
+        print('\n\t------------------------------------')
+
+        print('\n\t' + str(decayAcount_kaon) + ' charged kaons detected (decay A)')   # after checks and track converges
+        print('\t' + str(decayAcount_pion0) + ' neutral pions detected (decay A)')
+        print('\n\t' + str(decayBcount_pion) + ' charged pions detected (decay B)')
+        print('\t' + str(decayBcount_kaon0) + ' neutral kaons detected (decay B)\n')
+
+        makePlots_MuKa_exc()
+
+def finStateDarkPhot():
+    if sTree.GetBranch('FitTracks'):
+        print('\nRunning analysis for dark photon :\n')
+        createHists_DarkPhot()
+        successful_events = []
+        veto = 10*[0]   # creates list of veto counts for each possible veto cause
+        for n in range(nEvents):   # loops over events
+            rc = sTree.GetEntry(n)   # loads tree entry
+            event = True
+
+            #-----------------------------------------------TRACK-LOOPS------------------------------------------------
+
+            for index,reco_part in enumerate(sTree.FitTracks):
+                eminusPartkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
+                true_eminus = sTree.MCTrack[eminusPartkey]   # gives MC particle data              
+
+                if true_eminus.GetPdgCode() == 11:   # checks particle is electron
+                    eminusMotherkey = true_eminus.GetMotherId()   # stores a number index of MC track of mother
+                    true_mother = sTree.MCTrack[eminusMotherkey]   # obtains mother particle data
+
+                    if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV 
+                        for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
+                            eplusPartkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
+                            true_eplus = sTree.MCTrack[eplusPartkey]   # gives MC particle data
+                            if true_eplus.GetPdgCode() == -11:   # checks particle is positron
+                                eplusMotherkey = true_eplus.GetMotherId()   # stores a number index of MC track of mother
+                                true_mother = sTree.MCTrack[eplusMotherkey]   # obtains mother particle data
+
+                                if eplusMotherkey == eminusMotherkey and true_mother.GetPdgCode() == 9900015:   # check if mother keys are the same
+                                    fitstatus_eminus = reco_part.getFitStatus() 
+                                    fitstatus_eplus = reco_part2.getFitStatus()
+                                    if fitstatus_eminus.isFitConverged() and fitstatus_eplus.isFitConverged():
+                                        veto[0] += 1
+                                    else:
+                                        #print('At least one of the track fits did not converge')
+                                        continue
                                     
-                                        part3_LVec = ROOT.TLorentzVector()                 # declares variable as TLorentzVector class
-                                        HiddPart_LVec = ROOT.TLorentzVector()                # declares variable as TLorentzVector class
-                                        HiddPart_LVec,daught1_LVec,part3_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
-                                        if HiddPart_LVec == -1: continue
-                                        if doca > 2.: 
-                                            #print('distance of closest approach too large')
-                                            continue
-
-                                        HiddPart_mass = HiddPart_LVec.M()
-                                        HiddPart_recoMom = HiddPart_LVec.P()
-                                        mom_diff = p3MotherTrueMom - HiddPart_recoMom
-
-                                        p3M = part3_LVec.M()
-                                        p3P = part3_LVec.P()
-                                        p3E = part3_LVec.E()
-                                   
+                                    check,veto = track_checks(index,veto,1)   # performs various track checks
+                                    if check == -1: event = False
+                                    else:   # if the first track was fine, check the other one (ensures event veto counting is correct)
+                                        check,veto = track_checks(index2,veto,1)
+                                        if check == -1: event = False
                                     
-                                        part3TrueMom = true_part2.GetP()
-                                        part3TrueMass = true_part2.GetMass()
+                                    #-------------------------------------------------PARTICLE-DATA------------------------------------------------------
+
+                                    DP_4Mom,eminus_4Mom,eplus_4Mom,Decay_X,Decay_Y,Decay_Z,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
+                                    if DP_4Mom == -1: 
+                                        print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
+                                        veto[9] += 1
+                                        continue
+
+                                    h['recovertex'].Fill(Decay_Z)
+                                    if not isInFiducial(Decay_X,Decay_Y,Decay_Z):
+                                        #print('Neutralino decayed outside fiducial volume')
+                                        veto[6] += 1
+                                        event = False
                                     
-                                        part3='pi+/-'
-                                        h[part3 + 'TrueMom'].Fill(part3TrueMom)
-                                        h[part3 + 'TrueMass'].Fill(part3TrueMass)
-                                        h[HiddPart + 'TrueMass'].Fill(p3MotherTrueMass)            
-                                        h[HiddPart + 'TrueMom'].Fill(p3MotherTrueMom)
-                                        h[HiddPart + 'RecoMass'].Fill(HiddPart_mass)                        
-                                        h[HiddPart + 'RecoMom'].Fill(HiddPart_recoMom)                
-                                        #h['Chi2'].Fill(p3_chi2)                             
-                                        h[HiddPart + 'DeltaMom'].Fill(mom_diff)
-                                        h[part3 + 'RecoMom'].Fill(p3P)
-                                        h[part3 + 'RecoMass'].Fill(p3M)
+                                    h['doca'].Fill(doca)
+                                    if not doca < docaCut: 
+                                        #print('Distance of closest approach too large')
+                                        veto[7] +=1
+                                        event = False
 
+                                    Production_X = true_mother.GetStartX()   # vertex coordinates of dark photon production
+                                    Production_Y = true_mother.GetStartY()
+                                    Production_Z = true_mother.GetStartZ()
+                                    Production_T = true_mother.GetStartT()
+                                    DP_Pos = ROOT.TLorentzVector()
+                                    DP_Pos.SetXYZT(Production_X,Production_Y,Production_Z,Production_T)
+                                    tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
+                                    ip = ImpactParameter(tr,DP_Pos,DP_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
 
-                                        time_res(p3P,part3, p2Partkey, n,m)
+                                    h['IP_target'].Fill(ip)
+                                    if not ip < ipCut:
+                                        #print('Neutralino impact parameter to target too large')
+                                        veto[8] += 1
+                                        event = False
 
-        print(2*' ' + 80*'_')
+                                    if event == False: continue
+
+                                    DP_recomass = DP_4Mom.M()   # reconstructed dark photon mass
+                                    DP_truemom = true_mother.GetP()   # true dark photon momentum
+                                    DP_recomom = DP_4Mom.P()   # reconstructed dark photon momentum
+                                    DP_momdiff = DP_truemom - DP_recomom   # dark photon true/reco momentum difference
+                                    true_eplusP = true_eplus.GetP()   # true positron momentum
+                                    reco_eplusP = eplus_4Mom.P()   # reconstructed positron momentum
+                                    true_eminusP = true_eminus.GetP()   # true electron momentum
+                                    reco_eminusP = eminus_4Mom.P()   # reconstructed electron momentum
+                                                      
+                                    h['DP_recomass'].Fill(DP_recomass)   # fills histograms
+                                    h['DP_truemom'].Fill(DP_truemom)             
+                                    h['DP_recomom'].Fill(DP_recomom)                            
+                                    h['DP_mom_diff'].Fill(DP_momdiff)
+                                    h['eplus_recomom'].Fill(reco_eplusP)
+                                    h['eminus_recomom'].Fill(reco_eminusP)
+                                    h['eplus_truemom'].Fill(true_eplusP)
+                                    h['eminus_truemom'].Fill(true_eminusP)
+
+                                    DP_Zmom = DP_4Mom.Pz()
+                                    DP_Zbeta = 1/ROOT.TMath.Sqrt(1 + ((DP_recomass/DP_Zmom)**2))
+                                    DP_Zgamma = 1/(ROOT.TMath.Sqrt(1 - (DP_Zbeta**2)))
+                                    cos_theta = DP_Zmom/DP_recomom
+                                    theta = 1000*(ROOT.TMath.ACos(cos_theta))   # angle between beam line and neutralino momentum (mrad)
+
+                                    h['DP_beta'].Fill(DP_Zbeta)
+                                    h['DP_gamma'].Fill(DP_Zgamma)
+                                    h['DP_theta'].Fill(theta)
+
+                                    successful_events.append(n)   # adds entries to the list
+                                    
+        #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
+
         accepted = len(successful_events)
         rejected = veto[0] - accepted
-
-        print('\n\t' + str(totalEvents) +  ' total number of events')
-        print('\t' + str(HiddPartDaught1Events) + '  ' + daught1 + ' number of events (with ' + HiddPart + ' mother)')
-        print('\t' + str(finStateEvents) + ' number of events produced final state ')
-        print('\t' + str(veto[0]) + ' events reconstructed for this decay mode')
-        accepted=veto[0] - vetoo[3]
-        print('\t\t' + str(veto[0] - vetoo[3]) + ' events with both tracks chi squared < ' + str(chi2Cut) + ' (' + str(veto[3]) + ' event vetos)')
-        accepted-=vetoo[2]
-        print('\t\t' + str(accepted) + ' events with both tracks no. of measurements > ' + str(measCut) + ' (' + str(veto[2]) + ' event vetos)')
-        accepted-=veto[6]
-        print('\t\t' + str(accepted) + ' events with neutralino decay vertex inside fiducial volume (' + str(veto[6]) + ' event vetos)')
-        accepted-=veto[1]
-        print('\t\t' + str(accepted) + ' events with both tracks within fiducial volume (' + str(veto[1]) + ' event vetos)')
-        accepted-=vetoo[4]
-        print('\t\t' + str(accepted) + ' events where both tracks leave > ' + str(ecalCut) + ' GeV in ECAL (' + str(veto[4]) + ' event vetos)')
-        accepted-=vetoo[5]
-        print('\t\t' + str(accepted) + ' events with hits in both the 1st and 2nd muon stations (' + str(veto[5]) + ' event vetos)')
-        accepted-=veto[7]
-        print('\t\t' + str(accepted) + ' events with DOCA between tracks < ' + str(docaCut) + ' cm (' + str(veto[7]) + ' event vetos)')
-        accepted-=veto[8]
-        print('\t\t' + str(accepted) + ' events with IP to target < ' + str(ipCut) + ' cm (' + str(veto[8]) + ' event vetos)')
+        print('\n\t' + str(veto[0]) + ' events reconstructed for this decay mode')
+        print('\t' + str(accepted) + ' events not rejected')
+        print('\t' + str(rejected) + ' events rejected:')
+        print('\t\t' + str(veto[0] - veto[6]) + ' events with neutralino decay vertex inside fiducial volume (' + str(veto[6]) + ' event vetos)')
+        print('\t\t' + str(veto[0] - veto[1]) + ' events with both tracks within fiducial volume (' + str(veto[1]) + ' event vetos)')
+        print('\t\t' + str(veto[0] - veto[2]) + ' events with both tracks no. of measurements > ' + str(measCut) + ' (' + str(veto[2]) + ' event vetos)')
+        print('\t\t' + str(veto[0] - veto[3]) + ' events with both tracks chi squared < ' + str(chi2Cut) + ' (' + str(veto[3]) + ' event vetos)')
+        print('\t\t' + str(veto[0] - veto[4]) + ' events where both tracks leave > ' + str(ecalCut) + ' GeV in ECAL (' + str(veto[4]) + ' event vetos)')
+        print('\t\t' + str(veto[0] - veto[5]) + ' events with hits in both the 1st and 2nd muon stations (' + str(veto[5]) + ' event vetos)')
+        print('\t\t' + str(veto[0] - veto[7]) + ' events with DOCA between tracks < ' + str(docaCut) + ' cm (' + str(veto[7]) + ' event vetos)')
+        print('\t\t' + str(veto[0] - veto[8]) + ' events with IP to target < ' + str(ipCut) + ' cm (' + str(veto[8]) + ' event vetos)')
         print('\t' + str(veto[9]) + ' failed RedoVertexing extrapolations')
-        print('\t' + str(accepted) + ' events not rejected and '+ str(rejected) + ' events rejected.')
-        print('\t' + str(k2mu_MotherHP) + ' kaons (mother HP) decayed to muons before detection (' + str(k2mu_MotherHP-HP2ka_veto[0]) + ' after track checks)')
-        print('\t' + str(k2mu_Motherd2) + ' kaons (mother K*+/-) decayed to muons before detection (' + str(k2mu_Motherd2-d2ka_veto[0]) + ' after track checks)')
-        print(2*' ' + 80*'_'+ '\n')
 
-        h[daught1 + 'ProbMeasr'] = createRatio(h[daught1 + 'SmearedMass'],h['TotalSmearedMass'],daught1 + 'ProbMeasr')
-        h[part2 + 'ProbMeasr'] = createRatio(h[part2 + 'SmearedMass'],h['TotalSmearedMass'],part2 + 'ProbMeasr')
-        if not daught2=='K+/-':
-            h[part3 + 'ProbMeasr'] = createRatio(h[part3 + 'SmearedMass'],h['TotalSmearedMass'],part3 + 'ProbMeasr')
-graph = {}
-def makePlots2(HiddPart,part1,part2,part3):
-    
-    key='DAUGHTERS'
-
-    title='Time and velocity plots'
-    h[key + '_TV']=TCanvas(key + '_TV',title,1300,800)
-    h[key + '_TV'].Divide(3,2)
-    cv = h[key + '_TV'].cd(1)
-    h['StrawTime'].Add(h[part1 + 'StrawTime'])
-    h['StrawTime'].Add(h[part2 + 'StrawTime'])
-    if not part3==None:
-        h['StrawTime'].Add(h[part3 + 'StrawTime'])
-    h['StrawTime'].Draw("nostack")
-
-    cv = h[key + '_TV'].cd(2)
-    h['EcalTime'].Add(h[part1 + 'EcalTime'])
-    h['EcalTime'].Add(h[part2 + 'EcalTime'])
-    if not part3==None:
-        h['EcalTime'].Add(h[part3 + 'EcalTime'])
-    h['EcalTime'].Draw("nostack")
-    
-
-    cv = h[key + '_TV'].cd(3)
-    h['DirDeltaTimeSmeared'].Add(h[part1 + 'DirDeltaTimeSmeared'])
-    h['DirDeltaTimeSmeared'].Add(h[part2 + 'DirDeltaTimeSmeared'])
-    if not part3==None:
-        h['DirDeltaTimeSmeared'].Add(h[part3 + 'DirDeltaTimeSmeared'])
-    h['DirDeltaTimeSmeared'].Draw("nostack")
-
-    cv = h[key + '_TV'].cd(4)
-    h['FlightLen'].Add(h[part1 + 'FlightLen'])
-    h['FlightLen'].Add(h[part2 + 'FlightLen'])
-    if not part3==None:
-        h['FlightLen'].Add(h[part3 + 'FlightLen'])
-    h['FlightLen'].Draw("nostack")
-
-    cv = h[key + '_TV'].cd(5)
-    h['Speed'].Add(h[part1 + 'Speed'])
-    h['Speed'].Add(h[part2 + 'Speed'])
-    if not part3==None:
-        h['Speed'].Add(h[part3 + 'Speed'])
-    h['Speed'].Draw("nostack")
-
-    #h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
-
-    title='Momenta and mass plots'
-    h[key + '_MOM']=TCanvas(key + '_MOM',title,1300,800)
-    h[key + '_MOM'].Divide(3,2)
-    cv = h[key + '_MOM'].cd(1)
-    h['StrawMom'].Add(h[part1 + 'StrawMom'])
-    h['StrawMom'].Add(h[part2 + 'StrawMom'])
-    if not part3==None:
-        h['StrawMom'].Add(h[part3 + 'StrawMom'])
-    h['StrawMom'].Draw("nostack")
-
-
-    cv = h[key + '_MOM'].cd(2)
-    h['EcalMom'].Add(h[part1 + 'EcalMom'])
-    h['EcalMom'].Add(h[part2 + 'EcalMom'])
-    if not part3==None:
-        h['EcalMom'].Add(h[part3 + 'EcalMom'])
-    h['EcalMom'].Draw("nostack")
-
-    cv = h[key + '_MOM'].cd(3)
-    h['RecoMom'].Add(h[part1 + 'RecoMom'])
-    h['RecoMom'].Add(h[part2 + 'RecoMom'])
-    if not part3==None:
-        h['RecoMom'].Add(h[part3 + 'RecoMom'])
-    h['RecoMom'].Draw("nostack")
-    
-    cv = h[key + '_MOM'].cd(4)
-    h['DeltaMom'].Add(h[part1 + 'DeltaMom'])
-    h['DeltaMom'].Add(h[part2 + 'DeltaMom'])
-    if not part3==None:
-        h['DeltaMom'].Add(h[part3 + 'DeltaMom'])
-    h['DeltaMom'].Draw("nostack")
-
-    cv = h[key + '_MOM'].cd(5)
-    h['RecoMass'].Add(h[part1 + 'RecoMass'])
-    h['RecoMass'].Add(h[part2 + 'RecoMass'])
-    if not part3==None:
-        h['RecoMass'].Add(h[part3 + 'RecoMass'])
-    h['RecoMass'].Draw("nostack")
-
-    cv = h[key + '_MOM'].cd(6)
-    h[part1 + 'SmearedMass'].Fit("landau")
-    h[part1 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
-    h[part2 + 'SmearedMass'].Fit('landau')
-    h[part2 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
-    if not part3==None:
-        h[part3 + 'SmearedMass'].Fit('landau')
-        h[part3 + 'SmearedMass'].GetFunction("landau").SetLineColor(kBlack)
-
-    h['SmearedMass'].Add(h[part1 + 'SmearedMass'])
-    h['SmearedMass'].Add(h[part2 + 'SmearedMass'])
-    if not part3==None:
-        h['SmearedMass'].Add(h[part3 + 'SmearedMass'])
-    h['SmearedMass'].Draw("nostack")
-
-    #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
-
-    if part3==None:
-        partString=''
-    else:
-        partString=' or pion'
-    title='Probability Plots'
-    h[key + '_PROB'] = TCanvas(key + '_PROB',title,1300,800)
-    h[key + '_PROB'].Divide(3,2)
-    cv = h[key + '_PROB'].cd(1)
-    h[part1 + 'ProbMeasr'].SetMarkerColor(38)
-    polyFit1.SetLineColor(4)
-    h[part1 + 'ProbMeasr'].Fit('polyFit1')
-    h[part1 + 'ProbMeasr'].Draw('E2')
-    h[part1 + 'ProbMeasr'].SetXTitle('Mass [GeV/c2]')
-    h[part1 + 'ProbMeasr'].SetYTitle('Prob( particle = muon )')
-    h[part1 + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
-
-    cv = h[key + '_PROB'].cd(2)
-    h[part2 + 'ProbMeasr'].SetMarkerColor(46)
-    polyFit2.SetLineColor(2)
-    h[part2 + 'ProbMeasr'].Fit('polyFit2')
-    h[part2 + 'ProbMeasr'].Draw('E2')
-    h[part2 + 'ProbMeasr'].SetXTitle('Mass [GeV/c2]')
-    h[part2 + 'ProbMeasr'].SetYTitle('Prob( particle = kaon )')
-    h[part2 + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
-
-    if not part3==None:
-        cv = h[key + '_PROB'].cd(3)
-        h[part3 + 'ProbMeasr'].SetMarkerColor(8)
-        polyFit2.SetLineColor(3)
-        h[part3 + 'ProbMeasr'].Fit('polyFit2')
-        h[part3 + 'ProbMeasr'].Draw('E2')
-        h[part3 + 'ProbMeasr'].SetXTitle('Mass [GeV/c2]')
-        h[part3 + 'ProbMeasr'].SetYTitle('Prob( particle = pion )')
-        h[part3 + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
-
-    cv = h[key + '_PROB'].cd(4)
-    graph['partIDProb'] = TMultiGraph()
-    graph['partIDProb'].SetName('Prob(correct ID paticle)')
-    x1, y1 = array( 'd' ), array( 'd' )
-    ex1, ey1 = array( 'd' ), array( 'd' )
-    x2, y2 = array( 'd' ), array( 'd' )
-    ex2, ey2 = array( 'd' ), array( 'd' )
-    if not part3==None:
-        x3, y3 = array( 'd' ), array( 'd' )
-        ex3, ey3 = array( 'd' ), array( 'd' )
-    i=0
-    n=0
-    numBins = h[part1 + 'ProbMeasr'].GetNbinsX()
-    for i in range(numBins):
-        x1.append(h[part1 + 'ProbMeasr'].GetBinCenter(i))
-        ex1.append(0)
-        y1.append(h[part1 + 'ProbMeasr'].GetBinContent(i))
-        ey1.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/10))
-        x2.append(h[part2 + 'ProbMeasr'].GetBinCenter(i))
-        ex2.append(0)
-        y2.append(h[part2 + 'ProbMeasr'].GetBinContent(i))
-        ey2.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/10))
-        if not part3==None:
-            x3.append(h[part3 + 'ProbMeasr'].GetBinCenter(i))
-            ex3.append(0)
-            y3.append(h[part3 + 'ProbMeasr'].GetBinContent(i))
-            ey3.append(ROOT.TMath.Sqrt((h[part1 + 'ProbMeasr'].GetBinContent(i))/10))
-        n=n+1
-    graph["1"] = TGraphErrors( n, x1, y1, ex1, ey1 )
-    graph["1"].SetName('Prob(ID = ' + part1 + ')')
-    graph["1"].SetTitle('Prob(ID = ' + part1 + ')')
-    graph["1"].GetYaxis().SetTitle( 'Prob(particle = muon)' )
-    graph["1"].SetLineColor( 4 )
-    graph["1"].SetLineWidth( 1 )
-    graph["1"].SetMarkerColor( 4 )
-    graph["1"].SetMarkerStyle( 20 )
-    graph["1"].SetMarkerSize(0.5)   
-    graph["2"] = TGraphErrors( n, x2, y2, ex2, ey2 )
-    graph["2"].SetName('Prob(ID = ' + part2 + ')')
-    graph["2"].SetTitle('Prob(ID = ' + part2 + ')')
-    graph["2"].GetYaxis().SetTitle( 'Prob(particle = kaon)' )
-    graph["2"].SetLineColor( 2 )
-    graph["2"].SetLineWidth( 1 )
-    graph["2"].SetMarkerColor( 2 )
-    graph["2"].SetMarkerStyle( 20 )
-    graph["2"].SetMarkerSize(0.5)
-    graph['partIDProb'].Add(graph["1"], "PC")
-    graph['partIDProb'].Add(graph["2"], "PC")
-    if not part3==None:
-        graph["3"] = TGraphErrors( n, x3, y3, ex3, ey3 )
-        graph["3"].SetName('Prob(ID = ' + part3 + ')')
-        graph["3"].SetTitle('Prob(ID = ' + part3 + ')') 
-        graph["3"].GetYaxis().SetTitle( 'Prob(particle = pion)' )
-        graph["3"].SetLineColor( 3 )
-        graph["3"].SetLineWidth( 1 )
-        graph["3"].SetMarkerColor( 3 )
-        graph["3"].SetMarkerStyle( 20 )
-        graph["3"].SetMarkerSize(0.5)
-        graph['partIDProb'].Add(graph["3"], "PC")
-    graph['partIDProb'].Draw("A pfc plc")#P PLC PFCPLC PFC
-    for ckey in graph:
-        graph[ckey].GetXaxis().SetTitle( 'Mass [GeV/c2]' )
-    graph['partIDProb'].GetYaxis().SetTitle( 'Prob(particle=(kaon or muon' + partString + '))' )
-    graph['partIDProb'].GetYaxis().SetTitleOffset(1.5)
-    graph['partIDProb'].GetXaxis().SetRangeUser(0,1.5)
-    gPad.BuildLegend()
-    #h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
-    
-def print_menu(): 
-    print ('\n \n' + 30 * "-" + "MENU" + 30 * "-")
-    print ("1. RPV SUSY Benchmark1 --> K+/- mu+/- final state")
-    print ("2. RPV SUSY Benchmark1 --> K*+/- mu+/- final state")
-    print ("3. RPV SUSY Benchmark1 --> K*0 nu_mu final state")
-    print ("4. Exit")
-    print (64 * "-"+ '\n')
+        makePlots_DarkPhot()
 
 ########################################
-     
+#########  MAIN SECTION KINDA  #########
+def print_menu(): 
+    print ('\n \n' + 30 * '-' + 'MENU' + 30 * '-')
+    print ('1. RPV SUSY Benchmark1 --> K+/-  mu+/- visible final state')
+    print ('2. RPV SUSY Benchmark1 --> K*+/- mu+/- visible final state')
+    print ('3. Dark Photon         --> l+/-  l+/-  visible final state')
+    print ('4. Exit')
+    print (64 * '-'+ '\n')     
 while loop:        
     print_menu()
-    choice = input("Enter your choice [1-4]: ")
+    choice = input('Enter your choice [1-4]: ')
      
     if choice==1:     
-        print ("RPV SUSY Benchmark1 --> K+/- mu+/- final state selected.")
-        HiddenPart = 'Neutralino'
-        daughter1 = 'Mu'
-        daughter2 = 'K+/-'
-        create_Hists(HiddenPart, daughter1, daughter2, None)
-        finState2t1t2(HiddenPart,daughter1,daughter2)
-        makePlots2(HiddenPart,daughter1,daughter2,None)
+        print ('\nRPV SUSY Benchmark1 --> K+/- mu+/- visible final state selected.')
+        finStateMuKa()
+        #-------------------------------------------OUTPUT--------------------------------------------
+        hfile = inputFile.split(',')[0].replace('_rec','_RPVeditana')#create outputFile
+        if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
+            # do not write to eos, write to local directory 
+            tmp = hfile.split('/')
+            hfile = tmp[len(tmp)-1]
+        ROOT.gROOT.cd()
+        f = TFile(hfile,'RECREATE')
+        for akey in h:
+            cln = h[akey].Class().GetName()
+            if not cln.find('TH')<0 or not cln.find('TP')<0:   
+                h[akey].Write()
+        for bkey in graph:
+            cln = graph[bkey].Class().GetName()
+            if not cln.find('TG')<0 or not cln.find('TM')<0:   
+                f.WriteTObject(graph[bkey])
+        f.Close()
         loop=False
-    elif choice==2:
-        print ("RPV SUSY Benchmark1 --> K*+/- mu+/- final state selected.")
-        HiddenPart = 'Neutralino'
-        daughter1 = 'Mu'
-        daughter2 = 'K*+/-'        
-        create_Hists(HiddenPart, daughter1, 'K+/-', 'pi+/-')
-        finState2t1t2(HiddenPart,daughter1,daughter2)
-        makePlots2(HiddenPart,daughter1,'K+/-', 'pi+/-')
-        loop=False
-    elif choice==3:
-        print ("RPV SUSY Benchmark1 --> K*0 nu_mu final state selected")
-        HiddenPart = 'Neutralino'
-        daughter1 = 'Mu'
-        daughter2 = 'K*0'
-        create_Hists(HiddenPart, daughter1, 'K+/-','pi+/-')
-        finState2t1t2(HiddenPart,daughter1,daughter2)
-        makePlots2(HiddenPart,daughter1,'K+/-', 'pi+/-')
-        loop=False
-    elif choice==4:
-        print ("EXIT was selected.")
-        loop=False 
-    else:
-        print("No such option. Try again.")
 
-hfile = inputFile.split(',')[0].replace('_rec','_RPVeditana')#create outputFile
-if hfile[0:4] == "/eos" or not inputFile.find(',')<0:
-    # do not write to eos, write to local directory 
-    tmp = hfile.split('/')
-    hfile = tmp[len(tmp)-1]                                   #occurs only for cern users
-ROOT.gROOT.cd()
-f = TFile(hfile,"RECREATE")
-for akey in h:
-    cln = h[akey].Class().GetName()
-    if not cln.find('TH')<0 or not cln.find('TP')<0:   
-        h[akey].Write()
-for bkey in graph:
-    cln = graph[bkey].Class().GetName()
-    if not cln.find('TG')<0 or not cln.find('TM')<0:   
-        f.WriteTObject(graph[bkey])
-f.Close()
+    elif choice==2:
+        print ('\nRPV SUSY Benchmark1 --> K*+/- mu+/- visible final state selected.') 
+        #finStateMuKa()
+        loop=False
+
+    elif choice==3:
+        print ('Dark Photon Model selected')
+        finStateDarkPhot()
+        #-------------------------------------------OUTPUT--------------------------------------------
+        hfile = inputFile.split(',')[0].replace('_rec','_DarkPhot')  # Outputs histograms and ROOT file
+        if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
+        # do not write to eos, write to local directory 
+          tmp = hfile.split('/')
+          hfile = tmp[len(tmp)-1] 
+        ROOT.gROOT.cd()
+        ut.writeHists(h,hfile)   
+        loop=False
+
+    elif choice==4:
+        print ('\nEXIT was selected.')
+        loop=False 
+
+    else:
+        print('\nNo such option. Try again.')
+
+
+
 
