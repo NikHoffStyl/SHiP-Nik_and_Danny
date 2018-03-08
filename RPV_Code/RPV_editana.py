@@ -2,6 +2,8 @@
 #         RPV_EDITA Test Code             #
 ###########################################
 #Code Performs Analysis on Data Obtained by simulation and reconstruction
+#for RPV bencmark 1 final states 
+#and dark photon model
 #Author: Nikos Stylianou & Danny Galbinski
 
 #from __future__ import print_function
@@ -596,7 +598,7 @@ def makePlots2(partList):
     graph['partIDProb'].GetYaxis().SetTitleOffset(1.5)
     graph['partIDProb'].GetXaxis().SetRangeUser(0,1.5)
     gPad.BuildLegend()
-    h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
+    #h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
 
 def makePlots_DarkPhot():
     ut.bookCanvas(h,key='DP',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
@@ -873,6 +875,31 @@ def SingleTrack_4Mom(t1):
 
 ######################################
 ##########  TOOLS FUNCTIONS ##########
+def ecalMinIon(partkey):
+    ecalE_tot = 0
+    if sTree.GetBranch('EcalPoint'):
+        ecal_Etot = 0
+        for hits in sTree.EcalPoint:
+            ecal_TrackID = hits.GetTrackID()
+            if ecal_TrackID == partkey:
+                ecalE = hits.GetEnergyLoss()
+                ecalE_tot += ecalE
+    return ecalE_tot
+
+def muonstationHits(partkey):
+    if sTree.GetBranch('muonPoint'):
+        true_part = sTree.MCTrack[partkey]
+        if abs(true_part.GetPdgCode()) == 13:
+            muonstation_z = []
+            for hits in sTree.muonPoint:
+                muonTrackID = hits.GetTrackID()
+                if muonTrackID == partkey:
+                    muonstation_z.append(hits.GetZ())
+            if len(muonstation_z) > 1 and muonstation_z[0] == 4017.0: return True
+            else: return False
+        else: return False
+    else: return False
+
 def time_res(partMom,partName,partkey,eventN,succEventM):
     straw_time = None
     ecal_time = None
@@ -998,27 +1025,29 @@ def track_checks(index,veto,fill):
     true_part = sTree.MCTrack[partkey]
     reco_part = sTree.FitTracks[index]
 
-    if not checkFiducialVolume(sTree,index,dy): 
-        #print('Track outside fiducial volume')
-        veto[1] += 1
+    fit_status = reco_part.getFitStatus()
+    fit_nmeas = fit_status.getNdf()
+    fit_rchi2 = fit_status.getChi2()                      
+    fit_chi2 = (fit_rchi2/fit_nmeas)
+
+    #if fit_status.isFitConverged():
+       
+    if fill == 1: h['Chi2'].Fill(fit_chi2)
+    if not fit_chi2 < chi2Cut:
+        #print('Chi squared value too high')
+        if check == 0: veto[3] += 1
         check = -1
 
-    fit_status = reco_part.getFitStatus()
-    if fit_status.isFitConverged():
-        fit_nmeas = fit_status.getNdf()
-        if fill == 1: h['nmeas'].Fill(fit_nmeas)
-        if not fit_nmeas > measCut:
-            #print('Too few measurements')
-            if check == 0: veto[2] += 1
-            check = -1
-
-        fit_rchi2 = fit_status.getChi2()                      
-        fit_chi2 = (fit_rchi2/fit_nmeas)
-        if fill == 1: h['Chi2'].Fill(fit_chi2)
-        if not fit_chi2 < chi2Cut:
-            #print('Chi squared value too high')
-            if check == 0: veto[3] += 1
-            check = -1
+    if fill == 1: h['nmeas'].Fill(fit_nmeas)
+    if not fit_nmeas > measCut:
+        #print('Too few measurements')
+        if check == 0: veto[2] += 1
+        check = -1    
+        
+    if not checkFiducialVolume(sTree,index,dy): 
+        #print('Track outside fiducial volume')
+        if check == 0: veto[1] += 1
+        check = -1
 
     if sTree.GetBranch('EcalPoint'):
         ecal_Etot = 0
@@ -1071,6 +1100,14 @@ def createRatio(h1, h2, histname):
     x.SetRangeUser(0,1.5)
     return h3
 
+def print_menu(): 
+    print ('\n \n' + 30 * '-' + 'MENU' + 30 * '-')
+    print ('1. RPV SUSY Benchmark1 --> K+/-  mu+/- visible final state')
+    print ('2. RPV SUSY Benchmark1 --> K*+/- mu+/- visible final state')
+    print ('3. Dark Photon         --> l+/-  l+/-  visible final state')
+    print ('4. Exit')
+    print (64 * '-'+ '\n') 
+
 nEvents = min(sTree.GetEntries(),nEvents)
 
 ########################################
@@ -1092,132 +1129,137 @@ def finStateMuKa():
 
             for index,reco_part in enumerate(sTree.FitTracks):  # loops over index and data of track particles                                   
                 fitstatus1 = reco_part.getFitStatus()
-                if fitstatus1.isFitConverged(): 
-                    muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
-                    true_Mu = sTree.MCTrack[muPartkey]               # gives MC particle data
+                if not fitstatus1.isFitConverged(): continue
+                muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
+                true_Mu = sTree.MCTrack[muPartkey]               # gives MC particle data
 
-                    if abs(true_Mu.GetPdgCode()) == 13:        # checks particle is muon
-                        MuMotherKey = true_Mu.GetMotherId()             # stores a number index of MC track of mother
-                        true_mother = sTree.MCTrack[MuMotherKey]             # obtains mother particle data
+                if abs(true_Mu.GetPdgCode()) == 13:        # checks particle is muon
+                    MuMotherKey = true_Mu.GetMotherId()             # stores a number index of MC track of mother
+                    true_mother = sTree.MCTrack[MuMotherKey]             # obtains mother particle data
 
-                        check, muveto = track_checks(index,muveto,0)
-                        if not check == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
-                            continue
+                    #check, muveto = track_checks(index,muveto,0)
+                    #if not check == 0:   # performs various checks (i.e. vertex position, fiducial volume,...)
+                    #    continue
 
-                        if true_mother.GetPdgCode() == 321:     #checks mother is kaon
-                                muGrannyKey = true_mother.GetMotherId()
-                                true_gran = sTree.MCTrack[muGrannyKey]
-                                if true_gran.GetPdgCode() == 9900015:
-                                    k2mu_MotherHP+=1 # kaon has decayed to a muon in flight
-                                    check,HP2ka_veto = track_checks(index,HP2ka_veto,0)
-                                    if check == -1: HP2ka_veto[0] += 1 
+                    if true_mother.GetPdgCode() == 321:     #checks mother is kaon
+                            muGrannyKey = true_mother.GetMotherId()
+                            true_gran = sTree.MCTrack[muGrannyKey]
+                            if true_gran.GetPdgCode() == 9900015:
+                                k2mu_MotherHP+=1 # kaon has decayed to a muon in flight
+                                check,HP2ka_veto = track_checks(index,HP2ka_veto,0)
+                                if check == -1: HP2ka_veto[0] += 1 
 
-                        if true_mother.GetPdgCode() == 9900015:              # checks mother is Neutralino
-                            NeutralinoMuEvents+=1
+                    if true_mother.GetPdgCode() == 9900015:              # checks mother is Neutralino
+                        NeutralinoMuEvents+=1
                         
-                            for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
-                                fit_status2 = reco_part2.getFitStatus()
-                                p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
-                                true_part2 = sTree.MCTrack[p2Partkey]                 # gives MC particle data
-                                if abs(true_part2.GetPdgCode()) == 321:               # checks particle is kaon
-                                    part2MotherKey = true_part2.GetMotherId()            # stores a number index of MC track of mother
-                                    true_mother = sTree.MCTrack[part2MotherKey]          # obtains mother particle data
+                        for index2,reco_part2 in enumerate(sTree.FitTracks):  # loops over index and data of track particles
+                            fit_status2 = reco_part2.getFitStatus()
+                            p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
+                            true_part2 = sTree.MCTrack[p2Partkey]                 # gives MC particle data
+                            if abs(true_part2.GetPdgCode()) == 321:               # checks particle is kaon
+                                part2MotherKey = true_part2.GetMotherId()            # stores a number index of MC track of mother
+                                true_mother = sTree.MCTrack[part2MotherKey]          # obtains mother particle data
                                     
-                                    if (part2MotherKey==MuMotherKey and true_mother.GetPdgCode() == 9900015):#and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
-                                        finStateEvents+=1
+                                if (part2MotherKey==MuMotherKey and true_mother.GetPdgCode() == 9900015):#and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
+                                    finStateEvents+=1
 
-                                        ####################
-                                        #####  CHECKS  #####                                        
-                                        if fitstatus1.isFitConverged() and fit_status2.isFitConverged():
-                                            veto[0] += 1
-                                        else: continue
+                                    ####################
+                                    #####  CHECKS  #####                                        
+                                    if fit_status2.isFitConverged():
+                                        veto[0] += 1
+                                    else: continue
                                     
-                                        check,veto = track_checks(index,veto,1)   # performs various track checks
+                                    check,veto = track_checks(index,veto,1)   # performs various track checks
+                                    if not check == -1:
                                         check,veto = track_checks(index2,veto,1)
+                                        if check ==-1: continue
+                                    else: continue
 
-                                        Neutralino_LVec,Mu_LVec,part2_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
-                                        if Neutralino_LVec == -1 and not check == -1:
-                                            veto[9] += 1
-                                            check = -1
-                                            continue
+                                    Neutralino_LVec,Mu_LVec,part2_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
+                                    if Neutralino_LVec == -1:
+                                        veto[9] += 1
+                                        check = -1
+                                        continue
 
-                                        h['recovertex'].Fill(Z)
-                                        if not isInFiducial(X,Y,Z) and not check == -1:
-                                            veto[6] += 1
-                                            check = -1
+                                    h['recovertex'].Fill(Z)
+                                    if not isInFiducial(X,Y,Z) and not check == -1:
+                                        veto[6] += 1
+                                        check = -1
                                     
-                                        h['doca'].Fill(doca)
-                                        if not doca < docaCut and not check == -1:
-                                            veto[7] +=1
-                                            check = -1
+                                    h['doca'].Fill(doca)
+                                    if not doca < docaCut and not check == -1:
+                                        veto[7] +=1
+                                        check = -1
+
+                                    #list=[isInFiducial(X,Y,Z),doca,]
                                         
-                                        NProduction_X = true_mother.GetStartX()
-                                        NProduction_Y = true_mother.GetStartY()
-                                        NProduction_Z = true_mother.GetStartZ()
-                                        NProduction_T = true_mother.GetStartT()
-                                        Neutralino_Pos = ROOT.TLorentzVector()
-                                        Neutralino_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
-                                        tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
-                                        ip = ImpactParameter(tr,Neutralino_Pos,Neutralino_LVec)
-                                        h['IP_target'].Fill(ip)
-                                        if not ip < ipCut and not check == -1:
-                                            veto[8] += 1
-                                            continue
+                                    NProduction_X = true_mother.GetStartX()
+                                    NProduction_Y = true_mother.GetStartY()
+                                    NProduction_Z = true_mother.GetStartZ()
+                                    NProduction_T = true_mother.GetStartT()
+                                    Neutralino_Pos = ROOT.TLorentzVector()
+                                    Neutralino_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
+                                    tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
+                                    ip = ImpactParameter(tr,Neutralino_Pos,Neutralino_LVec)
+                                    h['IP_target'].Fill(ip)
+                                    if not ip < ipCut and not check == -1:
+                                        veto[8] += 1
+                                        continue
 
-                                        if check == -1: continue
+                                    if check == -1: continue
 
 
-                                        #######################
-                                        ### Reco Properties ###
-                                        Neutralino_mass = Neutralino_LVec.M()
-                                        Neutralino_recoMom = Neutralino_LVec.P()
-                                        p2M = part2_LVec.M()
-                                        p2P = part2_LVec.P()
-                                        p2E = part2_LVec.E()
-                                        muM = Mu_LVec.M()
-                                        muP = Mu_LVec.P()
-                                        muE = Mu_LVec.E()
-                                        #######################
-                                        ### True Properties ###
-                                        p2MotherTrueMass = true_mother.GetMass()
-                                        p2MotherTrueMom = true_mother.GetP()             
-                                        part2TrueMom = true_part2.GetP()
-                                        part2TrueMass = true_part2.GetMass()
-                                        MuTrueMom = true_Mu.GetP()
-                                        MuTrueMass = true_Mu.GetMass()
+                                    #######################
+                                    ### Reco Properties ###
+                                    Neutralino_mass = Neutralino_LVec.M()
+                                    Neutralino_recoMom = Neutralino_LVec.P()
+                                    p2M = part2_LVec.M()
+                                    p2P = part2_LVec.P()
+                                    p2E = part2_LVec.E()
+                                    muM = Mu_LVec.M()
+                                    muP = Mu_LVec.P()
+                                    muE = Mu_LVec.E()
+                                    #######################
+                                    ### True Properties ###
+                                    p2MotherTrueMass = true_mother.GetMass()
+                                    p2MotherTrueMom = true_mother.GetP()             
+                                    part2TrueMom = true_part2.GetP()
+                                    part2TrueMass = true_part2.GetMass()
+                                    MuTrueMom = true_Mu.GetP()
+                                    MuTrueMass = true_Mu.GetMass()
 
-                                        mom_diff = p2MotherTrueMom - Neutralino_recoMom
+                                    mom_diff = p2MotherTrueMom - Neutralino_recoMom
 
-                                        part2='K+/-'
-                                        h['Mu' + 'TrueMom'].Fill(MuTrueMom)
-                                        h['Mu' + 'TrueMass'].Fill(MuTrueMass)
-                                        h['K+/-' + 'TrueMom'].Fill(part2TrueMom)
-                                        h['K+/-' + 'TrueMass'].Fill(part2TrueMass)
-                                        h['Neutralino' + 'TrueMass'].Fill(p2MotherTrueMass)            
-                                        h['Neutralino' + 'TrueMom'].Fill(p2MotherTrueMom)
-                                        h['Neutralino' + 'RecoMass'].Fill(Neutralino_mass)                        
-                                        h['Neutralino' + 'RecoMom'].Fill(Neutralino_recoMom)                            
-                                        h['Neutralino' + 'DeltaMom'].Fill(mom_diff)
-                                        h['K+/-' + 'RecoMom'].Fill(p2P)
-                                        h['Mu' + 'RecoMom'].Fill(muP)
-                                        h['K+/-' + 'RecoMass'].Fill(p2M)
-                                        h['Mu' + 'RecoMass'].Fill(muM)
+                                    part2='K+/-'
+                                    h['Mu' + 'TrueMom'].Fill(MuTrueMom)
+                                    h['Mu' + 'TrueMass'].Fill(MuTrueMass)
+                                    h['K+/-' + 'TrueMom'].Fill(part2TrueMom)
+                                    h['K+/-' + 'TrueMass'].Fill(part2TrueMass)
+                                    h['Neutralino' + 'TrueMass'].Fill(p2MotherTrueMass)            
+                                    h['Neutralino' + 'TrueMom'].Fill(p2MotherTrueMom)
+                                    h['Neutralino' + 'RecoMass'].Fill(Neutralino_mass)                        
+                                    h['Neutralino' + 'RecoMom'].Fill(Neutralino_recoMom)                            
+                                    h['Neutralino' + 'DeltaMom'].Fill(mom_diff)
+                                    h['K+/-' + 'RecoMom'].Fill(p2P)
+                                    h['Mu' + 'RecoMom'].Fill(muP)
+                                    h['K+/-' + 'RecoMass'].Fill(p2M)
+                                    h['Mu' + 'RecoMass'].Fill(muM)
 
-                                        Neutralino_Zmom = Neutralino_LVec.Pz()
-                                        Neutralino_Zbeta = 1/ROOT.TMath.Sqrt(1 + ((Neutralino_mass/Neutralino_Zmom)**2))
-                                        Neutralino_Zgamma = 1/(ROOT.TMath.Sqrt(1 - (Neutralino_Zbeta**2)))
-                                        cos_theta = Neutralino_Zmom/Neutralino_recoMom
-                                        theta = 1000*(ROOT.TMath.ACos(cos_theta))   # angle between beam line and neutralino momentum (mrad)
+                                    Neutralino_Zmom = Neutralino_LVec.Pz()
+                                    Neutralino_Zbeta = 1/ROOT.TMath.Sqrt(1 + ((Neutralino_mass/Neutralino_Zmom)**2))
+                                    Neutralino_Zgamma = 1/(ROOT.TMath.Sqrt(1 - (Neutralino_Zbeta**2)))
+                                    cos_theta = Neutralino_Zmom/Neutralino_recoMom
+                                    theta = 1000*(ROOT.TMath.ACos(cos_theta))   # angle between beam line and neutralino momentum (mrad)
 
-                                        h['Neutralino' + 'Beta'].Fill(Neutralino_Zbeta)
-                                        h['Neutralino' + 'Gamma'].Fill(Neutralino_Zgamma)
-                                        h['Neutralino' + 'Theta'].Fill(theta)
+                                    h['Neutralino' + 'Beta'].Fill(Neutralino_Zbeta)
+                                    h['Neutralino' + 'Gamma'].Fill(Neutralino_Zgamma)
+                                    h['Neutralino' + 'Theta'].Fill(theta)
 
-                                        successful_events.append(n)   # adds entries to the list
-                                        m = successful_events[0]   # arbitrarily picks the first one as an example
+                                    successful_events.append(n)   # adds entries to the list
+                                    m = successful_events[0]   # arbitrarily picks the first one as an example
 
-                                        time_res(muP,'Mu',muPartkey,n,m)
-                                        time_res(p2P,'K+/-',p2Partkey, n, m)
+                                    time_res(muP,'Mu',muPartkey,n,m)
+                                    time_res(p2P,'K+/-',p2Partkey, n, m)
                                         
     print(2*' ' + 80*'_')
     accepted = len(successful_events)
@@ -1228,7 +1270,7 @@ def finStateMuKa():
     print('\t' + str(finStateEvents) + ' number of events produced final state ')
     print('\t' + str(veto[0]) + ' events reconstructed for this decay mode')
     accepted=veto[0] - veto[3]
-    print('\t\t' + str(veto[0] - veto[3]) + ' events with both tracks chi squared < ' + str(chi2Cut) + ' (' + str(veto[3]) + ' event vetos)')
+    print('\t\t' + str(accepted) + ' events with both tracks chi squared < ' + str(chi2Cut) + ' (' + str(veto[3]) + ' event vetos)')
     accepted-=veto[2]
     print('\t\t' + str(accepted) + ' events with both tracks no. of measurements > ' + str(measCut) + ' (' + str(veto[2]) + ' event vetos)')
     accepted-=veto[6]
@@ -1639,14 +1681,7 @@ def finStateDarkPhot():
         makePlots_DarkPhot()
 
 ########################################
-#########  MAIN SECTION KINDA  #########
-def print_menu(): 
-    print ('\n \n' + 30 * '-' + 'MENU' + 30 * '-')
-    print ('1. RPV SUSY Benchmark1 --> K+/-  mu+/- visible final state')
-    print ('2. RPV SUSY Benchmark1 --> K*+/- mu+/- visible final state')
-    print ('3. Dark Photon         --> l+/-  l+/-  visible final state')
-    print ('4. Exit')
-    print (64 * '-'+ '\n')     
+#########  MAIN SECTION KINDA  #########    
 while loop:        
     print_menu()
     choice = input('Enter your choice [1-4]: ')
