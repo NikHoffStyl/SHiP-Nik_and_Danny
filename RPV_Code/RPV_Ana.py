@@ -174,6 +174,8 @@ h = {}   # creates empty dictionary for histograms and graphs
 
 #----------------------------------------------------FUNCTIONS------------------------------------------------------------
 
+# Track Checks
+
 def dist2InnerWall(X,Y,Z):
   dist = 0
   # return distance to inner wall perpendicular to z-axis, if outside decay volume return 0.
@@ -286,50 +288,34 @@ def track_checks(tr,veto,hist):
     if hist == 1: h['Chi2'].Fill(fit_chi2)
     if not fit_chi2 < chi2Cut:
         #print('Chi squared value too high')
-        veto[3] += 1
+        if check == 0: veto[3] += 1
         check = -1
 
     if hist == 1: h['nmeas'].Fill(fit_nmeas)
     if not fit_nmeas > measCut:
         #print('Too few measurements')
-        veto[2] += 1
+        if check == 0: veto[2] += 1
         check = -1
 
     if not checkFiducialVolume(sTree,tr,dy): 
     #print('Track outside fiducial volume')
-        veto[1] += 1
+        if check == 0: veto[1] += 1
         check = -1
 
-    if sTree.GetBranch('EcalPoint'):
-        ecal_Etot = 0
-        for hits in sTree.EcalPoint:
-            ecal_TrackID = hits.GetTrackID()
-            if ecal_TrackID == partkey:
-                ecalE = hits.GetEnergyLoss()
-                ecal_Etot += ecalE
-        if hist == 1: h['ecalE'].Fill(ecal_Etot)
-        if not ecal_Etot > ecalCut:
-            #print('Not enough energy deposited in the ECAL')
-            veto[4] += 1
-            check = -1
+    ecal_Etot = ecalMinIon(partkey)
+    if hist == 1: h['ecalE'].Fill(ecal_Etot)
+    if not ecal_Etot > ecalCut:
+        #print('Not enough energy deposited in the ECAL')
+        if check == 0: veto[4] += 1
+        check = -1
 
-    if sTree.GetBranch('muonPoint'):
-        if abs(true_part.GetPdgCode()) == 13:
-            muonstation_z = []
-            for hits in sTree.muonPoint:
-                muonTrackID = hits.GetTrackID()
-                if muonTrackID == partkey:
-                    muonstation_z.append(hits.GetZ())
-            if not len(muonstation_z) > 2:
-                #print('Did not leave hits in both the 1st and 2nd muon stations')
-                veto[5] += 1
-                check = -1
-            else:
-                if not muonstation_z[0] == 4017.0:   # z position (cm)
-                    veto[5] += 1
-                    check = -1
+    if not muonstationHits:
+        if check == 0: veto[5] += 1
+        check = -1
 
     return check,veto
+
+# Analysis
 
 def fitSingleGauss(x,ba=None,be=None):
     name = 'myGauss_' + x 
@@ -1107,6 +1093,8 @@ def finStateMuKa():
                 if abs(true_muon.GetPdgCode()) == 13:   # checks particle is muon
                     muonMotherkey = true_muon.GetMotherId()   # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[muonMotherkey]   # obtains mother particle data
+                    fitstatus_muon = reco_part.getFitStatus() 
+                    if not fitstatus_muon.isFitConverged(): continue
 
                     if true_mother.GetPdgCode() == 321:
                         fitstatus = reco_part.getFitStatus()
@@ -1117,7 +1105,7 @@ def finStateMuKa():
                                 check,ka_veto = track_checks(index,ka_veto,0)
                                 if check == -1: ka_veto[0] += 1 
                                 
-                    if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV 
+                    if true_mother.GetPdgCode() == 9900015:   # checks mother is neutralino
                         for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
                             kaPartkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
                             true_kaon = sTree.MCTrack[kaPartkey]   # gives MC particle data
@@ -1126,9 +1114,9 @@ def finStateMuKa():
                                 true_mother = sTree.MCTrack[kaonMotherkey]   # obtains mother particle data
 
                                 if kaonMotherkey == muonMotherkey and true_mother.GetPdgCode() == 9900015:   # check if mother keys are the same
-                                    fitstatus_muon = reco_part.getFitStatus() 
+
                                     fitstatus_kaon = reco_part2.getFitStatus()
-                                    if fitstatus_muon.isFitConverged() and fitstatus_kaon.isFitConverged():
+                                    if fitstatus_kaon.isFitConverged():
                                         veto[0] += 1
                                     else:
                                         #print('At least one of the track fits did not converge')
@@ -1562,6 +1550,9 @@ def finStateDarkPhot():
                 if true_eminus.GetPdgCode() == 11:   # checks particle is electron
                     eminusMotherkey = true_eminus.GetMotherId()   # stores a number index of MC track of mother
                     true_mother = sTree.MCTrack[eminusMotherkey]   # obtains mother particle data
+                    fitstatus_eminus = reco_part.getFitStatus() 
+                    if not fitstatus_eminus.isFitConverged():
+                        continue
 
                     if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV 
                         for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
@@ -1572,19 +1563,12 @@ def finStateDarkPhot():
                                 true_mother = sTree.MCTrack[eplusMotherkey]   # obtains mother particle data
 
                                 if eplusMotherkey == eminusMotherkey and true_mother.GetPdgCode() == 9900015:   # check if mother keys are the same
-                                    fitstatus_eminus = reco_part.getFitStatus() 
                                     fitstatus_eplus = reco_part2.getFitStatus()
-                                    if fitstatus_eminus.isFitConverged() and fitstatus_eplus.isFitConverged():
+                                    if fitstatus_eplus.isFitConverged():
                                         veto[0] += 1
                                     else:
                                         #print('At least one of the track fits did not converge')
                                         continue
-                                    
-                                    #check,veto = track_checks(index,veto,1)   # performs various track checks
-                                    #if check == -1: event = False
-                                    #else:   # if the first track was fine, check the other one (ensures event veto counting is correct)
-                                    #    check,veto = track_checks(index2,veto,1)
-                                    #    if check == -1: event = False
                                     
                                     #-------------------------------------------------TRACK-CHECKS-------------------------------------------------------
 
