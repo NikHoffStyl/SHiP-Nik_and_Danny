@@ -1251,6 +1251,8 @@ def finStateMuKa():
                 if not fitstatus1.isFitConverged(): continue
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_Mu = sTree.MCTrack[muPartkey]               # gives MC particle data
+                wgMu = true_Mu.GetWeight()
+                if not wgMu>0.: wgMu=1.
 
                 if abs(true_Mu.GetPdgCode()) == 13:        # checks particle is muon
                     MuMotherKey = true_Mu.GetMotherId()             # stores a number index of MC track of mother
@@ -1275,6 +1277,9 @@ def finStateMuKa():
                             fit_status2 = reco_part2.getFitStatus()
                             p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
                             true_part2 = sTree.MCTrack[p2Partkey]                 # gives MC particle data
+                            wgKaon = true_part2.GetWeight()
+                            if not wgKaon>0.: wgKaon=1.
+
                             if abs(true_part2.GetPdgCode()) == 321:               # checks particle is kaon
                                 part2MotherKey = true_part2.GetMotherId()            # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[part2MotherKey]          # obtains mother particle data
@@ -1421,7 +1426,7 @@ def finStateMuKa():
         if eRemn == 0:
             acceptance[eRemn] = signalAcceptance(brRatio, veto[eRemn],n+1)
         else:
-            acceptance[eRemn] = signalAcceptance(brRatio, veto[eRemn],veto[eRemn-1])
+            acceptance[eRemn] = signalAcceptance(brRatio, veto[eRemn],n+1)
             print(acceptance[eRemn])
 
                                         
