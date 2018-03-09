@@ -1217,6 +1217,23 @@ def signalAcceptance(bRatio,recEntry,simEntry):
     accp=bRatio*(float(recEntry)/simEntry)
     return accp
 
+def effTable(veto,acceptance,selectionEff,dark):
+    print('\n\t' + str(veto[0]) + ' events reconstructed for this decay mode')
+    print('\t' + str(veto[9]) + ' events with successful RedoVertexing extrapolations')
+    print('\n\t|---------------------------------|------------------|-------------------|-------------------------|')
+    print('\t| Selection                       | Events remaining |    Acceptances    | Selection Efficiency (%)|')
+    print('\t|---------------------------------|------------------|-------------------|-------------------------|')
+    print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | ' + str(acceptance[0]) + '  |          %.2f           |'%selectionEff[0])
+    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         |       ' + str(veto[1]) + '       | ' + str(acceptance[1]) + '  |          %.2f          |'%selectionEff[1])
+    print('\t| No. of track measurements > ' + str(measCut) + '  |       ' + str(veto[2]) + '       | ' + str(acceptance[2]) + '  |          %.2f          |'%selectionEff[2])
+    print('\t| Decay vertex in fiducial volume |       ' + str(veto[3]) + '       | ' + str(acceptance[3]) +  '  |          %.2f          |'%selectionEff[3])
+    print('\t| Both tracks in fiducial volume  |       ' + str(veto[4]) + '       | ' + str(acceptance[4]) + '  |          %.2f         |'%selectionEff[4])
+    print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   |       ' + str(veto[5]) + '       | ' + str(acceptance[5]) +  '  |          %.2f          |'%selectionEff[5])
+    if not dark == True: print('\t| Muon hits in 1st & 2nd stations |       ' + str(veto[6]) + '       | ' + str(acceptance[6]) + '  |          %.2f          |'%selectionEff[6])
+    print('\t| DOCA < ' + str(docaCut) + ' cm                   |       ' + str(veto[7]) + '       | ' + str(acceptance[7]) + '   |          %.2f          |'%selectionEff[7])
+    print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | ' + str(acceptance[8]) + '   |          %.2f         |'%selectionEff[8])
+    print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
+
 def print_menu(): 
     print ('\n \n' + 30 * '-' + 'MENU' + 30 * '-')
     print ('1. RPV SUSY Benchmark1 --> K+/-  mu+/- visible final state')
@@ -1447,30 +1464,15 @@ def finStateMuKa():
             selectionEff[accp] = (acceptance[accp]/acceptance[accp-1])*100
 
                                         
-    print(2*' ' + 100*'_')
+    print(2*' ' + 110*'_')
     accepted = len(successful_events)
     rejected = veto[0] - accepted
     print('\n\t' + str(n+1) +  ' total number of events')
-    print('\t' + str(NeutralinoMuEvents) + '  ' + 'Mu' + ' number of events (with ' + 'Neutralino' + ' mother)')
     print('\t' + str(finStateEvents) + ' number of events produced final state ')
-    print('\n\t' + str(veto[0]) + ' events reconstructed for this decay mode')
-    print('\t' + str(veto[9]) + ' events with successful RedoVertexing extrapolations')
-    print('\t' + str(accepted) + ' events not rejected('+ str(rejected) + ' events rejected):')
-
-    print('\n\t| Selection                       | Events remaining | Acceptance        | Selection Efficiency (%)|')
-    print('\t|---------------------------------|------------------|-------------------|-------------------------|')
-    print('\t| Events reconstructed            | ' + str(veto[0]) + '             | ' + str(acceptance[0]) + '  |          %.2f           |'%selectionEff[0])
-    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         | ' + str(veto[1]) + '             | ' + str(acceptance[1]) + '  |          %.2f          |'%selectionEff[1])
-    print('\t| No. of track measurements > ' + str(measCut) + '  | ' + str(veto[2]) + '             | ' + str(acceptance[2]) + '  |          %.2f          |'%selectionEff[2])
-    print('\t| Decay vertex in fiducial volume | ' + str(veto[3]) + '             | ' + str(acceptance[3]) +  '  |          %.2f          |'%selectionEff[3])
-    print('\t| Both tracks in fiducial volume  | ' + str(veto[4]) + '             | ' + str(acceptance[4]) + '  |          %.2f         |'%selectionEff[4])
-    print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   | ' + str(veto[5]) + '             | ' + str(acceptance[5]) +  '  |          %.2f          |'%selectionEff[5])
-    print('\t| Muon hits in 1st & 2nd stations | ' + str(veto[6]) + '             | ' + str(acceptance[6]) + '  |          %.2f          |'%selectionEff[6])
-    print('\t| DOCA < ' + str(docaCut) + ' cm                   | ' + str(veto[7]) + '             | ' + str(acceptance[7]) + '   |          %.2f          |'%selectionEff[7])
-    print('\t| IP to target < ' + str(ipCut) + ' cm           | ' + str(veto[8]) + '             | ' + str(acceptance[8]) + '   |          %.2f         |'%selectionEff[8])
-    print('\t|---------------------------------|------------------|-------------------|-------------------------|')
-    print('\n\t' + str(k2mu_MotherHP) + ' kaons (mother HP) decayed to muons before detection (' + str(k2mu_MotherHP-HP2ka_veto[0]) + ' after track checks)')
-    print(2*' ' + 100*'_'+ '\n')
+    effTable(veto,acceptance,selectionEff,False)
+    print('\t' + str(accepted) + ' events not rejected (i.e. '+ str(rejected) + ' events rejected)')
+    print('\t' + str(k2mu_MotherHP) + ' kaons (mother HP) decayed to muons before detection (' + str(k2mu_MotherHP-HP2ka_veto[0]) + ' after track checks)')
+    print(2*' ' + 110*'_'+ '\n')
 
     h['Mu' + 'ProbMeasr'] = createRatio(h['Mu' + 'SmearedMass'],h['TotalSmearedMass'],'Mu' + 'ProbMeasr')
     h['K+/-' + 'ProbMeasr'] = createRatio(h['K+/-' + 'SmearedMass'],h['TotalSmearedMass'],'K+/-' + 'ProbMeasr')
@@ -1740,7 +1742,12 @@ def finStateDarkPhot():
         print('\nRunning analysis for dark photon :\n')
         createHists_DarkPhot()
         successful_events = []
+        finStateEvents=0
         veto = 10*[0]   # creates list of veto counts for each possible veto cause
+        vetoWg = 10*[0.]
+        acceptance = 10*[0.]
+        selectionEff = 10*[0.]
+
         for n in range(nEvents):   # loops over events
             rc = sTree.GetEntry(n)   # loads tree entry
             event = True
@@ -1767,9 +1774,16 @@ def finStateDarkPhot():
                                 true_mother = sTree.MCTrack[eplusMotherkey]   # obtains mother particle data
 
                                 if eplusMotherkey == eminusMotherkey and true_mother.GetPdgCode() == 9900015:   # check if mother keys are the same
+                                    wgDark = true_mother.GetWeight()
+                                    if not wgDark>0. : wgDark = 1.
+                                    finStateEvents+=1
+                                    
+                                    ####################
+                                    #####  CHECKS  #####
                                     fitstatus_eplus = reco_part2.getFitStatus()
                                     if fitstatus_eplus.isFitConverged():
                                         veto[0] += 1
+                                        vetoWg[0] += 1
                                     else:
                                         #print('At least one of the track fits did not converge')
                                         continue
@@ -1780,6 +1794,7 @@ def finStateDarkPhot():
                                     if DP_4Mom == -1: 
                                         print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
                                         veto[9] += 1
+                                        vetoWg[9] += wgDark
                                         continue
 
                                     nmeas_eplus = fitstatus_eplus.getNdf()
@@ -1791,7 +1806,8 @@ def finStateDarkPhot():
                                     h['Chi2'].Fill(rchi2_eplus)
                                     h['Chi2'].Fill(rchi2_eminus)
                                     if rchi2_eplus < chi2Cut and rchi2_eminus < chi2Cut:
-                                        veto[3] += 1
+                                        veto[1] += 1
+                                        vetoWg[1] += wgDark
                                     else: event = False
 
                                     h['nmeas'].Fill(nmeas_eplus)
@@ -1799,17 +1815,20 @@ def finStateDarkPhot():
                                     if event == True:
                                         if nmeas_eplus > measCut and nmeas_eminus > measCut:
                                             veto[2] += 1
+                                            vetoWg[2] += wgDark
                                         else: event = False
 
                                     h['recovertex'].Fill(NDecay_Z)
                                     if event == True:
                                         if isInFiducial(NDecay_X,NDecay_Y,NDecay_Z):
-                                            veto[6] += 1
+                                            veto[3] += 1
+                                            vetoWg[3] += wgDark
                                         else: event = False
 
                                     if event == True:
                                         if checkFiducialVolume(sTree,index,dy) and checkFiducialVolume(sTree,index2,dy): 
-                                            veto[1] += 1
+                                            veto[4] += 1
+                                            vetoWg[4] += wgDark
                                         else: event = False
 
                                     ecalE_eplus = ecalMinIon(eplusPartkey)
@@ -1818,7 +1837,8 @@ def finStateDarkPhot():
                                     h['ecalE'].Fill(ecalE_eminus)
                                     if event == True:
                                         if ecalE_eplus > ecalCut and ecalE_eminus > ecalCut:
-                                            veto[4] += 1
+                                            veto[5] += 1
+                                            vetoWg[5] += wgDark
                                         else: event = False
 
                                     #if event == True:
@@ -1830,6 +1850,7 @@ def finStateDarkPhot():
                                     if event == True:
                                         if doca < docaCut: 
                                             veto[7] +=1
+                                            vetoWg[7] += wgDark
                                         else: event = False
 
                                     NProduction_X = true_mother.GetStartX()   # vertex coordinates of neutralino production
@@ -1844,6 +1865,7 @@ def finStateDarkPhot():
                                     if event == True:
                                         if ip < ipCut:
                                             veto[8] += 1
+                                            vetoWg[8] += wgDark
                                         else: event = False
 
                                     if event == False: continue
@@ -1881,23 +1903,28 @@ def finStateDarkPhot():
                                     successful_events.append(n)   # adds entries to the list
                                     
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
+        #brRatio = getRPVBranchRatio('N -> K+ mu-')
+        brRatio=1
+        print('Branch ratio of N -> K+ mu- is:' + str(brRatio))
+        for eRemn in range(9):
+            print('vetoWg = %.6f' %vetoWg[eRemn])
+            if eRemn == 0:
+                acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],n+1)
+            else:
+                acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],n+1)
 
+        for accp in range(1,9):
+            if not acceptance[accp]==0 and not acceptance[accp-1]==0:
+                selectionEff[accp] = (acceptance[accp]/acceptance[accp-1])*100
+
+        print(2*' ' + 110*'_')
         accepted = len(successful_events)
-        print('\n\t' + str(veto[0]) + ' events reconstructed for this decay mode')
-        print('\t' + str(veto[0] - veto[9]) + ' events with successful RedoVertexing extrapolations')
-        print('\t' + str(accepted) + ' events not rejected:')
-
-        print('\n\t| Selection                       | Events remaining | Efficiency | Acceptance |')
-        print('\t|---------------------------------|------------------|------------|------------|')
-        print('\t| Events reconstructed            | ' + str(veto[0]) + '             | ' + '           |            |')
-        print('\t| Reduced chi squared < ' + str(chi2Cut) + '         | ' + str(veto[3]) + '             | ' + str(round(100*veto[3]/float(veto[0]),2)) + ' %    |            |')
-        print('\t| No. of track measurements > ' + str(measCut) + '  | ' + str(veto[2]) + '             | ' + str(round(100*veto[2]/float(veto[3]),2)) + ' %    |            |')
-        print('\t| Decay vertex in fiducial volume | ' + str(veto[6]) + '             | ' + str(round(100*veto[6]/float(veto[2]),2)) + ' %    |            |')
-        print('\t| Both tracks in fiducial volume  | ' + str(veto[1]) + '             | ' + str(round(100*veto[1]/float(veto[6]),2)) + ' %    |            |')
-        print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   | ' + str(veto[4]) + '             | ' + str(round(100*veto[4]/float(veto[1]),2)) + ' %    |            |')
-        #print('\t| Muon hits in 1st & 2nd stations | ' + str(veto[5]) + '             | ' + str(round(100*veto[5]/float(veto[4]),2)) + ' %    |            |')
-        print('\t| DOCA < ' + str(docaCut) + ' cm                   | ' + str(veto[7]) + '             | ' + str(round(100*veto[7]/float(veto[4]),2)) + ' %    |            |')
-        print('\t| IP to target < ' + str(ipCut) + ' cm           | ' + str(veto[8]) + '             | ' + str(round(100*veto[8]/float(veto[7]),2)) + ' %    |            |')
+        rejected = veto[0] - accepted
+        print('\n\t' + str(n+1) +  ' total number of events')
+        print('\t' + str(finStateEvents) + ' number of events produced final state ')
+        effTable(veto,acceptance,selectionEff,True)
+        print('\t' + str(accepted) + ' events not rejected (i.e. '+ str(rejected) + ' events rejected)')
+        print(2*' ' + 110*'_')
 
         makePlots_DarkPhot()
 
