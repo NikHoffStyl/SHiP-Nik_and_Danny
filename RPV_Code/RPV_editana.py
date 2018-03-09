@@ -1240,7 +1240,9 @@ def finStateMuKa():
         finStateEvents=0
         HP2ka_veto = 10*[0]
         veto = 10*[0]
+        vetoWg = 10*[0.]
         acceptance = 10*[0.]
+        selectionEff = 10*[0.]
         
         for n in range(nEvents):    # loops over events
             rc = sTree.GetEntry(n)    # load tree entry
@@ -1252,7 +1254,7 @@ def finStateMuKa():
                 muPartkey = sTree.fitTrack2MC[index]                  # matches track to MC particle key
                 true_Mu = sTree.MCTrack[muPartkey]               # gives MC particle data
                 wgMu = true_Mu.GetWeight()
-                if not wgMu>0.: wgMu=1.
+                if not wgMu>0.: wgMu = 1.
 
                 if abs(true_Mu.GetPdgCode()) == 13:        # checks particle is muon
                     MuMotherKey = true_Mu.GetMotherId()             # stores a number index of MC track of mother
@@ -1278,11 +1280,13 @@ def finStateMuKa():
                             p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
                             true_part2 = sTree.MCTrack[p2Partkey]                 # gives MC particle data
                             wgKaon = true_part2.GetWeight()
-                            if not wgKaon>0.: wgKaon=1.
+                            if not wgKaon>0.: wgKaon = 1.
 
                             if abs(true_part2.GetPdgCode()) == 321:               # checks particle is kaon
                                 part2MotherKey = true_part2.GetMotherId()            # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[part2MotherKey]          # obtains mother particle data
+                                wgNeutralino = true_mother.GetWeight()
+                                if not wgNeutralino>0. : wgNeutralino = 1.
                                     
                                 if (part2MotherKey==MuMotherKey and true_mother.GetPdgCode() == 9900015):#and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
                                     finStateEvents+=1
@@ -1291,10 +1295,13 @@ def finStateMuKa():
                                     #####  CHECKS  #####                                        
                                     if fit_status2.isFitConverged():
                                         veto[0] += 1
+                                        vetoWg[0] += wgKaon
                                     else: continue
 
                                     Neutralino_LVec,Mu_LVec,part2_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
-                                    if not Neutralino_LVec == -1: veto[9] += 1
+                                    if not Neutralino_LVec == -1: 
+                                        veto[9] += 1
+                                        vetoWg[9] += wgKaon
                                     else: 
                                         print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
                                         continue
@@ -1309,6 +1316,7 @@ def finStateMuKa():
                                     h['Chi2'].Fill(rchi2_kaon)
                                     if rchi2_muon < chi2Cut and rchi2_kaon < chi2Cut:
                                         veto[1] += 1
+                                        vetoWg[1] += wgKaon
                                     else: event = False
 
                                     h['nmeas'].Fill(nmeas_muon)
@@ -1316,17 +1324,20 @@ def finStateMuKa():
                                     if event == True:
                                         if nmeas_muon > measCut and nmeas_kaon > measCut:
                                             veto[2] += 1
+                                            vetoWg[2] += wgKaon
                                         else: event = False
 
                                     h['recovertex'].Fill(Z)
                                     if event == True:
                                         if isInFiducial(X,Y,Z):
                                             veto[3] += 1
+                                            vetoWg[3] += wgKaon
                                         else: event = False
 
                                     if event == True:
                                         if checkFiducialVolume(sTree,index,dy) and checkFiducialVolume(sTree,index2,dy): 
                                             veto[4] += 1
+                                            vetoWg[4] += wgKaon
                                         else: event = False
 
                                     ecalE_muon = ecalMinIon(muPartkey)
@@ -1336,17 +1347,20 @@ def finStateMuKa():
                                     if event == True:
                                         if ecalE_muon > ecalCut and ecalE_kaon > ecalCut:
                                             veto[5] += 1
+                                            vetoWg[5] += wgKaon
                                         else: event = False
 
                                     if event == True:
                                         if muonstationHits(muPartkey):
                                             veto[6] += 1
+                                            vetoWg[6] += wgKaon
                                         else: event = False
                                     
                                     h['doca'].Fill(doca)
                                     if event == True:
                                         if doca < docaCut: 
                                             veto[7] +=1
+                                            vetoWg[7] += wgKaon
                                         else: event = False
 
                                         
@@ -1362,6 +1376,7 @@ def finStateMuKa():
                                     if event == True:
                                         if ip < ipCut:
                                             veto[8] += 1
+                                            vetoWg[8] += wgKaon
                                         else: event = False
 
                                     if event == False: continue
@@ -1420,17 +1435,19 @@ def finStateMuKa():
                                     time_res(p2P,'K+/-',p2Partkey, n, m)
 
     brRatio = getRPVBranchRatio('N -> K+ mu-')
-    print(brRatio)
-    #accp = signalAcceptance('N -> K+ mu-')
+    print('Branch ratio of N -> K+ mu- is:' + str(brRatio))
     for eRemn in range(9):
         if eRemn == 0:
-            acceptance[eRemn] = signalAcceptance(brRatio, veto[eRemn],n+1)
+            acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],n+1)
         else:
-            acceptance[eRemn] = signalAcceptance(brRatio, veto[eRemn],n+1)
-            print(acceptance[eRemn])
+            acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],n+1)
+
+    for accp in range(1,9):
+        if not acceptance[accp]==0 and not acceptance[accp-1]==0:
+            selectionEff[accp] = (acceptance[accp]/acceptance[accp-1])*100
 
                                         
-    print(2*' ' + 80*'_')
+    print(2*' ' + 100*'_')
     accepted = len(successful_events)
     rejected = veto[0] - accepted
     print('\n\t' + str(n+1) +  ' total number of events')
@@ -1440,19 +1457,20 @@ def finStateMuKa():
     print('\t' + str(veto[9]) + ' events with successful RedoVertexing extrapolations')
     print('\t' + str(accepted) + ' events not rejected('+ str(rejected) + ' events rejected):')
 
-    print('\n\t| Selection                       | Events remaining | Acceptance        | Selection Efficiency|')
-    print('\t|---------------------------------|------------------|-------------------|---------------------|')
-    print('\t| Events reconstructed            | ' + str(veto[0]) + '             | ' + str(acceptance[0]) + '   |            |')
-    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         | ' + str(veto[1]) + '             | ' + str(acceptance[1]) + '     |            |')
-    print('\t| No. of track measurements > ' + str(measCut) + '  | ' + str(veto[2]) + '             | ' + str(acceptance[2]) + '     |            |')
-    print('\t| Decay vertex in fiducial volume | ' + str(veto[3]) + '             | ' + str(acceptance[3]) +  '     |            |')
-    print('\t| Both tracks in fiducial volume  | ' + str(veto[4]) + '             | ' + str(acceptance[4]) + '     |            |')
-    print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   | ' + str(veto[5]) + '             | ' + str(acceptance[5]) +  '     |            |')
-    print('\t| Muon hits in 1st & 2nd stations | ' + str(veto[6]) + '             | ' + str(acceptance[6]) + '     |            |')
-    print('\t| DOCA < ' + str(docaCut) + ' cm                   | ' + str(veto[7]) + '             | ' + str(acceptance[7]) + '     |            |')
-    print('\t| IP to target < ' + str(ipCut) + ' cm           | ' + str(veto[8]) + '             | ' + str(acceptance[8]) + '     |            |')
+    print('\n\t| Selection                       | Events remaining | Acceptance        | Selection Efficiency (%)|')
+    print('\t|---------------------------------|------------------|-------------------|-------------------------|')
+    print('\t| Events reconstructed            | ' + str(veto[0]) + '             | ' + str(acceptance[0]) + '  |          %.2f           |'%selectionEff[0])
+    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         | ' + str(veto[1]) + '             | ' + str(acceptance[1]) + '  |          %.2f          |'%selectionEff[1])
+    print('\t| No. of track measurements > ' + str(measCut) + '  | ' + str(veto[2]) + '             | ' + str(acceptance[2]) + '  |          %.2f          |'%selectionEff[2])
+    print('\t| Decay vertex in fiducial volume | ' + str(veto[3]) + '             | ' + str(acceptance[3]) +  '  |          %.2f          |'%selectionEff[3])
+    print('\t| Both tracks in fiducial volume  | ' + str(veto[4]) + '             | ' + str(acceptance[4]) + '  |          %.2f         |'%selectionEff[4])
+    print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   | ' + str(veto[5]) + '             | ' + str(acceptance[5]) +  '  |          %.2f          |'%selectionEff[5])
+    print('\t| Muon hits in 1st & 2nd stations | ' + str(veto[6]) + '             | ' + str(acceptance[6]) + '  |          %.2f          |'%selectionEff[6])
+    print('\t| DOCA < ' + str(docaCut) + ' cm                   | ' + str(veto[7]) + '             | ' + str(acceptance[7]) + '   |          %.2f          |'%selectionEff[7])
+    print('\t| IP to target < ' + str(ipCut) + ' cm           | ' + str(veto[8]) + '             | ' + str(acceptance[8]) + '   |          %.2f         |'%selectionEff[8])
+    print('\t|---------------------------------|------------------|-------------------|-------------------------|')
     print('\n\t' + str(k2mu_MotherHP) + ' kaons (mother HP) decayed to muons before detection (' + str(k2mu_MotherHP-HP2ka_veto[0]) + ' after track checks)')
-    print(2*' ' + 80*'_'+ '\n')
+    print(2*' ' + 100*'_'+ '\n')
 
     h['Mu' + 'ProbMeasr'] = createRatio(h['Mu' + 'SmearedMass'],h['TotalSmearedMass'],'Mu' + 'ProbMeasr')
     h['K+/-' + 'ProbMeasr'] = createRatio(h['K+/-' + 'SmearedMass'],h['TotalSmearedMass'],'K+/-' + 'ProbMeasr')
