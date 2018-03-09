@@ -1,13 +1,11 @@
-###########################################
-#         RPV_EDITA Test Code             #
-###########################################
-#   Code Performs Analysis on Data Obtained by simulation and reconstruction
-#   for RPV bencmark 1 final states 
+#====================================================================
+#   Code Performs Analysis on Data Obtained by simulation   
+#    and reconstruction for RPV bencmark 1 final states 
 #   and dark photon model
 #
 #   Created by Nicolas Stylianou and Danny Galbinski
-
 #
+#===================================================================
 
 import ROOT,os,sys,getopt
 import rootUtils as ut
@@ -22,6 +20,7 @@ import shipDet_conf
 import shipVeto
 shipRoot_conf.configure()
 
+import rpvsusy
 from ROOT import TCanvas, TH1D, TF1, TMultiGraph,TGraphErrors, THStack, TFile
 from ROOT import kBlack, kBlue, kRed, kGreen, kGray, kMagenta
 from ROOT import gROOT, gPad, gStyle
@@ -1144,7 +1143,7 @@ def track_checks(index,veto,fill):
     if fill == 1: h['Chi2'].Fill(fit_chi2)
     if not fit_chi2 < chi2Cut:
         #print('Chi squared value too high')
-        if check == 0: veto[3] += 1
+        if check == 0: veto[1] += 1
         check = -1
 
     if fill == 1: h['nmeas'].Fill(fit_nmeas)
@@ -1155,7 +1154,7 @@ def track_checks(index,veto,fill):
         
     if not checkFiducialVolume(sTree,index,dy): 
         #print('Track outside fiducial volume')
-        if check == 0: veto[1] += 1
+        if check == 0: veto[4] += 1
         check = -1
 
     if sTree.GetBranch('EcalPoint'):
@@ -1168,7 +1167,7 @@ def track_checks(index,veto,fill):
         if fill == 1: h['ecalE'].Fill(ecal_Etot)
         if not ecal_Etot > ecalCut:
             #print('Not enough energy deposited in the ECAL')
-            if check == 0: veto[4] += 1
+            if check == 0: veto[5] += 1
             check = -1
 
     if sTree.GetBranch('muonPoint'):
@@ -1180,11 +1179,11 @@ def track_checks(index,veto,fill):
                     muonstation_z.append(hits.GetZ())
             if not len(muonstation_z) > 2:
                 #print('Did not leave hits in both the 1st and 2nd muon stations')
-                if check == 0: veto[5] += 1
+                if check == 0: veto[6] += 1
                 check = -1
             else:
                 if not muonstation_z[0] == 4017.0: #first muon station position (cm)
-                    if check == 0: veto[5] += 1
+                    if check == 0: veto[6] += 1
                     check =-1
 
     return check,veto
@@ -1209,6 +1208,15 @@ def createRatio(h1, h2, histname):
     x.SetRangeUser(0,1.5)
     return h3
 
+def getRPVBranchRatio(stEntry):
+    rpvsusy_instance = rpvsusy.RPVSUSY(1.,[0.2,0.03],1e3,1,True)
+    bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
+    return bRatio
+
+def signalAcceptance(bRatio,recEntry,simEntry):
+    accp=bRatio*(float(recEntry)/simEntry)
+    return accp
+
 def print_menu(): 
     print ('\n \n' + 30 * '-' + 'MENU' + 30 * '-')
     print ('1. RPV SUSY Benchmark1 --> K+/-  mu+/- visible final state')
@@ -1232,6 +1240,7 @@ def finStateMuKa():
         finStateEvents=0
         HP2ka_veto = 10*[0]
         veto = 10*[0]
+        acceptance = 10*[0.]
         
         for n in range(nEvents):    # loops over events
             rc = sTree.GetEntry(n)    # load tree entry
@@ -1294,7 +1303,7 @@ def finStateMuKa():
                                     h['Chi2'].Fill(rchi2_muon)
                                     h['Chi2'].Fill(rchi2_kaon)
                                     if rchi2_muon < chi2Cut and rchi2_kaon < chi2Cut:
-                                        veto[3] += 1
+                                        veto[1] += 1
                                     else: event = False
 
                                     h['nmeas'].Fill(nmeas_muon)
@@ -1307,12 +1316,12 @@ def finStateMuKa():
                                     h['recovertex'].Fill(Z)
                                     if event == True:
                                         if isInFiducial(X,Y,Z):
-                                            veto[6] += 1
+                                            veto[3] += 1
                                         else: event = False
 
                                     if event == True:
                                         if checkFiducialVolume(sTree,index,dy) and checkFiducialVolume(sTree,index2,dy): 
-                                            veto[1] += 1
+                                            veto[4] += 1
                                         else: event = False
 
                                     ecalE_muon = ecalMinIon(muPartkey)
@@ -1321,12 +1330,12 @@ def finStateMuKa():
                                     h['ecalE'].Fill(ecalE_kaon)
                                     if event == True:
                                         if ecalE_muon > ecalCut and ecalE_kaon > ecalCut:
-                                            veto[4] += 1
+                                            veto[5] += 1
                                         else: event = False
 
                                     if event == True:
                                         if muonstationHits(muPartkey):
-                                            veto[5] += 1
+                                            veto[6] += 1
                                         else: event = False
                                     
                                     h['doca'].Fill(doca)
@@ -1404,6 +1413,17 @@ def finStateMuKa():
 
                                     time_res(muP,'Mu',muPartkey,n,m)
                                     time_res(p2P,'K+/-',p2Partkey, n, m)
+
+    brRatio = getRPVBranchRatio('N -> K+ mu-')
+    print(brRatio)
+    #accp = signalAcceptance('N -> K+ mu-')
+    for eRemn in range(9):
+        if eRemn == 0:
+            acceptance[eRemn] = signalAcceptance(brRatio, veto[eRemn],n+1)
+        else:
+            acceptance[eRemn] = signalAcceptance(brRatio, veto[eRemn],veto[eRemn-1])
+            print(acceptance[eRemn])
+
                                         
     print(2*' ' + 80*'_')
     accepted = len(successful_events)
@@ -1415,17 +1435,17 @@ def finStateMuKa():
     print('\t' + str(veto[9]) + ' events with successful RedoVertexing extrapolations')
     print('\t' + str(accepted) + ' events not rejected('+ str(rejected) + ' events rejected):')
 
-    print('\n\t| Selection                       | Events remaining | Acceptance | Selection Efficiency|')
-    print('\t|---------------------------------|------------------|------------|---------------------|')
-    print('\t| Events reconstructed            | ' + str(veto[0]) + '             | ' + '           |            |')
-    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         | ' + str(veto[3]) + '             | ' + ' %    |            |')
-    print('\t| No. of track measurements > ' + str(measCut) + '  | ' + str(veto[2]) + '             | ' + ' %    |            |')
-    print('\t| Decay vertex in fiducial volume | ' + str(veto[6]) + '             | ' +  ' %    |            |')
-    print('\t| Both tracks in fiducial volume  | ' + str(veto[1]) + '             | ' + ' %    |            |')
-    print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   | ' + str(veto[4]) + '             | ' +  ' %    |            |')
-    print('\t| Muon hits in 1st & 2nd stations | ' + str(veto[5]) + '             | ' + ' %    |            |')
-    print('\t| DOCA < ' + str(docaCut) + ' cm                   | ' + str(veto[7]) + '             | ' + ' %    |            |')
-    print('\t| IP to target < ' + str(ipCut) + ' cm           | ' + str(veto[8]) + '             | ' + ' %    |            |')
+    print('\n\t| Selection                       | Events remaining | Acceptance        | Selection Efficiency|')
+    print('\t|---------------------------------|------------------|-------------------|---------------------|')
+    print('\t| Events reconstructed            | ' + str(veto[0]) + '             | ' + str(acceptance[0]) + '   |            |')
+    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         | ' + str(veto[1]) + '             | ' + str(acceptance[1]) + '     |            |')
+    print('\t| No. of track measurements > ' + str(measCut) + '  | ' + str(veto[2]) + '             | ' + str(acceptance[2]) + '     |            |')
+    print('\t| Decay vertex in fiducial volume | ' + str(veto[3]) + '             | ' + str(acceptance[3]) +  '     |            |')
+    print('\t| Both tracks in fiducial volume  | ' + str(veto[4]) + '             | ' + str(acceptance[4]) + '     |            |')
+    print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   | ' + str(veto[5]) + '             | ' + str(acceptance[5]) +  '     |            |')
+    print('\t| Muon hits in 1st & 2nd stations | ' + str(veto[6]) + '             | ' + str(acceptance[6]) + '     |            |')
+    print('\t| DOCA < ' + str(docaCut) + ' cm                   | ' + str(veto[7]) + '             | ' + str(acceptance[7]) + '     |            |')
+    print('\t| IP to target < ' + str(ipCut) + ' cm           | ' + str(veto[8]) + '             | ' + str(acceptance[8]) + '     |            |')
     print('\n\t' + str(k2mu_MotherHP) + ' kaons (mother HP) decayed to muons before detection (' + str(k2mu_MotherHP-HP2ka_veto[0]) + ' after track checks)')
     print(2*' ' + 80*'_'+ '\n')
 
@@ -1853,7 +1873,7 @@ def finStateDarkPhot():
         print('\t| Both tracks in fiducial volume  | ' + str(veto[1]) + '             | ' + str(round(100*veto[1]/float(veto[6]),2)) + ' %    |            |')
         print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   | ' + str(veto[4]) + '             | ' + str(round(100*veto[4]/float(veto[1]),2)) + ' %    |            |')
         #print('\t| Muon hits in 1st & 2nd stations | ' + str(veto[5]) + '             | ' + str(round(100*veto[5]/float(veto[4]),2)) + ' %    |            |')
-        print('\t| DOCA < ' + str(docaCut) + ' cm                     | ' + str(veto[7]) + '             | ' + str(round(100*veto[7]/float(veto[4]),2)) + ' %    |            |')
+        print('\t| DOCA < ' + str(docaCut) + ' cm                   | ' + str(veto[7]) + '             | ' + str(round(100*veto[7]/float(veto[4]),2)) + ' %    |            |')
         print('\t| IP to target < ' + str(ipCut) + ' cm           | ' + str(veto[8]) + '             | ' + str(round(100*veto[8]/float(veto[7]),2)) + ' %    |            |')
 
         makePlots_DarkPhot()
@@ -1888,7 +1908,13 @@ while loop:
 
     elif choice==2:
         print ('\nRPV SUSY Benchmark1 --> K*+/- mu+/- visible final state selected.') 
-        #finStateMuKa()
+        finStateMuKa_exc()
+        if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
+        # do not write to eos, write to local directory 
+          tmp = hfile.split('/')
+          hfile = tmp[len(tmp)-1] 
+        ROOT.gROOT.cd()
+        ut.writeHists(h,hfile)
         loop=False
 
     elif choice==3:
