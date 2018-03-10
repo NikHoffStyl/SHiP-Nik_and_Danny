@@ -20,7 +20,7 @@ import shipDet_conf
 import shipVeto
 shipRoot_conf.configure()
 
-import rpvsusy
+import rpvsusy, darkphoton
 from ROOT import TCanvas, TH1D, TF1, TMultiGraph,TGraphErrors, THStack, TFile
 from ROOT import kBlack, kBlue, kRed, kGreen, kGray, kMagenta
 from ROOT import gROOT, gPad, gStyle
@@ -1208,9 +1208,14 @@ def createRatio(h1, h2, histname):
     x.SetRangeUser(0,1.5)
     return h3
 
-def getRPVBranchRatio(stEntry):
+def getBranchingRatio(stEntry,dark):
     rpvsusy_instance = rpvsusy.RPVSUSY(1.,[0.2,0.03],1e3,1,True)
     bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
+
+    if dark == True:
+        dark_instance = darkphoton.DarkPhoton(1.,1e3)
+        bRatio = dark_instance.findBranchingRatio(stEntry)
+
     return bRatio
 
 def signalAcceptance(bRatio,recEntry,simEntry):
@@ -1223,15 +1228,15 @@ def effTable(veto,acceptance,selectionEff,dark):
     print('\n\t|---------------------------------|------------------|-------------------|-------------------------|')
     print('\t| Selection                       | Events remaining |    Acceptances    | Selection Efficiency (%)|')
     print('\t|---------------------------------|------------------|-------------------|-------------------------|')
-    print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | ' + str(acceptance[0]) + '  |          %.2f           |'%selectionEff[0])
-    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         |       ' + str(veto[1]) + '       | ' + str(acceptance[1]) + '  |          %.2f          |'%selectionEff[1])
-    print('\t| No. of track measurements > ' + str(measCut) + '  |       ' + str(veto[2]) + '       | ' + str(acceptance[2]) + '  |          %.2f          |'%selectionEff[2])
-    print('\t| Decay vertex in fiducial volume |       ' + str(veto[3]) + '       | ' + str(acceptance[3]) +  '  |          %.2f          |'%selectionEff[3])
-    print('\t| Both tracks in fiducial volume  |       ' + str(veto[4]) + '       | ' + str(acceptance[4]) + '  |          %.2f         |'%selectionEff[4])
-    print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   |       ' + str(veto[5]) + '       | ' + str(acceptance[5]) +  '  |          %.2f          |'%selectionEff[5])
-    if not dark == True: print('\t| Muon hits in 1st & 2nd stations |       ' + str(veto[6]) + '       | ' + str(acceptance[6]) + '  |          %.2f          |'%selectionEff[6])
-    print('\t| DOCA < ' + str(docaCut) + ' cm                   |       ' + str(veto[7]) + '       | ' + str(acceptance[7]) + '   |          %.2f          |'%selectionEff[7])
-    print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | ' + str(acceptance[8]) + '   |          %.2f         |'%selectionEff[8])
+    print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |          %.2f           |'%(acceptance[0] ,selectionEff[0]))
+    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         |       ' + str(veto[1]) + '       | %.14f  |          %.2f           |'%(acceptance[1] ,selectionEff[1]))
+    print('\t| No. of track measurements > ' + str(measCut) + '  |       ' + str(veto[2]) + '       | %.14f  |          %.2f          |'%(acceptance[2] ,selectionEff[2]))
+    print('\t| Decay vertex in fiducial volume |       ' + str(veto[3]) + '       | %.14f  |          %.2f          |'%(acceptance[3] ,selectionEff[3]))
+    print('\t| Both tracks in fiducial volume  |       ' + str(veto[4]) + '       | %.14f  |          %.2f         |'%(acceptance[4] ,selectionEff[4]))
+    print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   |       ' + str(veto[5]) + '       | %.14f  |          %.2f          |'%(acceptance[5] ,selectionEff[5]))
+    if not dark == True: print('\t| Muon hits in 1st & 2nd stations |       ' + str(veto[6]) + '       | %.14f  |          %.2f           |'%(acceptance[6] ,selectionEff[6]))
+    print('\t| DOCA < ' + str(docaCut) + ' cm                   |       ' + str(veto[7]) + '       | %.14f  |          %.2f           |'%(acceptance[7] ,selectionEff[7]))
+    print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8] ,selectionEff[8]))
     print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
 def print_menu(): 
@@ -1451,7 +1456,7 @@ def finStateMuKa():
                                     time_res(muP,'Mu',muPartkey,n,m)
                                     time_res(p2P,'K+/-',p2Partkey, n, m)
 
-    brRatio = getRPVBranchRatio('N -> K+ mu-')
+    brRatio = getBranchingRatio('N -> K+ mu-', False)
     print('Branch ratio of N -> K+ mu- is:' + str(brRatio))
     for eRemn in range(9):
         if eRemn == 0:
@@ -1903,9 +1908,9 @@ def finStateDarkPhot():
                                     successful_events.append(n)   # adds entries to the list
                                     
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
-        #brRatio = getRPVBranchRatio('N -> K+ mu-')
-        brRatio=1
-        print('Branch ratio of N -> K+ mu- is:' + str(brRatio))
+        brRatio = getBranchingRatio('A -> e- e+',True)
+        #brRatio=1
+        print('Branch ratio of A -> e- e+ is:' + str(brRatio))
         for eRemn in range(9):
             print('vetoWg = %.6f' %vetoWg[eRemn])
             if eRemn == 0:
