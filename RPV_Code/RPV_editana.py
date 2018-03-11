@@ -1,7 +1,7 @@
 #====================================================================
 #   Code Performs Analysis on Data Obtained by simulation   
 #    and reconstruction for RPV bencmark 1 final states 
-#   and dark photon model
+#   and dark photon model. Outputs selection efficiency table.
 #
 #   Created by Nicolas Stylianou and Danny Galbinski
 #
@@ -21,7 +21,7 @@ import shipVeto
 shipRoot_conf.configure()
 
 import rpvsusy, darkphoton
-from ROOT import TCanvas, TH1D, TF1, TMultiGraph,TGraphErrors, THStack, TFile
+from ROOT import TCanvas, TH1D, TF1, TMultiGraph,TGraphErrors, THStack, TFile, TLatex
 from ROOT import kBlack, kBlue, kRed, kGreen, kGray, kMagenta
 from ROOT import gROOT, gPad, gStyle
 from inspect import currentframe
@@ -209,6 +209,28 @@ import TrackExtrapolateTool
 ##########  HIST FUNCTIONS  ###########
 h = {}
 graph = {}
+def veto_Hists():
+    #######################
+    ####  Veto Checks  ####
+    h['IP_target'] = TH1D('IP_target','Impact parameter to target; Impact parameter to target [cm]; Frequency',300,0,10)
+    h['IP_target'].SetLineColor(kMagenta+4)
+    h['IP_target'].SetFillColor(kMagenta-1)
+    h['ecalE'] = TH1D('ecalE','Energy deposited in ECAL ; Energy [GeV/c2] ; Frequency',300,0,100)
+    h['ecalE'].SetLineColor(kMagenta+4)
+    h['ecalE'].SetFillColor(kMagenta-1)
+    h['doca'] = TH1D('doca','Distance of closest approach between muon and kaon tracks ; DOCA of daughter tracks [cm] ; Frequency',300,0,3)
+    h['doca'].SetLineColor(kMagenta+4)
+    h['doca'].SetFillColor(kMagenta+-1)
+    h['nmeas'] = TH1D('nmeas','No. of measurements in fitted tracks (ndf) ; Minimum daughters ndf ; No. of tracks',300,0,50)
+    h['nmeas'].SetLineColor(kMagenta+4)
+    h['nmeas'].SetFillColor(kMagenta-1)
+    h['Chi2'] = TH1D('Chi2','Fitted Tracks Chi Squared ; Maximum daughters #chi^{2} /ndf ; Frequency',300,0,3)
+    h['Chi2'].SetLineColor(kMagenta+4)
+    h['Chi2'].SetFillColor(kMagenta-1)
+    h['recovertex'] = TH1D('recovertex','Reconstructed decay vertex z-coordinate ; Reconstructed decay vertex z-coordinate  [cm] ; Frequency',100,-4000,4000)
+    h['recovertex'].SetLineColor(kMagenta+4)
+    h['recovertex'].SetFillColor(kMagenta-1)
+
 def create_Hists(partList):
     dictionList={partList[1]:[kBlue+3,kBlue-2], partList[2]:[kRed+3,kRed-2]}
     if not partList[3] == None:
@@ -338,36 +360,7 @@ def create_Hists(partList):
     h[partList[0] + 'Theta'].SetLineColor(1)
     h[partList[0] + 'Theta'].SetFillColor(kGray+2)
 
-    #######################
-    ####  Veto Checks  ####
-    h['IP_target'] = TH1D('IP_target','Impact parameter to target; Impact Parameter [cm]; Frequency',300,0,10)
-    h['IP_target'].SetLineColor(kMagenta+4)
-    h['IP_target'].SetFillColor(kMagenta-1)
-    h['ecalE'] = TH1D('ecalE','Energy deposited in ECAL ; Energy [GeV/c2] ; Frequency',300,0,100)
-    h['ecalE'].SetLineColor(kMagenta+4)
-    h['ecalE'].SetFillColor(kMagenta-1)
-    h['doca'] = TH1D('doca','Distance of closest approach between muon and kaon tracks ; Distance [cm] ; Frequency',300,0,3)
-    h['doca'].SetLineColor(kMagenta+4)
-    h['doca'].SetFillColor(kMagenta+-1)
-    h['nmeas'] = TH1D('nmeas','No. of measurements in fitted tracks (ndf) ; ndf ; No. of tracks',300,0,50)
-    h['nmeas'].SetLineColor(kMagenta+4)
-    h['nmeas'].SetFillColor(kMagenta-1)
-    h['Chi2'] = TH1D('Chi2','Fitted Tracks Chi Squared ; Reduced Chi Squared ; Frequency',300,0,3)
-    h['Chi2'].SetLineColor(kMagenta+4)
-    h['Chi2'].SetFillColor(kMagenta-1)
-    h['recovertex'] = TH1D('recovertex','Reconstructed neutralino decay vertex z-coordinate ; Z  [cm] ; Frequency',100,-4000,4000)
-    h['recovertex'].SetLineColor(kMagenta+4)
-    h['recovertex'].SetFillColor(kMagenta-1)
-
-    #ut.bookHist(h,'photonE','Photon Energy Distribution in ECAL',150,0,100)
-
-
-    #ut.bookHist(h,partList[0] + '_no_iter','Reconstructed Mass (without track iterations)',500,0.,2.)   # reco mass(without track itrns)
-    #ut.bookHist(h,'normdistr','Gaussian Distribution',500,-0.05,0.05)                               #
-    #ut.bookHist(h,'smearedmass1','Time Smeared Neutralino Mass',500,0.,2.)
-    #ut.bookHist(h,'smearedmass2','Time Smeared Neutralino Mass',500,0.,2.)
-    #ut.bookHist(h,'smearedP1','Time Smeared Neutralino Momentum P1(red) P2(blue)',500,0.,300.)
-    #ut.bookHist(h,'smearedP2','Time Smeared Neutralino Momentum',500,0.,300.)
+    veto_Hists()
 
     print('Created Histograms')
     print(partList)
@@ -588,12 +581,7 @@ def createHists_MuKa_exc():
     ut.bookHist(h,'RPV_recomom','Reconstructed',100,0,300)
 
     # Canvas 2
-    ut.bookHist(h,'IP_target','Impact parameter to target',120,0,10)
-    ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
-    ut.bookHist(h,'doca','Distance of closest approach between tracks',150,0,3)
-    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
-    ut.bookHist(h,'Chi2','Fitted Tracks Reduced Chi Squared',150,0,3)
-    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',100,-4000,4000)
+    veto_Hists()
 def makePlots_MuKa_exc():
     ut.bookCanvas(h,key='Exc_RPV_N',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
     cv = h['Exc_RPV_N'].cd(1)
@@ -643,45 +631,21 @@ def makePlots_MuKa_exc():
     #======================================================================================================================
     ut.bookCanvas(h,key='Exc_Vetos',title='Results 2',nx=1500,ny=800,cx=3,cy=2)
     cv = h['Exc_Vetos'].cd(1)
-    h['IP_target'].SetXTitle('Impact Parameter / [cm]')
-    h['IP_target'].SetYTitle('Frequency')
-    h['IP_target'].SetLineColor(1)
-    h['IP_target'].SetFillColor(17)
     h['IP_target'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Exc_Vetos'].cd(2)
-    h['ecalE'].SetXTitle('Energy / [GeV/c2]')
-    h['ecalE'].SetYTitle('Frequency')
-    h['ecalE'].SetLineColor(1)
-    h['ecalE'].SetFillColor(17)
     h['ecalE'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Exc_Vetos'].cd(3)
-    h['doca'].SetXTitle('Distance / [cm]')
-    h['doca'].SetYTitle('Frequency')
-    h['doca'].SetLineColor(1)
-    h['doca'].SetFillColor(17)
     h['doca'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Exc_Vetos'].cd(4)
-    h['nmeas'].SetXTitle('ndf')
-    h['nmeas'].SetYTitle('No. of tracks')
-    h['nmeas'].SetLineColor(1)
-    h['nmeas'].SetFillColor(17)
     h['nmeas'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Exc_Vetos'].cd(5)
-    h['Chi2'].SetXTitle('Reduced Chi Squared')
-    h['Chi2'].SetYTitle('Frequency')
-    h['Chi2'].SetLineColor(1)
-    h['Chi2'].SetFillColor(17)
     h['Chi2'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Exc_Vetos'].cd(6)
-    h['recovertex'].SetXTitle('Z / [cm]')
-    h['recovertex'].SetYTitle('Frequency')
-    h['recovertex'].SetLineColor(1)
-    h['recovertex'].SetFillColor(17)
     h['recovertex'].Draw()
     h['Exc_Vetos'].Print('Exc_Vetos.png')
 
@@ -702,12 +666,7 @@ def createHists_DarkPhot():
     ut.bookHist(h,'eminus_recomom','Reconstructed e- Momentum',100,0.,140.)   # RPV pion daughter true momentum
 
     # Canvas 3
-    ut.bookHist(h,'IP_target','Impact parameter to target',120,0,10)
-    ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
-    ut.bookHist(h,'doca','Distance of closest approach between tracks',150,0,3)
-    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
-    ut.bookHist(h,'Chi2','Fitted Tracks Reduced Chi Squared',150,0,3)
-    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',100,-4000,4000)
+    veto_Hists()
 def makePlots_DarkPhot():
     ut.bookCanvas(h,key='DP',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
     cv = h['DP'].cd(1)
@@ -777,45 +736,21 @@ def makePlots_DarkPhot():
     #======================================================================================================================
     ut.bookCanvas(h,key='DP_Vetos',title='Results 3',nx=1500,ny=800,cx=3,cy=2)
     cv = h['DP_Vetos'].cd(1)
-    h['IP_target'].SetXTitle('Impact Parameter / [cm]')
-    h['IP_target'].SetYTitle('Frequency')
-    h['IP_target'].SetLineColor(1)
-    h['IP_target'].SetFillColor(17)
     h['IP_target'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['DP_Vetos'].cd(2)
-    h['ecalE'].SetXTitle('Energy / [GeV/c2]')
-    h['ecalE'].SetYTitle('Frequency')
-    h['ecalE'].SetLineColor(1)
-    h['ecalE'].SetFillColor(17)
     h['ecalE'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['DP_Vetos'].cd(3)
-    h['doca'].SetXTitle('Distance / [cm]')
-    h['doca'].SetYTitle('Frequency')
-    h['doca'].SetLineColor(1)
-    h['doca'].SetFillColor(17)
     h['doca'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['DP_Vetos'].cd(4)
-    h['nmeas'].SetXTitle('ndf')
-    h['nmeas'].SetYTitle('No. of tracks')
-    h['nmeas'].SetLineColor(1)
-    h['nmeas'].SetFillColor(17)
     h['nmeas'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['DP_Vetos'].cd(5)
-    h['Chi2'].SetXTitle('Reduced Chi Squared')
-    h['Chi2'].SetYTitle('Frequency')
-    h['Chi2'].SetLineColor(1)
-    h['Chi2'].SetFillColor(17)
     h['Chi2'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['DP_Vetos'].cd(6)
-    h['recovertex'].SetXTitle('Z / [cm]')
-    h['recovertex'].SetYTitle('Frequency')
-    h['recovertex'].SetLineColor(1)
-    h['recovertex'].SetFillColor(17)
     h['recovertex'].Draw()
     h['DP_Vetos'].Print('DP_Vetos.png')
 
@@ -1209,12 +1144,12 @@ def createRatio(h1, h2, histname):
     return h3
 
 def getBranchingRatio(stEntry,dark):
-    rpvsusy_instance = rpvsusy.RPVSUSY(1.,[0.2,0.03],1e3,1,True)
-    bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
-
     if dark == True:
         dark_instance = darkphoton.DarkPhoton(1.,1e3)
         bRatio = dark_instance.findBranchingRatio(stEntry)
+    else:
+        rpvsusy_instance = rpvsusy.RPVSUSY(1.,[0.2,0.03],1e3,1,True)
+        bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
 
     return bRatio
 
@@ -1228,14 +1163,14 @@ def effTable(veto,acceptance,selectionEff,dark):
     print('\n\t|---------------------------------|------------------|-------------------|-------------------------|')
     print('\t| Selection                       | Events remaining |    Acceptances    | Selection Efficiency (%)|')
     print('\t|---------------------------------|------------------|-------------------|-------------------------|')
-    print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |          %.2f           |'%(acceptance[0] ,selectionEff[0]))
-    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         |       ' + str(veto[1]) + '       | %.14f  |          %.2f           |'%(acceptance[1] ,selectionEff[1]))
+    print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |           --            |'%(acceptance[0]))
+    print('\t| Reduced chi squared < ' + str(chi2Cut) + '         |       ' + str(veto[1]) + '       | %.14f  |          %.2f          |'%(acceptance[1] ,selectionEff[1]))
     print('\t| No. of track measurements > ' + str(measCut) + '  |       ' + str(veto[2]) + '       | %.14f  |          %.2f          |'%(acceptance[2] ,selectionEff[2]))
     print('\t| Decay vertex in fiducial volume |       ' + str(veto[3]) + '       | %.14f  |          %.2f          |'%(acceptance[3] ,selectionEff[3]))
     print('\t| Both tracks in fiducial volume  |       ' + str(veto[4]) + '       | %.14f  |          %.2f         |'%(acceptance[4] ,selectionEff[4]))
     print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   |       ' + str(veto[5]) + '       | %.14f  |          %.2f          |'%(acceptance[5] ,selectionEff[5]))
-    if not dark == True: print('\t| Muon hits in 1st & 2nd stations |       ' + str(veto[6]) + '       | %.14f  |          %.2f           |'%(acceptance[6] ,selectionEff[6]))
-    print('\t| DOCA < ' + str(docaCut) + ' cm                   |       ' + str(veto[7]) + '       | %.14f  |          %.2f           |'%(acceptance[7] ,selectionEff[7]))
+    if not dark == True: print('\t| Muon hits in 1st & 2nd stations |       ' + str(veto[6]) + '       | %.14f  |          %.2f          |'%(acceptance[6] ,selectionEff[6]))
+    print('\t| DOCA < ' + str(docaCut) + ' cm                   |       ' + str(veto[7]) + '       | %.14f  |          %.2f          |'%(acceptance[7] ,selectionEff[7]))
     print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8] ,selectionEff[8]))
     print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
@@ -1742,7 +1677,7 @@ def finStateMuKa_exc():
 
         makePlots_MuKa_exc()
 
-def finStateDarkPhot():
+def finStateDarkPhot(): 
     if sTree.GetBranch('FitTracks'):
         print('\nRunning analysis for dark photon :\n')
         createHists_DarkPhot()
@@ -1788,7 +1723,7 @@ def finStateDarkPhot():
                                     fitstatus_eplus = reco_part2.getFitStatus()
                                     if fitstatus_eplus.isFitConverged():
                                         veto[0] += 1
-                                        vetoWg[0] += 1
+                                        vetoWg[0] += wgDark
                                     else:
                                         #print('At least one of the track fits did not converge')
                                         continue
@@ -1845,11 +1780,6 @@ def finStateDarkPhot():
                                             veto[5] += 1
                                             vetoWg[5] += wgDark
                                         else: event = False
-
-                                    #if event == True:
-                                    #    if muonstationHits(muPartkey):
-                                    #        veto[5] += 1
-                                    #    else: event = False
                                                     
                                     h['doca'].Fill(doca)
                                     if event == True:
@@ -1909,8 +1839,9 @@ def finStateDarkPhot():
                                     
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
         brRatio = getBranchingRatio('A -> e- e+',True)
-        #brRatio=1
         print('Branch ratio of A -> e- e+ is:' + str(brRatio))
+
+        # calculate acceptance
         for eRemn in range(9):
             print('vetoWg = %.6f' %vetoWg[eRemn])
             if eRemn == 0:
@@ -1918,10 +1849,14 @@ def finStateDarkPhot():
             else:
                 acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],n+1)
 
-        for accp in range(1,9):
+        # calculate selection efficiency
+        for accp in range(9):
             if not acceptance[accp]==0 and not acceptance[accp-1]==0:
                 selectionEff[accp] = (acceptance[accp]/acceptance[accp-1])*100
+        if not acceptance[accp]==0 and not acceptance[accp-1]==0:
+            selectionEff[7] = (acceptance[7]/acceptance[5])*100
 
+        # Table Output
         print(2*' ' + 110*'_')
         accepted = len(successful_events)
         rejected = veto[0] - accepted
@@ -1964,6 +1899,7 @@ while loop:
     elif choice==2:
         print ('\nRPV SUSY Benchmark1 --> K*+/- mu+/- visible final state selected.') 
         finStateMuKa_exc()
+        hfile = inputFile.split(',')[0].replace('_rec','_RPVexcd')#create outputFile
         if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
         # do not write to eos, write to local directory 
           tmp = hfile.split('/')
