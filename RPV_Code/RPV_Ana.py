@@ -554,7 +554,7 @@ def getBranchingRatio(stEntry,dark):
         bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
 
     else:
-        dark_instance = darkphoton.DarkPhoton(1.,1e3)
+        dark_instance = darkphoton.DarkPhoton(0.2,0.00000008)
         bRatio = dark_instance.findBranchingRatio(stEntry)
 
     return bRatio
@@ -569,49 +569,93 @@ def print_menu():
 
 # Histograms
 
-def createHists_MuKa():
-    # Canvas 1
-    ut.bookHist(h,'RPV_recomass','Reconstructed Neutralino Mass',500,0.8,1.2)   # reconstructed mass
-    ut.bookHist(h,'RPV_truemom','True Neutralino Momentum',100,0.,300.)   # true momentum distribution
-    ut.bookHist(h,'RPV_recomom','Reconstructed Neutralino Momentum',100,0.,300)   # reconstructed momentum distribution
-    ut.bookHist(h,'RPV_mom_diff','True/Reco Neutralino Momentum Difference',100,-3.,3)   # true/reco momentum difference
-    ut.bookHist(h,'RPV_beta','Reconstructed Neutralino Beta in Z-direction',100,0.994,1)
-    ut.bookHist(h,'RPV_gamma','Reconstructed Neutralino Gamma in Z-direction',100,0,200)
-    ut.bookHist(h,'RPV_theta','Angle between neutralino momentum and beam line',100,0,50)
+def createHists(choice):
+    # RPV SUSY: N --> K+ mu-
+    if choice == 1:
+        # Canvas 1
+        ut.bookHist(h,'RPV_recomass','Reconstructed Neutralino Mass',500,0.8,1.2)   # reconstructed mass
+        ut.bookHist(h,'RPV_truemom','True Neutralino Momentum',100,0.,300.)   # true momentum distribution
+        ut.bookHist(h,'RPV_recomom','Reconstructed Neutralino Momentum',100,0.,300)   # reconstructed momentum distribution
+        ut.bookHist(h,'RPV_mom_diff','True/Reco Neutralino Momentum Difference',100,-3.,3)   # true/reco momentum difference
+        ut.bookHist(h,'RPV_beta','Reconstructed Neutralino Beta in Z-direction',100,0.994,1)
+        ut.bookHist(h,'RPV_gamma','Reconstructed Neutralino Gamma in Z-direction',100,0,200)
+        ut.bookHist(h,'RPV_theta','Angle between neutralino momentum and beam line',100,0,50)
 
-    # Canvas 2
-    ut.bookHist(h,'Muon_truemom','True Muon Momentum',100,0.,140.)   # RPV muon daughter reco momentum
-    ut.bookHist(h,'Kaon_truemom','True Kaon Momentum',100,0.,140.)   # RPV pion daughter reco momentum
-    ut.bookHist(h,'Muon_recomom','Reconstructed Muon Momentum',100,0.,140.)   # RPV muon daughter true momentum
-    ut.bookHist(h,'Kaon_recomom','Reconstructed Kaon Momentum',100,0.,140.)   # RPV pion daughter true momentum
-    ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4)   # includes both kaon and muon
-    ut.bookHist(h,'MuonDir_nosmear','Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight
-    ut.bookHist(h,'KaonDir_nosmear','Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight
+        # Canvas 2
+        ut.bookHist(h,'Muon_truemom','True Muon Momentum',100,0.,140.)   # RPV muon daughter reco momentum
+        ut.bookHist(h,'Kaon_truemom','True Kaon Momentum',100,0.,140.)   # RPV pion daughter reco momentum
+        ut.bookHist(h,'Muon_recomom','Reconstructed Muon Momentum',100,0.,140.)   # RPV muon daughter true momentum
+        ut.bookHist(h,'Kaon_recomom','Reconstructed Kaon Momentum',100,0.,140.)   # RPV pion daughter true momentum
+        ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4)   # includes both kaon and muon
+        ut.bookHist(h,'MuonDir_nosmear','Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight
+        ut.bookHist(h,'KaonDir_nosmear','Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight
 
-    # Canvas 3
-    ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time',150,37.5,40.)   # daughter muon time of flight (Gaussian blurred)
-    ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time',150,37.5,40.)   # daughter kaon time of flight (Gaussian blurred)
-    ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,3.)   # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
-    ut.bookHist(h,'tmass_kaon','Time Deduced Kaon Mass',150,0.,3.)
-    ut.bookHist(h,'tsmearmass_muon_samebins','Smeared Time Deduced Muon Mass',150,0.,3.)   # same as above, but for smeared mass
-    ut.bookHist(h,'tsmearmass_kaon_samebins','Smeared Time Deduced Kaon Mass',150,0.,3.)
-    ut.bookHist(h,'daughter_masses','Kaon and muon true masses',50,0,1)
+        # Canvas 3
+        ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time',150,37.5,40.)   # daughter muon time of flight (Gaussian blurred)
+        ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time',150,37.5,40.)   # daughter kaon time of flight (Gaussian blurred)
+        ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,3.)   # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
+        ut.bookHist(h,'tmass_kaon','Time Deduced Kaon Mass',150,0.,3.)
+        ut.bookHist(h,'tsmearmass_muon_samebins','Smeared Time Deduced Muon Mass',150,0.,3.)   # same as above, but for smeared mass
+        ut.bookHist(h,'tsmearmass_kaon_samebins','Smeared Time Deduced Kaon Mass',150,0.,3.)
+        ut.bookHist(h,'daughter_masses','Kaon and muon true masses',50,0,1)
 
-    edgesarray = []
-    edgesarray.append(0)
-    for binNumber in range(0,40):
-        edgesarray.append(edgesarray[binNumber] + 0.015)
-    for binNumber in range(40,86):
-        edgesarray.append(edgesarray[binNumber] + 0.045)
-    h['Muon_SmearedMass'] = ROOT.TH1D('Muon_SmearedMass','Prob. particle is muon',85,array('d',edgesarray))
-    h['Kaon_SmearedMass'] = ROOT.TH1D('Kaon_SmearedMass','Prob. particle is kaon',85,array('d',edgesarray))
-    h['Total_SmearedMass'] = ROOT.TH1D('Total_SmearedMass','Smeared Mass',85,array('d',edgesarray))
+        edgesarray = []
+        edgesarray.append(0)
+        for binNumber in range(0,40):
+            edgesarray.append(edgesarray[binNumber] + 0.015)
+        for binNumber in range(40,86):
+            edgesarray.append(edgesarray[binNumber] + 0.045)
+        h['Muon_SmearedMass'] = ROOT.TH1D('Muon_SmearedMass','Prob. particle is muon',85,array('d',edgesarray))
+        h['Kaon_SmearedMass'] = ROOT.TH1D('Kaon_SmearedMass','Prob. particle is kaon',85,array('d',edgesarray))
+        h['Total_SmearedMass'] = ROOT.TH1D('Total_SmearedMass','Smeared Mass',85,array('d',edgesarray))
 
-    # Canvas 4
-    h['Muon_ProbMeasr'] = ROOT.TH1D('Muon_ProbMeasr','Prob. Identifying Muon',85,array('d',edgesarray))
-    h['Kaon_ProbMeasr'] = ROOT.TH1D('Kaon_ProbMeasr','Prob. Identifying Kaon',85,array('d',edgesarray))
+        # Canvas 4
+        h['Muon_ProbMeasr'] = ROOT.TH1D('Muon_ProbMeasr','Prob. Identifying Muon',85,array('d',edgesarray))
+        h['Kaon_ProbMeasr'] = ROOT.TH1D('Kaon_ProbMeasr','Prob. Identifying Kaon',85,array('d',edgesarray))
 
-    # Canvas 5
+        # Not drawn on canvas
+        ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
+        ut.bookHist(h,'num_kaon','No. of kaon hits in straw tubes',25,25,50)
+        ut.bookHist(h,'path_diff','Difference between straight path and better approximation',100,0,0.001)
+        ut.bookHist(h,'straight_path','Straight distance from first straw tube hit to ECAL',200,11,12)
+        ut.bookHist(h,'better_path','Curved path through straw tubes, then straight to ECAL',200,11,12)
+        ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
+        ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular event)',500,44,45)
+
+    # RPV SUSY: N --> K*+ mu-
+    if choice == 2:
+        # Canvas 1
+        ut.bookHist(h,'Kaon_recomass','Reconstructed Neutral Kaon Mass',200,0.4,0.6)
+        ut.bookHist(h,'RPV_recomass','Reconstructed Neutralino Mass',300,0.5,1.5)
+        ut.bookHist(h,'Kaon_recomom','Reconstructed',80,0,100)
+        ut.bookHist(h,'Kaon_truemom','True',80,0,100)
+        ut.bookHist(h,'Piplus_recomom','Reconstructed Pi+ Momentum',80,0,40)
+        ut.bookHist(h,'Piminus_recomom','Reconstructed Pi- Momentum',80,0,40)
+        ut.bookHist(h,'RPV_truemom','True',100,0,300)
+        ut.bookHist(h,'RPV_recomom','Reconstructed',100,0,300)
+
+        ut.bookHist(h,'RPV_beta','Reconstructed Neutralino Beta in Z-direction',100,0.994,1)
+        ut.bookHist(h,'RPV_gamma','Reconstructed Neutralino Gamma in Z-direction',100,0,200)
+        ut.bookHist(h,'RPV_theta','Angle between neutralino momentum and beam line',100,0,50)
+
+    # Dark Photon: A --> e- e+
+    if choice == 3:
+        # Canvas 1
+        ut.bookHist(h,'DP_recomass','Reconstructed Dark Photon Mass',500,0,0.4)   # reconstructed mass
+        ut.bookHist(h,'DP_truemom','True Dark Photon Momentum',100,0.,300.)   # true momentum distribution
+        ut.bookHist(h,'DP_recomom','Reconstructed Dark Photon Momentum',100,0.,300)   # reconstructed momentum distribution
+        ut.bookHist(h,'DP_mom_diff','True/Reco Dark Photon Momentum Difference',100,-3.,3)   # true/reco momentum difference
+        ut.bookHist(h,'DP_beta','Reconstructed Dark Photon Beta in Z-direction',100,0.994,1)
+        ut.bookHist(h,'DP_gamma','Reconstructed Dark Photon Gamma in Z-direction',100,0,200)
+        ut.bookHist(h,'DP_theta','Angle between Dark Photon Momentum and Beam Line',100,0,50)
+
+        # Canvas 2
+        ut.bookHist(h,'eplus_truemom','True e+ Momentum',100,0.,140.)
+        ut.bookHist(h,'eminus_truemom','True e- Momentum',100,0.,140.) 
+        ut.bookHist(h,'eplus_recomom','Reconstructed e+ Momentum',100,0.,140.)
+        ut.bookHist(h,'eminus_recomom','Reconstructed e- Momentum',100,0.,140.)
+
+    # Veto Histograms (same for all)
     ut.bookHist(h,'IP_target','Impact parameter to target',120,0,10)
     ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
     ut.bookHist(h,'doca','Distance of closest approach between tracks',150,0,3)
@@ -619,175 +663,287 @@ def createHists_MuKa():
     ut.bookHist(h,'Chi2','Fitted Tracks Reduced #chi^{2}',150,0,3)
     ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',100,-4000,4000)
 
-    # Not drawn on canvas
-    ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
-    ut.bookHist(h,'num_kaon','No. of kaon hits in straw tubes',25,25,50)
-    ut.bookHist(h,'path_diff','Difference between straight path and better approximation',100,0,0.001)
-    ut.bookHist(h,'straight_path','Straight distance from first straw tube hit to ECAL',200,11,12)
-    ut.bookHist(h,'better_path','Curved path through straw tubes, then straight to ECAL',200,11,12)
-    ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
-    ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular event)',500,44,45)
-def makePlots_MuKa():
-    ut.bookCanvas(h,key='RPV_N',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
-    cv = h['RPV_N'].cd(1)
-    h['RPV_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
-    h['RPV_recomass'].SetYTitle('No. of Particles')
-    h['RPV_recomass'].SetLineColor(1)
-    h['RPV_recomass'].Draw()
-    print('\nNeutralino mass Gaussian fit:\n')
-    fitSingleGauss('RPV_recomass',0.9,1.1)
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['RPV_N'].cd(2)
-    h['RPV_truemom'].SetXTitle('Momentum / [GeV/c]')
-    h['RPV_truemom'].SetYTitle('No. of Particles')
-    h['RPV_truemom'].SetLineColor(2)
-    h['ths1'] = ROOT.THStack('RPVmom','True & Reconstructed Neutralino Momentum ; Momentum / [GeV/c] ; No. of Particles')
-    h['ths1'].Add(h['RPV_truemom'])
-    h['ths1'].Add(h['RPV_recomom'])
-    h['ths1'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['RPV_N'].cd(3)
-    h['RPV_mom_diff'].SetXTitle('Momentum Difference / [GeV/c]')
-    h['RPV_mom_diff'].SetYTitle('No. of Particles')
-    h['RPV_mom_diff'].SetLineColor(1)    
-    h['RPV_mom_diff'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['RPV_N'].cd(4)
-    h['RPV_beta'].SetXTitle('Beta')
-    h['RPV_beta'].SetYTitle('No. of Particles')
-    h['RPV_beta'].SetLineColor(1)
-    h['RPV_beta'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['RPV_N'].cd(5)
-    h['RPV_gamma'].SetXTitle('Gamma')
-    h['RPV_gamma'].SetYTitle('No. of Particles')
-    h['RPV_gamma'].SetLineColor(1)
-    h['RPV_gamma'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['RPV_N'].cd(6)
-    h['RPV_theta'].SetXTitle('Theta / [mrad]')
-    h['RPV_theta'].SetYTitle('No. of Particles')
-    h['RPV_theta'].SetLineColor(1)
-    h['RPV_theta'].Draw()
-    h['RPV_N'].Print('RPV_N.png')
-    #======================================================================================================================
-    ut.bookCanvas(h,key='KaMu',title='Results 2',nx=1000,ny=1000,cx=2,cy=2)
-    cv = h['KaMu'].cd(1)
-    h['Kaon_truemom'].SetXTitle('Momentum / [GeV/c]')
-    h['Kaon_truemom'].SetYTitle('No. of Particles')
-    h['Kaon_truemom'].SetLineColor(2)
-    h['ths2'] = ROOT.THStack('Kamom','Kaon True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
-    h['ths2'].Add(h['Kaon_truemom'])
-    h['ths2'].Add(h['Kaon_recomom'])
-    h['ths2'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['KaMu'].cd(2)
-    h['Muon_truemom'].SetXTitle('Momentum / [GeV/c]')
-    h['Muon_truemom'].SetYTitle('No. of Particles')
-    h['Muon_truemom'].SetLineColor(2)
-    h['ths3'] = ROOT.THStack('Mumom','Muon True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
-    h['ths3'].Add(h['Muon_truemom'])
-    h['ths3'].Add(h['Muon_recomom'])
-    h['ths3'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['KaMu'].cd(3)
-    h['ecalstraw_mom'].SetXTitle('Momentum Difference [GeV/c]')
-    h['ecalstraw_mom'].SetYTitle('Frequency')
-    h['ecalstraw_mom'].SetLineColor(1)
-    h['ecalstraw_mom'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['KaMu'].cd(4)
-    h['MuonDir_nosmear'].SetXTitle('Time / [ns]')
-    h['MuonDir_nosmear'].SetYTitle('No. of particles')
-    h['KaonDir_nosmear'].SetLineColor(2)
-    h['ths4'] = ROOT.THStack('MuKaDirTime','Kaon & Muon Straw-ECAL Time ; Time / [ns] ; No. of Particles')
-    h['ths4'].Add(h['MuonDir_nosmear'])
-    h['ths4'].Add(h['KaonDir_nosmear'])
-    h['ths4'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    h['KaMu'].Print('KaMu.png')
-    #======================================================================================================================
-    ut.bookCanvas(h,key='Time_Mass',title='Results 3',nx=1000,ny=1000,cx=2,cy=2)
-    cv = h['Time_Mass'].cd(1)
-    h['MuonDir'].SetXTitle('Time / [ns]')
-    h['MuonDir'].SetYTitle('Frequency')
-    h['MuonDir'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Time_Mass'].cd(2)
-    h['KaonDir'].SetXTitle('Time / [ns]')
-    h['KaonDir'].SetYTitle('Frequency')
-    h['KaonDir'].SetLineColor(2)
-    h['KaonDir'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Time_Mass'].cd(3)
-    h['tmass_kaon'].SetXTitle('Mass / [GeV/c2]')
-    h['tmass_kaon'].SetYTitle('Frequency')
-    h['tmass_kaon'].SetLineColor(2)
-    h['daughter_masses'].SetLineColor(1)
-    h['daughter_masses'].SetLineStyle(2)
-    h['daughter_masses'].Draw('same')
-    h['ths5'] = ROOT.THStack('tmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Frequency')
-    h['ths5'].Add(h['tmass_kaon'])
-    h['ths5'].Add(h['tmass_muon'])
-    #h['ths5'].Add(h['daughter_masses'])
-    h['ths5'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Time_Mass'].cd(4)
-    h['tsmearmass_kaon_samebins'].SetXTitle('Mass / [GeV/c2]')
-    h['tsmearmass_kaon_samebins'].SetYTitle('Frequency')
-    h['tsmearmass_kaon_samebins'].SetLineColor(2)
-    h['tsmearmass_muon_samebins'].SetXTitle('Mass / [GeV/c2]')
-    h['tsmearmass_muon_samebins'].SetYTitle('Frequency')
-    print('\nLandau fits for mass (time of flight):\n')
-    h['tsmearmass_kaon_samebins'].Fit('landau')
-    h['tsmearmass_kaon_samebins'].GetFunction('landau').SetLineColor(1)
-    h['tsmearmass_muon_samebins'].Fit('landau')
-    h['tsmearmass_muon_samebins'].GetFunction('landau').SetLineColor(1)
-    #par0 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(0)
-    #par1 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(1)
-    #par2 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(2)
-    h['ths6'] = ROOT.THStack('smeartmass','Smeared Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Frequency')
-    h['ths6'].Add(h['tsmearmass_kaon_samebins'])
-    h['ths6'].Add(h['tsmearmass_muon_samebins'])
-    #h['ths6'].Add(h['daughter_masses'])
-    h['ths6'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    h['Time_Mass'].Print('Time_Mass.png')
-    #======================================================================================================================
-    ut.bookCanvas(h,key='Probs',title='Results 4',nx=1000,ny=1000,cx=2,cy=2)
-    cv = h['Probs'].cd(1)
-    h['Muon_ProbMeasr'].SetXTitle('Mass / [GeV/c2]')
-    h['Muon_ProbMeasr'].SetYTitle('Probability')
-    h['Muon_ProbMeasr'].SetLineColor(4)
-    h['Muon_ProbMeasr'].SetMarkerColor(4)
-    h['Muon_ProbMeasr'].SetMarkerStyle(33)
-    h['Muon_ProbMeasr'].SetMarkerSize(1)
-    print('\nPolynomial fits for probability graphs:')
-    #h['Muon_ProbMeasr'].Fit('pol4')
-    #h['Muon_ProbMeasr'].GetFunction('pol4').SetLineColor(4)
-    h['Muon_ProbMeasr'].Draw('E')
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Probs'].cd(2) 
-    h['Kaon_ProbMeasr'].SetXTitle('Mass / [GeV/c2]')
-    h['Kaon_ProbMeasr'].SetYTitle('Probability')
-    h['Kaon_ProbMeasr'].SetLineColor(2)
-    h['Kaon_ProbMeasr'].SetMarkerColor(2)
-    h['Kaon_ProbMeasr'].SetMarkerStyle(33)
-    h['Kaon_ProbMeasr'].SetMarkerSize(1)
-    #h['Kaon_ProbMeasr'].Fit('pol4')
-    #h['Kaon_ProbMeasr'].GetFunction('pol4').SetLineColor(2)
-    h['Kaon_ProbMeasr'].Draw('E')
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Probs'].cd(3)
-    h['Kaon_ProbMeasr'].Draw('E')
-    h['Muon_ProbMeasr'].Draw('E same')
-    h['Probs'].Print('Probs.png')
-    #======================================================================================================================
-    ut.bookCanvas(h,key='Vetos',title='Results 5',nx=1500,ny=800,cx=3,cy=2)
+def makePlots(choice):
+    if choice == 1:
+        ut.bookCanvas(h,key='RPV_N',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
+        cv = h['RPV_N'].cd(1)
+        h['RPV_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
+        h['RPV_recomass'].SetYTitle('No. of Particles')
+        h['RPV_recomass'].SetLineColor(1)
+        h['RPV_recomass'].Draw()
+        print('\nNeutralino mass Gaussian fit:\n')
+        fitSingleGauss('RPV_recomass',0.9,1.1)
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['RPV_N'].cd(2)
+        h['RPV_truemom'].SetXTitle('Momentum / [GeV/c]')
+        h['RPV_truemom'].SetYTitle('No. of Particles')
+        h['RPV_truemom'].SetLineColor(2)
+        h['ths1'] = ROOT.THStack('RPVmom','True & Reconstructed Neutralino Momentum ; Momentum / [GeV/c] ; No. of Particles')
+        h['ths1'].Add(h['RPV_truemom'])
+        h['ths1'].Add(h['RPV_recomom'])
+        h['ths1'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['RPV_N'].cd(3)
+        h['RPV_mom_diff'].SetXTitle('Momentum Difference / [GeV/c]')
+        h['RPV_mom_diff'].SetYTitle('No. of Particles')
+        h['RPV_mom_diff'].SetLineColor(1)    
+        h['RPV_mom_diff'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['RPV_N'].cd(4)
+        h['RPV_beta'].SetXTitle('Beta')
+        h['RPV_beta'].SetYTitle('No. of Particles')
+        h['RPV_beta'].SetLineColor(1)
+        h['RPV_beta'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['RPV_N'].cd(5)
+        h['RPV_gamma'].SetXTitle('Gamma')
+        h['RPV_gamma'].SetYTitle('No. of Particles')
+        h['RPV_gamma'].SetLineColor(1)
+        h['RPV_gamma'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['RPV_N'].cd(6)
+        h['RPV_theta'].SetXTitle('Theta / [mrad]')
+        h['RPV_theta'].SetYTitle('No. of Particles')
+        h['RPV_theta'].SetLineColor(1)
+        h['RPV_theta'].Draw()
+        h['RPV_N'].Print('RPV_N.png')
+        #======================================================================================================================
+        ut.bookCanvas(h,key='KaMu',title='Results 2',nx=1000,ny=1000,cx=2,cy=2)
+        cv = h['KaMu'].cd(1)
+        h['Kaon_truemom'].SetXTitle('Momentum / [GeV/c]')
+        h['Kaon_truemom'].SetYTitle('No. of Particles')
+        h['Kaon_truemom'].SetLineColor(2)
+        h['ths2'] = ROOT.THStack('Kamom','Kaon True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
+        h['ths2'].Add(h['Kaon_truemom'])
+        h['ths2'].Add(h['Kaon_recomom'])
+        h['ths2'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['KaMu'].cd(2)
+        h['Muon_truemom'].SetXTitle('Momentum / [GeV/c]')
+        h['Muon_truemom'].SetYTitle('No. of Particles')
+        h['Muon_truemom'].SetLineColor(2)
+        h['ths3'] = ROOT.THStack('Mumom','Muon True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
+        h['ths3'].Add(h['Muon_truemom'])
+        h['ths3'].Add(h['Muon_recomom'])
+        h['ths3'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['KaMu'].cd(3)
+        h['ecalstraw_mom'].SetXTitle('Momentum Difference [GeV/c]')
+        h['ecalstraw_mom'].SetYTitle('Frequency')
+        h['ecalstraw_mom'].SetLineColor(1)
+        h['ecalstraw_mom'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['KaMu'].cd(4)
+        h['MuonDir_nosmear'].SetXTitle('Time / [ns]')
+        h['MuonDir_nosmear'].SetYTitle('No. of particles')
+        h['KaonDir_nosmear'].SetLineColor(2)
+        h['ths4'] = ROOT.THStack('MuKaDirTime','Kaon & Muon Straw-ECAL Time ; Time / [ns] ; No. of Particles')
+        h['ths4'].Add(h['MuonDir_nosmear'])
+        h['ths4'].Add(h['KaonDir_nosmear'])
+        h['ths4'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        h['KaMu'].Print('KaMu.png')
+        #======================================================================================================================
+        ut.bookCanvas(h,key='Time_Mass',title='Results 3',nx=1000,ny=1000,cx=2,cy=2)
+        cv = h['Time_Mass'].cd(1)
+        h['MuonDir'].SetXTitle('Time / [ns]')
+        h['MuonDir'].SetYTitle('Frequency')
+        h['MuonDir'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Time_Mass'].cd(2)
+        h['KaonDir'].SetXTitle('Time / [ns]')
+        h['KaonDir'].SetYTitle('Frequency')
+        h['KaonDir'].SetLineColor(2)
+        h['KaonDir'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Time_Mass'].cd(3)
+        h['tmass_kaon'].SetXTitle('Mass / [GeV/c2]')
+        h['tmass_kaon'].SetYTitle('Frequency')
+        h['tmass_kaon'].SetLineColor(2)
+        h['daughter_masses'].SetLineColor(1)
+        h['daughter_masses'].SetLineStyle(2)
+        h['daughter_masses'].Draw('same')
+        h['ths5'] = ROOT.THStack('tmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Frequency')
+        h['ths5'].Add(h['tmass_kaon'])
+        h['ths5'].Add(h['tmass_muon'])
+        #h['ths5'].Add(h['daughter_masses'])
+        h['ths5'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Time_Mass'].cd(4)
+        h['tsmearmass_kaon_samebins'].SetXTitle('Mass / [GeV/c2]')
+        h['tsmearmass_kaon_samebins'].SetYTitle('Frequency')
+        h['tsmearmass_kaon_samebins'].SetLineColor(2)
+        h['tsmearmass_muon_samebins'].SetXTitle('Mass / [GeV/c2]')
+        h['tsmearmass_muon_samebins'].SetYTitle('Frequency')
+        print('\nLandau fits for mass (time of flight):\n')
+        h['tsmearmass_kaon_samebins'].Fit('landau')
+        h['tsmearmass_kaon_samebins'].GetFunction('landau').SetLineColor(1)
+        h['tsmearmass_muon_samebins'].Fit('landau')
+        h['tsmearmass_muon_samebins'].GetFunction('landau').SetLineColor(1)
+        #par0 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(0)
+        #par1 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(1)
+        #par2 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(2)
+        h['ths6'] = ROOT.THStack('smeartmass','Smeared Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Frequency')
+        h['ths6'].Add(h['tsmearmass_kaon_samebins'])
+        h['ths6'].Add(h['tsmearmass_muon_samebins'])
+        #h['ths6'].Add(h['daughter_masses'])
+        h['ths6'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        h['Time_Mass'].Print('Time_Mass.png')
+        #======================================================================================================================
+        ut.bookCanvas(h,key='Probs',title='Results 4',nx=1000,ny=1000,cx=2,cy=2)
+        cv = h['Probs'].cd(1)
+        h['Muon_ProbMeasr'].SetXTitle('Mass / [GeV/c2]')
+        h['Muon_ProbMeasr'].SetYTitle('Probability')
+        h['Muon_ProbMeasr'].SetLineColor(4)
+        h['Muon_ProbMeasr'].SetMarkerColor(4)
+        h['Muon_ProbMeasr'].SetMarkerStyle(33)
+        h['Muon_ProbMeasr'].SetMarkerSize(1)
+        print('\nPolynomial fits for probability graphs:')
+        #h['Muon_ProbMeasr'].Fit('pol4')
+        #h['Muon_ProbMeasr'].GetFunction('pol4').SetLineColor(4)
+        h['Muon_ProbMeasr'].Draw('E')
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Probs'].cd(2) 
+        h['Kaon_ProbMeasr'].SetXTitle('Mass / [GeV/c2]')
+        h['Kaon_ProbMeasr'].SetYTitle('Probability')
+        h['Kaon_ProbMeasr'].SetLineColor(2)
+        h['Kaon_ProbMeasr'].SetMarkerColor(2)
+        h['Kaon_ProbMeasr'].SetMarkerStyle(33)
+        h['Kaon_ProbMeasr'].SetMarkerSize(1)
+        #h['Kaon_ProbMeasr'].Fit('pol4')
+        #h['Kaon_ProbMeasr'].GetFunction('pol4').SetLineColor(2)
+        h['Kaon_ProbMeasr'].Draw('E')
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Probs'].cd(3)
+        h['Kaon_ProbMeasr'].Draw('E')
+        h['Muon_ProbMeasr'].Draw('E same')
+        h['Probs'].Print('Probs.png')
+        #======================================================================================================================
+        h['straight_path'].SetLineColor(1)
+        h['better_path'].SetLineColor(1)
+        h['track_kaon'].SetLineColor(2)   # RPV SUSY: N --> K+ mu-
+
+    if choice == 2:
+        ut.bookCanvas(h,key='Exc_RPV_N',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
+        cv = h['Exc_RPV_N'].cd(1)
+        h['RPV_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
+        h['RPV_recomass'].SetYTitle('No. of particles')
+        h['RPV_recomass'].SetLineColor(1)
+        h['RPV_recomass'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Exc_RPV_N'].cd(2)
+        h['Kaon_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
+        h['Kaon_recomass'].SetYTitle('No. of particles')
+        h['Kaon_recomass'].SetLineColor(1)
+        h['Kaon_recomass'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Exc_RPV_N'].cd(3)
+        h['RPV_truemom'].SetXTitle('Momentum / [GeV/c]')
+        h['RPV_truemom'].SetYTitle('No. of particles')
+        h['RPV_truemom'].SetLineColor(2)
+        h['ths1'] = ROOT.THStack('RPVmom','True & Reconstructed Neutralino Momentum ; Momentum / [GeV/c] ; No. of Particles')
+        h['ths1'].Add(h['RPV_truemom'])
+        h['ths1'].Add(h['RPV_recomom'])
+        h['ths1'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Exc_RPV_N'].cd(4)
+        h['Kaon_truemom'].SetXTitle('Momentum / [GeV/c]')
+        h['Kaon_truemom'].SetYTitle('No. of particles')
+        h['Kaon_truemom'].SetLineColor(2)
+        h['ths2'] = ROOT.THStack('Kaonmom','True & Reconstructed K0 Momentum ; Momentum / [GeV/c] ; No. of Particles')
+        h['ths2'].Add(h['Kaon_truemom'])
+        h['ths2'].Add(h['Kaon_recomom'])
+        h['ths2'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Exc_RPV_N'].cd(5)
+        h['Piplus_recomom'].SetXTitle('Momentum / [GeV/c]')
+        h['Piplus_recomom'].SetYTitle('No. of particles')
+        h['Piplus_recomom'].SetLineColor(3)
+        h['Piplus_recomom'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['Exc_RPV_N'].cd(6)
+        h['Piminus_recomom'].SetXTitle('Momentum / [GeV/c]')
+        h['Piminus_recomom'].SetYTitle('No. of particles')
+        h['Piminus_recomom'].SetLineColor(3)
+        h['Piminus_recomom'].Draw()
+        h['Exc_RPV_N'].Print('Exc_RPV_N.png')   # RPV SUSY: N --> K*+ mu-
+
+    if choice == 3:
+        ut.bookCanvas(h,key='DP',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
+        cv = h['DP'].cd(1)
+        h['DP_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
+        h['DP_recomass'].SetYTitle('No. of Particles')
+        h['DP_recomass'].SetLineColor(1)
+        h['DP_recomass'].Draw()
+        print('\nDark Photon mass Gaussian fit:\n')
+        fitSingleGauss('DP_recomass',0.1,0.3)
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['DP'].cd(2)
+        h['DP_truemom'].SetXTitle('Momentum / [GeV/c]')
+        h['DP_truemom'].SetYTitle('No. of Particles')
+        h['DP_truemom'].SetLineColor(2)
+        h['ths1'] = ROOT.THStack('DPmom','True & Reconstructed Dark Photon Momentum ; Momentum / [GeV/c] ; No. of Particles')
+        h['ths1'].Add(h['DP_truemom'])
+        h['ths1'].Add(h['DP_recomom'])
+        h['ths1'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['DP'].cd(3)
+        h['DP_mom_diff'].SetXTitle('Momentum Difference / [GeV/c]')
+        h['DP_mom_diff'].SetYTitle('No. of Particles')
+        h['DP_mom_diff'].SetLineColor(1)    
+        h['DP_mom_diff'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['DP'].cd(4)
+        h['DP_beta'].SetXTitle('Beta')
+        h['DP_beta'].SetYTitle('No. of Particles')
+        h['DP_beta'].SetLineColor(1)
+        h['DP_beta'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['DP'].cd(5)
+        h['DP_gamma'].SetXTitle('Gamma')
+        h['DP_gamma'].SetYTitle('No. of Particles')
+        h['DP_gamma'].SetLineColor(1)
+        h['DP_gamma'].Draw()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['DP'].cd(6)
+        h['DP_theta'].SetXTitle('Theta / [mrad]')
+        h['DP_theta'].SetYTitle('No. of Particles')
+        h['DP_theta'].SetLineColor(1)
+        h['DP_theta'].Draw()
+        h['DP'].Print('DarkPhot.png')
+        #======================================================================================================================
+        ut.bookCanvas(h,key='ee',title='Results 2',nx=1000,ny=1000,cx=2,cy=2)
+        cv = h['ee'].cd(1)
+        h['eplus_truemom'].SetXTitle('Momentum / [GeV/c]')
+        h['eplus_truemom'].SetYTitle('No. of Particles')
+        h['eplus_truemom'].SetLineColor(2)
+        h['ths2'] = ROOT.THStack('Kamom','e+ True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
+        h['ths2'].Add(h['eplus_truemom'])
+        h['ths2'].Add(h['eplus_recomom'])
+        h['ths2'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        #----------------------------------------------------------------------------------------------------------------------
+        cv = h['ee'].cd(2)
+        h['eminus_truemom'].SetXTitle('Momentum / [GeV/c]')
+        h['eminus_truemom'].SetYTitle('No. of Particles')
+        h['eminus_truemom'].SetLineColor(2)
+        h['ths3'] = ROOT.THStack('Mumom','e- True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
+        h['ths3'].Add(h['eminus_truemom'])
+        h['ths3'].Add(h['eminus_recomom'])
+        h['ths3'].Draw('nostack')
+        ROOT.gPad.BuildLegend()
+        h['ee'].Print('Electrons.png')   # Dark Photon: A --> e- e+
+
+    # Veto Histograms (same for all)
+    ut.bookCanvas(h,key='Vetos',title='Veto Results',nx=1500,ny=800,cx=3,cy=2)
     cv = h['Vetos'].cd(1)
     h['IP_target'].SetXTitle('Impact Parameter / [cm]')
     h['IP_target'].SetYTitle('Frequency')
@@ -829,259 +985,10 @@ def makePlots_MuKa():
     h['recovertex'].SetLineColor(1)
     h['recovertex'].SetFillColor(17)
     h['recovertex'].Draw()
-    h['Vetos'].Print('Vetos.png')
-    #======================================================================================================================
-    h['straight_path'].SetLineColor(1)
-    h['better_path'].SetLineColor(1)
-    h['track_kaon'].SetLineColor(2)
-
-def createHists_MuKa_exc():
-    # Canvas 1
-    ut.bookHist(h,'Kaon_recomass','Reconstructed Neutral Kaon Mass',200,0.4,0.6)
-    ut.bookHist(h,'RPV_recomass','Reconstructed Neutralino Mass',300,0.5,1.5)
-    ut.bookHist(h,'Kaon_recomom','Reconstructed',80,0,100)
-    ut.bookHist(h,'Kaon_truemom','True',80,0,100)
-    ut.bookHist(h,'Piplus_recomom','Reconstructed Pi+ Momentum',80,0,40)
-    ut.bookHist(h,'Piminus_recomom','Reconstructed Pi- Momentum',80,0,40)
-    ut.bookHist(h,'RPV_truemom','True',100,0,300)
-    ut.bookHist(h,'RPV_recomom','Reconstructed',100,0,300)
-
-    ut.bookHist(h,'RPV_beta','Reconstructed Neutralino Beta in Z-direction',100,0.994,1)
-    ut.bookHist(h,'RPV_gamma','Reconstructed Neutralino Gamma in Z-direction',100,0,200)
-    ut.bookHist(h,'RPV_theta','Angle between neutralino momentum and beam line',100,0,50)
-
-    # Canvas 2
-    ut.bookHist(h,'IP_target','Impact parameter to target',120,0,10)
-    ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
-    ut.bookHist(h,'doca','Distance of closest approach between tracks',150,0,3)
-    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
-    ut.bookHist(h,'Chi2','Fitted Tracks Reduced #chi^{2}',150,0,3)
-    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',100,-4000,4000)
-def makePlots_MuKa_exc():
-    ut.bookCanvas(h,key='Exc_RPV_N',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
-    cv = h['Exc_RPV_N'].cd(1)
-    h['RPV_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
-    h['RPV_recomass'].SetYTitle('No. of particles')
-    h['RPV_recomass'].SetLineColor(1)
-    h['RPV_recomass'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_RPV_N'].cd(2)
-    h['Kaon_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
-    h['Kaon_recomass'].SetYTitle('No. of particles')
-    h['Kaon_recomass'].SetLineColor(1)
-    h['Kaon_recomass'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_RPV_N'].cd(3)
-    h['RPV_truemom'].SetXTitle('Momentum / [GeV/c]')
-    h['RPV_truemom'].SetYTitle('No. of particles')
-    h['RPV_truemom'].SetLineColor(2)
-    h['ths1'] = ROOT.THStack('RPVmom','True & Reconstructed Neutralino Momentum ; Momentum / [GeV/c] ; No. of Particles')
-    h['ths1'].Add(h['RPV_truemom'])
-    h['ths1'].Add(h['RPV_recomom'])
-    h['ths1'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_RPV_N'].cd(4)
-    h['Kaon_truemom'].SetXTitle('Momentum / [GeV/c]')
-    h['Kaon_truemom'].SetYTitle('No. of particles')
-    h['Kaon_truemom'].SetLineColor(2)
-    h['ths2'] = ROOT.THStack('Kaonmom','True & Reconstructed K0 Momentum ; Momentum / [GeV/c] ; No. of Particles')
-    h['ths2'].Add(h['Kaon_truemom'])
-    h['ths2'].Add(h['Kaon_recomom'])
-    h['ths2'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_RPV_N'].cd(5)
-    h['Piplus_recomom'].SetXTitle('Momentum / [GeV/c]')
-    h['Piplus_recomom'].SetYTitle('No. of particles')
-    h['Piplus_recomom'].SetLineColor(3)
-    h['Piplus_recomom'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_RPV_N'].cd(6)
-    h['Piminus_recomom'].SetXTitle('Momentum / [GeV/c]')
-    h['Piminus_recomom'].SetYTitle('No. of particles')
-    h['Piminus_recomom'].SetLineColor(3)
-    h['Piminus_recomom'].Draw()
-    h['Exc_RPV_N'].Print('Exc_RPV_N.png')
-    #======================================================================================================================
-    ut.bookCanvas(h,key='Exc_Vetos',title='Results 2',nx=1500,ny=800,cx=3,cy=2)
-    cv = h['Exc_Vetos'].cd(1)
-    h['IP_target'].SetXTitle('Impact Parameter / [cm]')
-    h['IP_target'].SetYTitle('Frequency')
-    h['IP_target'].SetLineColor(1)
-    h['IP_target'].SetFillColor(17)
-    h['IP_target'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_Vetos'].cd(2)
-    h['ecalE'].SetXTitle('Energy / [GeV/c2]')
-    h['ecalE'].SetYTitle('Frequency')
-    h['ecalE'].SetLineColor(1)
-    h['ecalE'].SetFillColor(17)
-    h['ecalE'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_Vetos'].cd(3)
-    h['doca'].SetXTitle('Distance / [cm]')
-    h['doca'].SetYTitle('Frequency')
-    h['doca'].SetLineColor(1)
-    h['doca'].SetFillColor(17)
-    h['doca'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_Vetos'].cd(4)
-    h['nmeas'].SetXTitle('ndf')
-    h['nmeas'].SetYTitle('No. of tracks')
-    h['nmeas'].SetLineColor(1)
-    h['nmeas'].SetFillColor(17)
-    h['nmeas'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_Vetos'].cd(5)
-    h['Chi2'].SetXTitle('#chi^{2}/ndf')
-    h['Chi2'].SetYTitle('Frequency')
-    h['Chi2'].SetLineColor(1)
-    h['Chi2'].SetFillColor(17)
-    h['Chi2'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['Exc_Vetos'].cd(6)
-    h['recovertex'].SetXTitle('Z / [cm]')
-    h['recovertex'].SetYTitle('Frequency')
-    h['recovertex'].SetLineColor(1)
-    h['recovertex'].SetFillColor(17)
-    h['recovertex'].Draw()
-    h['Exc_Vetos'].Print('Exc_Vetos.png')
-
-def createHists_DarkPhot():
-    # Canvas 1
-    ut.bookHist(h,'DP_recomass','Reconstructed Dark Photon Mass',500,0,0.4)   # reconstructed mass
-    ut.bookHist(h,'DP_truemom','True Dark Photon Momentum',100,0.,300.)   # true momentum distribution
-    ut.bookHist(h,'DP_recomom','Reconstructed Dark Photon Momentum',100,0.,300)   # reconstructed momentum distribution
-    ut.bookHist(h,'DP_mom_diff','True/Reco Dark Photon Momentum Difference',100,-3.,3)   # true/reco momentum difference
-    ut.bookHist(h,'DP_beta','Reconstructed Dark Photon Beta in Z-direction',100,0.994,1)
-    ut.bookHist(h,'DP_gamma','Reconstructed Dark Photon Gamma in Z-direction',100,0,200)
-    ut.bookHist(h,'DP_theta','Angle between Dark Photon Momentum and Beam Line',100,0,50)
-
-    # Canvas 2
-    ut.bookHist(h,'eplus_truemom','True e+ Momentum',100,0.,140.)   # RPV muon daughter reco momentum
-    ut.bookHist(h,'eminus_truemom','True e- Momentum',100,0.,140.)   # RPV pion daughter reco momentum
-    ut.bookHist(h,'eplus_recomom','Reconstructed e+ Momentum',100,0.,140.)   # RPV muon daughter true momentum
-    ut.bookHist(h,'eminus_recomom','Reconstructed e- Momentum',100,0.,140.)   # RPV pion daughter true momentum
-
-    # Canvas 3
-    ut.bookHist(h,'IP_target','Impact parameter to target',120,0,10)
-    ut.bookHist(h,'ecalE','Energy deposited in ECAL',150,0,100)
-    ut.bookHist(h,'doca','Distance of closest approach between tracks',150,0,3)
-    ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
-    ut.bookHist(h,'Chi2','Fitted Tracks Reduced #chi^{2}',150,0,3)
-    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',100,-4000,4000)
-def makePlots_DarkPhot():
-    ut.bookCanvas(h,key='DP',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
-    cv = h['DP'].cd(1)
-    h['DP_recomass'].SetXTitle('Invariant mass / [GeV/c2]')
-    h['DP_recomass'].SetYTitle('No. of Particles')
-    h['DP_recomass'].SetLineColor(1)
-    h['DP_recomass'].Draw()
-    print('\nDark Photon mass Gaussian fit:\n')
-    fitSingleGauss('DP_recomass',0.1,0.3)
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP'].cd(2)
-    h['DP_truemom'].SetXTitle('Momentum / [GeV/c]')
-    h['DP_truemom'].SetYTitle('No. of Particles')
-    h['DP_truemom'].SetLineColor(2)
-    h['ths1'] = ROOT.THStack('DPmom','True & Reconstructed Dark Photon Momentum ; Momentum / [GeV/c] ; No. of Particles')
-    h['ths1'].Add(h['DP_truemom'])
-    h['ths1'].Add(h['DP_recomom'])
-    h['ths1'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP'].cd(3)
-    h['DP_mom_diff'].SetXTitle('Momentum Difference / [GeV/c]')
-    h['DP_mom_diff'].SetYTitle('No. of Particles')
-    h['DP_mom_diff'].SetLineColor(1)    
-    h['DP_mom_diff'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP'].cd(4)
-    h['DP_beta'].SetXTitle('Beta')
-    h['DP_beta'].SetYTitle('No. of Particles')
-    h['DP_beta'].SetLineColor(1)
-    h['DP_beta'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP'].cd(5)
-    h['DP_gamma'].SetXTitle('Gamma')
-    h['DP_gamma'].SetYTitle('No. of Particles')
-    h['DP_gamma'].SetLineColor(1)
-    h['DP_gamma'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP'].cd(6)
-    h['DP_theta'].SetXTitle('Theta / [mrad]')
-    h['DP_theta'].SetYTitle('No. of Particles')
-    h['DP_theta'].SetLineColor(1)
-    h['DP_theta'].Draw()
-    h['DP'].Print('DarkPhot.png')
-    #======================================================================================================================
-    ut.bookCanvas(h,key='ee',title='Results 2',nx=1000,ny=1000,cx=2,cy=2)
-    cv = h['ee'].cd(1)
-    h['eplus_truemom'].SetXTitle('Momentum / [GeV/c]')
-    h['eplus_truemom'].SetYTitle('No. of Particles')
-    h['eplus_truemom'].SetLineColor(2)
-    h['ths2'] = ROOT.THStack('Kamom','e+ True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
-    h['ths2'].Add(h['eplus_truemom'])
-    h['ths2'].Add(h['eplus_recomom'])
-    h['ths2'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['ee'].cd(2)
-    h['eminus_truemom'].SetXTitle('Momentum / [GeV/c]')
-    h['eminus_truemom'].SetYTitle('No. of Particles')
-    h['eminus_truemom'].SetLineColor(2)
-    h['ths3'] = ROOT.THStack('Mumom','e- True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
-    h['ths3'].Add(h['eminus_truemom'])
-    h['ths3'].Add(h['eminus_recomom'])
-    h['ths3'].Draw('nostack')
-    ROOT.gPad.BuildLegend()
-    h['ee'].Print('Electrons.png')
-    #======================================================================================================================
-    ut.bookCanvas(h,key='DP_Vetos',title='Results 3',nx=1500,ny=800,cx=3,cy=2)
-    cv = h['DP_Vetos'].cd(1)
-    h['IP_target'].SetXTitle('Impact Parameter / [cm]')
-    h['IP_target'].SetYTitle('Frequency')
-    h['IP_target'].SetLineColor(1)
-    h['IP_target'].SetFillColor(17)
-    h['IP_target'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP_Vetos'].cd(2)
-    h['ecalE'].SetXTitle('Energy / [GeV/c2]')
-    h['ecalE'].SetYTitle('Frequency')
-    h['ecalE'].SetLineColor(1)
-    h['ecalE'].SetFillColor(17)
-    h['ecalE'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP_Vetos'].cd(3)
-    h['doca'].SetXTitle('Distance / [cm]')
-    h['doca'].SetYTitle('Frequency')
-    h['doca'].SetLineColor(1)
-    h['doca'].SetFillColor(17)
-    h['doca'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP_Vetos'].cd(4)
-    h['nmeas'].SetXTitle('ndf')
-    h['nmeas'].SetYTitle('No. of tracks')
-    h['nmeas'].SetLineColor(1)
-    h['nmeas'].SetFillColor(17)
-    h['nmeas'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP_Vetos'].cd(5)
-    h['Chi2'].SetXTitle('#chi^{2}/ndf')
-    h['Chi2'].SetYTitle('Frequency')
-    h['Chi2'].SetLineColor(1)
-    h['Chi2'].SetFillColor(17)
-    h['Chi2'].Draw()
-    #----------------------------------------------------------------------------------------------------------------------
-    cv = h['DP_Vetos'].cd(6)
-    h['recovertex'].SetXTitle('Z / [cm]')
-    h['recovertex'].SetYTitle('Frequency')
-    h['recovertex'].SetLineColor(1)
-    h['recovertex'].SetFillColor(17)
-    h['recovertex'].Draw()
-    h['DP_Vetos'].Print('DP_Vetos.png')
-
+    if choice == 1: h['Vetos'].Print('RPV_Vetos.png')
+    if choice == 2: h['Vetos'].Print('RPV_Exc_Vetos.png')
+    if choice == 3: h['Vetos'].Print('DP_Vetos.png')
+    
 #----------------------------------------------------EVENT-LOOPS----------------------------------------------------------
 
 nEvents = min(sTree.GetEntries(),nEvents)   # number of generated events
@@ -1089,7 +996,6 @@ nEvents = min(sTree.GetEntries(),nEvents)   # number of generated events
 def finStateMuKa():
     if sTree.GetBranch('FitTracks'):
         print('\nRunning analysis for final state K+- Mu-+ :\n')
-        createHists_MuKa()   # calls function to create histograms
         successful_events = []   # creates list of event numbers of desired decays
         veto = 10*[0]   # creates list of veto counts for each possible veto cause
         weight_veto = 9*[0.0]
@@ -1286,17 +1192,17 @@ def finStateMuKa():
         print('\nBranching ratio of N -> K+ mu- = ' + str(brRatio))
 
         for i,value in enumerate(weight_veto):
-            acceptance[i] = value/float(simcount)
+            acceptance[i] = value/float(simcount)   # calculates signal acceptance
 
         for j in range(8):
-            efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))
+            efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))   # calculates signal efficiency
 
         accepted = len(successful_events)
         print('\n\t' + str(simcount) + ' events generated for this decay mode')
         print('\t' + str(veto[0]) + ' events reconstructed for this decay mode')
-        print('\t(' + str(veto[0] - veto[9]) + ' failed RedoVertexing extrapolations)')
-        print('\t' + str(accepted) + ' events not rejected:')
-        print('\n\t|---------------------------------|------------------|-------------------|-------------------------|')
+        print('\t' + str(veto[0] - veto[9]) + ' failed RedoVertexing extrapolations')
+        print('\t' + str(accepted) + ' events not rejected:\n')
+        print('\t|---------------------------------|------------------|-------------------|-------------------------|')
         print('\t| Selection                       | Events remaining |    Acceptance     | Selection Efficiency (%)|')
         print('\t|---------------------------------|------------------|-------------------|-------------------------|')
         print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |           ---           |'%(acceptance[0]))
@@ -1322,13 +1228,10 @@ def finStateMuKa():
         del h['Kaon_SmearedMass']
         del h['Total_SmearedMass']
 
-        makePlots_MuKa()
-
 def finStateMuKa_exc():
     if sTree.GetBranch('FitTracks'):
         print('\nRunning analysis for final state K*+- Mu-+ :')
-        print('\tCharged final state: N --> K*+ mu- --> K0 pi+ mu- --> pi+ pi- pi+ mu-\n')
-        createHists_MuKa_exc()   # calls function to create histograms
+        print('Charged final state: N --> K*+ mu- --> K0 pi+ mu- --> pi+ pi- pi+ mu-\n')
         successful_events = []   # creates list of event numbers of desired decays
         veto = 10*[0]   # veto counter
         weight_veto = 9*[0.0]
@@ -1406,6 +1309,7 @@ def finStateMuKa_exc():
                                                         
                                                                         if piplusMotherkey == piminusMotherkey:
                                                                             wgRPV_Exc = true_motherN.GetWeight()   # hidden particle weighting
+                                                                            if not wgRPV_Exc == 0: print(wgRPV_Exc)
                                                                             if not wgRPV_Exc > 0. : wgRPV_Exc = 1.   # in case the weighting information doesn't exist
 
                                                                             fitstatus_piplus = reco_piplus.getFitStatus() 
@@ -1558,17 +1462,17 @@ def finStateMuKa_exc():
         print('\nBranching ratio of N -> K*+ mu- = ' + str(brRatio))
 
         for i,value in enumerate(weight_veto):
-            acceptance[i] = value/float(simcount)
+            acceptance[i] = value/float(simcount)   # calculates signal acceptance
 
         for j in range(8):
-            efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))
+            efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))   # calculates signal efficiency
 
         accepted = len(successful_events)
         print('\n\t' + str(simcount) + ' events generated for this decay mode')
         print('\t' + str(veto[0]) + ' charged final state events reconstructed for this decay mode')
-        print('\t(' + str(veto[9]) + ' failed RedoVertexing extrapolations)')
-        print('\t' + str(accepted) + ' not rejected')
-        print('\n\t|---------------------------------|------------------|-------------------|-------------------------|')
+        print('\t' + str(veto[9]) + ' failed RedoVertexing extrapolations')
+        print('\t' + str(accepted) + ' not rejected:\n')
+        print('\t|---------------------------------|------------------|-------------------|-------------------------|')
         print('\t| Selection                       | Events remaining |    Acceptance     | Selection Efficiency (%)|')
         print('\t|---------------------------------|------------------|-------------------|-------------------------|')
         print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |           ---           |'%(acceptance[0]))
@@ -1582,12 +1486,9 @@ def finStateMuKa_exc():
         print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8],efficiency[8]))
         print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
-        makePlots_MuKa_exc()
-
 def finStateDarkPhot():
     if sTree.GetBranch('FitTracks'):
         print('\nRunning analysis for dark photon :\n')
-        createHists_DarkPhot()
         successful_events = []
         simcount = 0
         veto = 9*[0]   # creates list of veto counts for each possible veto cause
@@ -1754,19 +1655,20 @@ def finStateDarkPhot():
 
         brRatio = getBranchingRatio('A -> e- e+',True)
         print('\nBranching ratio of A -> e- e+ = ' + str(brRatio))
+        print(simcount)
 
         for i,value in enumerate(weight_veto):
-            acceptance[i] = value/float(simcount)
+            acceptance[i] = value/float(simcount)   # calculates signal acceptance
 
         for j in range(7):
-            efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))
+            efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))   # calculates signal efficiency
 
         accepted = len(successful_events)
         print('\n\t' + str(simcount) + ' events generated for this decay mode')
         print('\t' + str(veto[0]) + ' events reconstructed for this decay mode')
-        print('\t\t(' + str(veto[0] - veto[8]) + ' failed RedoVertexing extrapolations)')
-        print('\t' + str(accepted) + ' events not rejected:')
-        print('\n\t|---------------------------------|------------------|-------------------|-------------------------|')
+        print('\t' + str(veto[0] - veto[8]) + ' failed RedoVertexing extrapolations')
+        print('\t' + str(accepted) + ' events not rejected:\n')
+        print('\t|---------------------------------|------------------|-------------------|-------------------------|')
         print('\t| Selection                       | Events remaining |    Acceptance     | Selection Efficiency (%)|')
         print('\t|---------------------------------|------------------|-------------------|-------------------------|')
         print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |           ---           |'%(acceptance[0]))
@@ -1778,15 +1680,12 @@ def finStateDarkPhot():
         print('\t| DOCA < ' + str(docaCut) + ' cm                     |       ' + str(veto[6]) + '       | %.14f  |          %.2f          |'%(acceptance[6],efficiency[6]))
         print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[7]) + '       | %.14f  |          %.2f         |'%(acceptance[7],efficiency[7]))
         print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
-        
-        makePlots_DarkPhot()
 
 def finStateMuKa_exc_OLD():
     if sTree.GetBranch('FitTracks'):
         print('\nRunning analysis for final state K*+- Mu-+ :\n')
         print('Decay A: N --> K*+- mu-+ --> K+- pi0 mu-+')
         print('Decay B: N --> K*+- mu-+ --> K0 pi+- mu-+\n')
-        createHists_MuKa_exc()   # calls function to create histograms
         successful_events = []   # creates list of event numbers of desired decays
         A_veto = 10*[0]   # veto counter for decay A
         B_veto = 10*[0]   # veto counter for decay B
@@ -2050,15 +1949,15 @@ def finStateMuKa_exc_OLD():
         print('\n\t' + str(decayBcount_pion) + ' charged pions detected (decay B)')
         print('\t' + str(decayBcount_kaon0) + ' neutral kaons detected (decay B)\n')
 
-        makePlots_MuKa_exc()
-
 loop = True
 while loop:
     print_menu()
     choice = input('Enter your choice [0-3]: ')
      
     if choice == 1:
+        createHists(choice)
         finStateMuKa()
+        makePlots(choice)
         #-----------------------------------------OUTPUT------------------------------------------
         hfile = inputFile.split(',')[0].replace('_rec','_RPV')  # Outputs histograms and ROOT file
         if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
@@ -2070,7 +1969,9 @@ while loop:
         loop = False
 
     elif choice == 2:
+        createHists(choice)
         finStateMuKa_exc()
+        makePlots(choice)
         #-------------------------------------------OUTPUT--------------------------------------------
         hfile = inputFile.split(',')[0].replace('_rec','_RPV_Exc')  # Outputs histograms and ROOT file
         if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
@@ -2082,7 +1983,9 @@ while loop:
         loop = False
 
     elif choice == 3:
+        createHists(choice)
         finStateDarkPhot()
+        makePlots(choice)
         #-------------------------------------------OUTPUT--------------------------------------------
         hfile = inputFile.split(',')[0].replace('_rec','_DarkPhot')  # Outputs histograms and ROOT file
         if hfile[0:4] == '/eos' or not inputFile.find(',')<0:
