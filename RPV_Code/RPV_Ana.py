@@ -1132,7 +1132,20 @@ def finStateMuKa():
                                     RPV_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
                                     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
                                     ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
-                                    h['IP_target'].Fill(ip)
+                                    fittedState = reco_part2.getFittedState()
+                                    mcPart    = sTree.MCTrack[kaPartkey]
+                                    trackDir = fittedState.getDir()
+                                    trackPos = fittedState.getPos()
+                                    vx = ROOT.TVector3()
+                                    mcPart.GetStartVertex(vx)
+                                    t = 0
+                                    for i in range(3):   t += trackDir(i)*(vx(i)-trackPos(i)) 
+                                    dist = 0
+                                    for i in range(3):   dist += (vx(i)-trackPos(i)-t*trackDir(i))**2
+                                    dist = ROOT.TMath.Sqrt(dist)
+                                     
+                                    h['IP_target'].Fill(dist)
+                                    #h['IP_target'].Fill(ip)
                                     if event == True:
                                         if ip < ipCut:
                                             veto[8] += 1
