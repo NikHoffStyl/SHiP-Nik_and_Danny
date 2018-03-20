@@ -343,7 +343,7 @@ def create_Hists(partList):
     h[partList[0] + 'RecoMass'] = TH1D(partList[0] + 'RecoMass','Reconstructed Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.97,1.03)                          # reco mass
     h[partList[0] + 'RecoMass'].SetLineColor(1)
     h[partList[0] + 'RecoMass'].SetFillColor(kGray+2)
-    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum [GeV/c] ; No. of Particles',100,0.,180.)                     # true momentum 
+    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum [GeV/c] ; No. of Particles',300,0.,180.)                     # true momentum 
     h[partList[0] + 'TrueMom'].SetLineColor(2)
     h[partList[0] + 'TrueMom'].SetFillColor(kRed+2)
     h[partList[0] + 'RecoMom'] = TH1D(partList[0] + 'RecoMom','Reconstructed Momentum ; Momentum [GeV/c] ; No. of Particles',300,0.,180.)                                 # reco momentum
@@ -352,13 +352,13 @@ def create_Hists(partList):
     h[partList[0] + 'DeltaMom'] = TH1D(partList[0] + 'DeltaMom','True/Reco Momentum Difference ; Momentum Difference [GeV/c] ; No. of Particles',300,-3.,3)               # true-reco momentum difference
     h[partList[0] + 'DeltaMom'].SetLineColor(1)
     h[partList[0] + 'DeltaMom'].SetFillColor(kGray+2)
-    h[partList[0] + 'Beta'] = TH1D(partList[0] + 'Beta','Reconstructed Neutralino Beta in Z-direction; Beta; No. of Particles',100,0.994,1)
+    h[partList[0] + 'Beta'] = TH1D(partList[0] + 'Beta','Reconstructed Neutralino Beta in Z-direction; Beta; No. of Particles',300,0.994,1)
     h[partList[0] + 'Beta'].SetLineColor(1)
     h[partList[0] + 'Beta'].SetFillColor(kGray+2)
-    h[partList[0] + 'Gamma'] = TH1D(partList[0] + 'Gamma','Reconstructed Neutralino Gamma in Z-direction; Gamma; No. of Particles',100,0,200)
+    h[partList[0] + 'Gamma'] = TH1D(partList[0] + 'Gamma','Reconstructed Neutralino Gamma in Z-direction; Gamma; No. of Particles',300,0,200)
     h[partList[0] + 'Gamma'].SetLineColor(1)
     h[partList[0] + 'Gamma'].SetFillColor(kGray+2)
-    h[partList[0] + 'Theta'] = TH1D(partList[0] + 'Theta','Angle between neutralino momentum and beam line; Theta / [mrad]; No. of Particles',100,0,50)
+    h[partList[0] + 'Theta'] = TH1D(partList[0] + 'Theta','Angle between neutralino momentum and beam line; Theta / [mrad]; No. of Particles',300,0,50)
     h[partList[0] + 'Theta'].SetLineColor(1)
     h[partList[0] + 'Theta'].SetFillColor(kGray+2)
 
@@ -608,11 +608,11 @@ def makePlots2(partList):
     #h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
     #h[key + '_PROB'].Print('DaughterProbGraph.png')
 
-    #title='NeutralinoPlots'
-    #key = 'Neutralino'
-    #h[key] = TCanvas(key,title,800,800)
-    #h[key].Divide(1,1)
-    #cv = h[key].cd(1)
+    title='NeutralinoPlots'
+    key = 'Neutralino'
+    h[key] = TCanvas(key,title,800,800)
+    h[key].Divide(1,1)
+    cv = h[key].cd(1)
     #h['Neutralino_RecoMass'].Draw()
     #print('\nNeutralino mass Gaussian fit:\n')
     #fitSingleGauss('Neutralino_RecoMass',0.985,1.015)
@@ -621,7 +621,7 @@ def makePlots2(partList):
     #h['Neutralino_TrueMom'].Draw()
     #h['Neutralino_RecoMom'].Draw('same')
     #cv = h[key].cd(3)
-    #h['Neutralino_DeltaMom'].Draw()
+    h['Neutralino_DeltaMom'].Draw()
     #cv = h[key].cd(1)
     #h['Neutralino_Beta'].Draw()
     #cv = h[key].cd(2)
@@ -629,7 +629,7 @@ def makePlots2(partList):
     #cv = h[key].cd(1)
     #h['Neutralino_Theta'].Draw()
 
-    #h[key].Print(key + 'Mass.png')
+    h[key].Print(key + 'MomDelta.png')
 
 
 
