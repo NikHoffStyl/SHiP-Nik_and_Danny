@@ -172,11 +172,11 @@ else:
 
 import TrackExtrapolateTool
 c = 2.99792458*(10**8)   # speed of light
-h = {}   # creates empty dictionary for histograms and graphs
+h = {}   # creates empty dictionary for histograms
 
 #----------------------------------------------------FUNCTIONS------------------------------------------------------------
 
-# Track Checks
+# Track Vetos
 
 def dist2InnerWall(X,Y,Z):
   dist = 0
@@ -316,7 +316,7 @@ def track_checks(tr,veto,hist):
 
     return check,veto
 
-# Analysis
+# Analysis Tools
 
 def fitSingleGauss(x,ba=None,be=None):
     name = 'myGauss_' + x 
@@ -780,10 +780,10 @@ def makePlots(choice):
         h['tsmearmass_muon_samebins'].SetXTitle('Mass / [GeV/c2]')
         h['tsmearmass_muon_samebins'].SetYTitle('Frequency')
         print('\nLandau fits for mass (time of flight):\n')
-        h['tsmearmass_kaon_samebins'].Fit('landau')
-        h['tsmearmass_kaon_samebins'].GetFunction('landau').SetLineColor(1)
-        h['tsmearmass_muon_samebins'].Fit('landau')
-        h['tsmearmass_muon_samebins'].GetFunction('landau').SetLineColor(1)
+        #h['tsmearmass_kaon_samebins'].Fit('landau')
+        #h['tsmearmass_kaon_samebins'].GetFunction('landau').SetLineColor(1)
+        #h['tsmearmass_muon_samebins'].Fit('landau')
+        #h['tsmearmass_muon_samebins'].GetFunction('landau').SetLineColor(1)
         #par0 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(0)
         #par1 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(1)
         #par2 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(2)
@@ -992,6 +992,8 @@ def makePlots(choice):
 #----------------------------------------------------EVENT-LOOPS----------------------------------------------------------
 
 nEvents = min(sTree.GetEntries(),nEvents)   # number of generated events
+
+# Main Analysis
 
 def finStateMuKa():
     if sTree.GetBranch('FitTracks'):
@@ -1655,7 +1657,6 @@ def finStateDarkPhot():
 
         brRatio = getBranchingRatio('A -> e- e+',True)
         print('\nBranching ratio of A -> e- e+ = ' + str(brRatio))
-        print(simcount)
 
         for i,value in enumerate(weight_veto):
             acceptance[i] = value/float(simcount)   # calculates signal acceptance
