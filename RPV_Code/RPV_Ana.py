@@ -1,3 +1,11 @@
+#===================================================================
+#   Code performs analysis on data obtained by simulation   
+#    and reconstruction for RPV benchmark 1 final states 
+#   and dark photon model. Outputs acceptance table.
+#
+#   Created by Nicolas Stylianou and Danny Galbinski
+#===================================================================
+
 import ROOT,os,sys,getopt
 import rootUtils as ut
 import shipunit as u
@@ -202,10 +210,10 @@ def dist2InnerWall(X,Y,Z):
   return minDistance
 
 def isInFiducial(X,Y,Z):
-   if Z > ShipGeo.TrackStation1.z : return False
-   if Z < ShipGeo.vetoStation.z+100.*u.cm : return False
+   if Z > ShipGeo.TrackStation1.z: return False
+   if Z < ShipGeo.vetoStation.z + 100.*u.cm : return False
    # typical x,y Vx resolution for exclusive RPV decays 0.3cm,0.15cm (gaussian width)
-   if dist2InnerWall(X,Y,Z)<5*u.cm: return False
+   if dist2InnerWall(X,Y,Z) < 5*u.cm: return False
    return True
 
 def checkFiducialVolume(sTree,tr,dy):
@@ -221,34 +229,34 @@ def checkFiducialVolume(sTree,tr,dy):
 def myVertex(t1,t2,PosDir):
    # closest distance between two tracks
    # d = |pq . u x v|/|u x v|
-   a = ROOT.TVector3(PosDir[t1][0](0) ,PosDir[t1][0](1), PosDir[t1][0](2))
+   a = ROOT.TVector3(PosDir[t1][0](0),PosDir[t1][0](1),PosDir[t1][0](2))
    u = ROOT.TVector3(PosDir[t1][1](0),PosDir[t1][1](1),PosDir[t1][1](2))
-   c = ROOT.TVector3(PosDir[t2][0](0) ,PosDir[t2][0](1), PosDir[t2][0](2))
+   c = ROOT.TVector3(PosDir[t2][0](0),PosDir[t2][0](1),PosDir[t2][0](2))
    v = ROOT.TVector3(PosDir[t2][1](0),PosDir[t2][1](1),PosDir[t2][1](2))
-   pq = a-c
+   pq = a - c
    uCrossv = u.Cross(v)
-   dist  = pq.Dot(uCrossv)/(uCrossv.Mag()+1E-8)
+   dist = pq.Dot(uCrossv)/(uCrossv.Mag()+1E-8)
    # u.a - u.c + s*|u|**2 - u.v*t = 0
    # v.a - v.c + s*v.u - t*|v|**2 = 0
    E = u.Dot(a) - u.Dot(c) 
    F = v.Dot(a) - v.Dot(c) 
-   A,B = u.Mag2(), -u.Dot(v) 
-   C,D = u.Dot(v), -v.Mag2()
-   t = -(C*E-A*F)/(B*C-A*D)
-   X = c.x()+v.x()*t 
-   Y = c.y()+v.y()*t
-   Z = c.z()+v.z()*t
+   A,B = u.Mag2(),-u.Dot(v) 
+   C,D = u.Dot(v),-v.Mag2()
+   t = -(C*E - A*F)/(B*C - A*D)
+   X = c.x() + v.x()*t 
+   Y = c.y() + v.y()*t
+   Z = c.z() + v.z()*t
    return X,Y,Z,abs(dist)
 
-def ImpactParameter(point,tPos,tMom):
+def ImpactParameter(point,Pos,Mom):
   t = 0
-  if hasattr(tMom,'P'): P = tMom.P()
-  else:                 P = tMom.Mag()
-  for i in range(3): t += tMom(i)/P*(point(i)-tPos(i)) 
-  dist = 0
-  for i in range(3): dist += (point(i)-tPos(i)-t*tMom(i)/P)**2
-  dist = ROOT.TMath.Sqrt(dist)
-  return dist
+  if hasattr(Mom,'P'): P = Mom.P()
+  else: P = Mom.Mag()
+  for i in range(3): t += (Mom(i)/P)*(point(i) - Pos(i)) 
+  ip_squared = 0
+  for i in range(3): ip_squared += (point(i) - Pos(i) - t*Mom(i)/P)**2
+  ip = ROOT.TMath.Sqrt(ip_squared)
+  return ip
 
 def ecalMinIon(partkey):
     ecalE_tot = 0
@@ -480,14 +488,14 @@ def time_res(partkey,n,m):
             pdiff = strawP - ecalP   # between 1st straw tube hit and ECAL
 
             r = ROOT.TMath.Sqrt(((ecal_x - firststraw_x)**2) + ((ecal_y - firststraw_y)**2) + ((ecal_z - firststraw_z)**2))
-            h['straight_path'].Fill(r)
+            #h['straight_path'].Fill(r)
             max_z_index = z_array.index(max(z_array))   # gives index of the largest element in the list
             laststraw_x = 0.01*x_array[max_z_index]
             laststraw_y = 0.01*y_array[max_z_index]
             laststraw_z = 0.01*z_array[max_z_index]
             R2 = ROOT.TMath.Sqrt(((ecal_x - laststraw_x)**2) + ((ecal_y - laststraw_y)**2) + ((ecal_z - laststraw_z)**2))
             R = R1+R2   # better approximation of distance travelled through the straw tubes
-            h['better_path'].Fill(R)
+            #h['better_path'].Fill(R)
             rdiff = abs(R - r)
             h['path_diff'].Fill(rdiff)
             
@@ -515,6 +523,7 @@ def time_res(partkey,n,m):
                 if abs(pdg) == 13:
                     h['MuonDir'].Fill(tsmear)   # fills histogram with smeared time
                     h['MuonDir_nosmear'].Fill(tnosmear)   # fills histogram with true time
+                    h['MuonPath'].Fill(R)   # muon flight path length
                     h['tmass_muon'].Fill(nosmearM)   # fills histograms with mass data
                     if not smearM == -1:
                         h['Muon_SmearedMass'].Fill(smearM)
@@ -523,6 +532,7 @@ def time_res(partkey,n,m):
                 if abs(pdg) == 321:
                     h['KaonDir'].Fill(tsmear)   # fills histogram with smeared time
                     h['KaonDir_nosmear'].Fill(tnosmear)   # fills histogram with true time
+                    h['KaonPath'].Fill(R)   # kaon flight path length
                     h['tmass_kaon'].Fill(nosmearM)   # fills histograms with mass data
                     if not smearM == -1:
                         h['Kaon_SmearedMass'].Fill(smearM)
@@ -595,8 +605,8 @@ def createHists(choice):
         ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time',150,37.5,40.)   # daughter kaon time of flight (Gaussian blurred)
         ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,3.)   # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
         ut.bookHist(h,'tmass_kaon','Time Deduced Kaon Mass',150,0.,3.)
-        ut.bookHist(h,'tsmearmass_muon_samebins','Smeared Time Deduced Muon Mass',150,0.,3.)   # same as above, but for smeared mass
-        ut.bookHist(h,'tsmearmass_kaon_samebins','Smeared Time Deduced Kaon Mass',150,0.,3.)
+        ut.bookHist(h,'tsmearmass_muon_samebins','Muon Mass',150,0.,3.)   # same as above, but for smeared mass
+        ut.bookHist(h,'tsmearmass_kaon_samebins','Kaon Mass',150,0.,3.)
         ut.bookHist(h,'daughter_masses','Kaon and muon true masses',50,0,1)
 
         edgesarray = []
@@ -614,11 +624,11 @@ def createHists(choice):
         h['Kaon_ProbMeasr'] = ROOT.TH1D('Kaon_ProbMeasr','Prob. Identifying Kaon',85,array('d',edgesarray))
 
         # Not drawn on canvas
+        ut.bookHist(h,'MuonPath','Muon Straw-ECAL Length',150,11,12)
+        ut.bookHist(h,'KaonPath','Muon Straw-ECAL Length',150,11,12)
         ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
         ut.bookHist(h,'num_kaon','No. of kaon hits in straw tubes',25,25,50)
         ut.bookHist(h,'path_diff','Difference between straight path and better approximation',100,0,0.001)
-        ut.bookHist(h,'straight_path','Straight distance from first straw tube hit to ECAL',200,11,12)
-        ut.bookHist(h,'better_path','Curved path through straw tubes, then straight to ECAL',200,11,12)
         ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
         ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular event)',500,44,45)
 
@@ -779,7 +789,7 @@ def makePlots(choice):
         h['tsmearmass_kaon_samebins'].SetLineColor(2)
         h['tsmearmass_muon_samebins'].SetXTitle('Mass / [GeV/c2]')
         h['tsmearmass_muon_samebins'].SetYTitle('Frequency')
-        print('\nLandau fits for mass (time of flight):\n')
+        #print('\nLandau fits for mass (time of flight):\n')
         #h['tsmearmass_kaon_samebins'].Fit('landau')
         #h['tsmearmass_kaon_samebins'].GetFunction('landau').SetLineColor(1)
         #h['tsmearmass_muon_samebins'].Fit('landau')
@@ -787,10 +797,9 @@ def makePlots(choice):
         #par0 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(0)
         #par1 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(1)
         #par2 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(2)
-        h['ths6'] = ROOT.THStack('smeartmass','Smeared Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Frequency')
+        h['ths6'] = ROOT.THStack('smeartmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Frequency')
         h['ths6'].Add(h['tsmearmass_kaon_samebins'])
         h['ths6'].Add(h['tsmearmass_muon_samebins'])
-        #h['ths6'].Add(h['daughter_masses'])
         h['ths6'].Draw('nostack')
         ROOT.gPad.BuildLegend()
         h['Time_Mass'].Print('Time_Mass.png')
@@ -824,8 +833,6 @@ def makePlots(choice):
         h['Muon_ProbMeasr'].Draw('E same')
         h['Probs'].Print('Probs.png')
         #======================================================================================================================
-        h['straight_path'].SetLineColor(1)
-        h['better_path'].SetLineColor(1)
         h['track_kaon'].SetLineColor(2)   # RPV SUSY: N --> K+ mu-
 
     if choice == 2:
@@ -873,7 +880,7 @@ def makePlots(choice):
         h['Piminus_recomom'].SetYTitle('No. of particles')
         h['Piminus_recomom'].SetLineColor(3)
         h['Piminus_recomom'].Draw()
-        h['Exc_RPV_N'].Print('Exc_RPV_N.png')   # RPV SUSY: N --> K*+ mu-
+        h['Exc_RPV_N'].Print('RPV_Exc_N.png')   # RPV SUSY: N --> K*+ mu-
 
     if choice == 3:
         ut.bookCanvas(h,key='DP',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
@@ -1040,6 +1047,7 @@ def finStateMuKa():
                                 if check == -1: ka_veto[0] += 1 
                                 
                     if true_mother.GetPdgCode() == 9900015:   # checks mother is neutralino
+                        
                         for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
                             kaPartkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
                             true_kaon = sTree.MCTrack[kaPartkey]   # gives MC particle data
@@ -1126,28 +1134,10 @@ def finStateMuKa():
                                             weight_veto[7] += wgRPV
                                         else: event = False
 
-                                    NProduction_X = true_mother.GetStartX()   # vertex coordinates of neutralino production
-                                    NProduction_Y = true_mother.GetStartY()
-                                    NProduction_Z = true_mother.GetStartZ()
-                                    NProduction_T = true_mother.GetStartT()
-                                    RPV_Pos = ROOT.TLorentzVector()
-                                    RPV_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
-                                    tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
-                                    ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
-                                    fittedState = reco_part2.getFittedState()
-                                    mcPart    = sTree.MCTrack[kaPartkey]
-                                    trackDir = fittedState.getDir()
-                                    trackPos = fittedState.getPos()
-                                    vx = ROOT.TVector3()
-                                    mcPart.GetStartVertex(vx)
-                                    t = 0
-                                    for i in range(3):   t += trackDir(i)*(vx(i)-trackPos(i)) 
-                                    dist = 0
-                                    for i in range(3):   dist += (vx(i)-trackPos(i)-t*trackDir(i))**2
-                                    dist = ROOT.TMath.Sqrt(dist)
-                                     
-                                    h['IP_target'].Fill(dist)
-                                    #h['IP_target'].Fill(ip)
+                                    RPV_DecayPos = ROOT.TVector3(NDecay_X,NDecay_Y,NDecay_Z)
+                                    target_point = ROOT.TVector3(0,0,ShipGeo.target.z0)
+                                    ip = ImpactParameter(target_point,RPV_DecayPos,RPV_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
+                                    h['IP_target'].Fill(ip)
                                     if event == True:
                                         if ip < ipCut:
                                             veto[8] += 1
@@ -1215,7 +1205,7 @@ def finStateMuKa():
         accepted = len(successful_events)
         print('\n\t' + str(simcount) + ' events generated for this decay mode')
         print('\t' + str(veto[0]) + ' events reconstructed for this decay mode')
-        print('\t' + str(veto[0] - veto[9]) + ' failed RedoVertexing extrapolations')
+        print('\t' + str(veto[9]) + ' successful RedoVertexing extrapolations')
         print('\t' + str(accepted) + ' events not rejected:\n')
         print('\t|---------------------------------|------------------|-------------------|-------------------------|')
         print('\t| Selection                       | Events remaining |    Acceptance     | Selection Efficiency (%)|')
@@ -1324,7 +1314,6 @@ def finStateMuKa_exc():
                                                         
                                                                         if piplusMotherkey == piminusMotherkey:
                                                                             wgRPV_Exc = true_motherN.GetWeight()   # hidden particle weighting
-                                                                            if not wgRPV_Exc == 0: print(wgRPV_Exc)
                                                                             if not wgRPV_Exc > 0. : wgRPV_Exc = 1.   # in case the weighting information doesn't exist
 
                                                                             fitstatus_piplus = reco_piplus.getFitStatus() 
@@ -1423,14 +1412,12 @@ def finStateMuKa_exc():
                                                                                     weight_veto[7] += wgRPV_Exc
                                                                                 else: event = False
 
-                                                                            NProduction_X = true_motherN.GetStartX()   # vertex coordinates of neutralino production
+                                                                            NProduction_X = true_motherN.GetStartX()   # coordinates of neutralino production vertex
                                                                             NProduction_Y = true_motherN.GetStartY()
                                                                             NProduction_Z = true_motherN.GetStartZ()
-                                                                            NProduction_T = true_motherN.GetStartT()
-                                                                            RPV_Pos = ROOT.TLorentzVector()
-                                                                            RPV_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
-                                                                            tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
-                                                                            ip = ImpactParameter(tr,RPV_Pos,RPV_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
+                                                                            RPV_Pos = ROOT.TVector3(NProduction_X,NProduction_Y,NProduction_Z)
+                                                                            target_point = ROOT.TVector3(0,0,ShipGeo.target.z0)
+                                                                            ip = ImpactParameter(target_point,RPV_Pos,RPV_4Mom)
                                                                             h['IP_target'].Fill(ip)
                                                                             if event == True:
                                                                                 if ip < ipCut:
@@ -1485,7 +1472,7 @@ def finStateMuKa_exc():
         accepted = len(successful_events)
         print('\n\t' + str(simcount) + ' events generated for this decay mode')
         print('\t' + str(veto[0]) + ' charged final state events reconstructed for this decay mode')
-        print('\t' + str(veto[9]) + ' failed RedoVertexing extrapolations')
+        print('\t' + str(veto[9]) + ' successful RedoVertexing extrapolations')
         print('\t' + str(accepted) + ' not rejected:\n')
         print('\t|---------------------------------|------------------|-------------------|-------------------------|')
         print('\t| Selection                       | Events remaining |    Acceptance     | Selection Efficiency (%)|')
@@ -1557,7 +1544,7 @@ def finStateDarkPhot():
                                     
                                     #-------------------------------------------------TRACK-CHECKS-------------------------------------------------------
 
-                                    DP_4Mom,eminus_4Mom,eplus_4Mom,NDecay_X,NDecay_Y,NDecay_Z,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
+                                    DP_4Mom,eminus_4Mom,eplus_4Mom,DPDecay_X,DPDecay_Y,DPDecay_Z,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
                                     if not DP_4Mom == -1:
                                         veto[8] += 1
                                     else:
@@ -1617,14 +1604,10 @@ def finStateDarkPhot():
                                             weight_veto[6] += wgDark
                                         else: event = False
 
-                                    NProduction_X = true_mother.GetStartX()   # vertex coordinates of neutralino production
-                                    NProduction_Y = true_mother.GetStartY()
-                                    NProduction_Z = true_mother.GetStartZ()
-                                    NProduction_T = true_mother.GetStartT()
-                                    DP_Pos = ROOT.TLorentzVector()
-                                    DP_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
-                                    tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
-                                    ip = ImpactParameter(tr,DP_Pos,DP_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
+
+                                    DP_DecayPos = ROOT.TVector3(DPDecay_X,DPDecay_Y,DPDecay_Z)
+                                    target_point = ROOT.TVector3(0,0,ShipGeo.target.z0)
+                                    ip = ImpactParameter(target_point,DP_DecayPos,DP_4Mom)
                                     h['IP_target'].Fill(ip)
                                     if event == True:
                                         if ip < ipCut:
