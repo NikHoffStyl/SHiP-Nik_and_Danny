@@ -128,7 +128,7 @@ ut.bookHist(h,'Vzpull','Vz pull',100,-5.,5.)
 ut.bookHist(h,'Vxpull','Vx pull',100,-5.,5.)
 ut.bookHist(h,'Vypull','Vy pull',100,-5.,5.)
 ut.bookHist(h,'Doca','Doca between two tracks',100,0.,10.)
-ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,100.)
+ut.bookHist(h,'IP0','Impact Parameter to target',100,0.,10.)
 ut.bookHist(h,'IP0/mass','Impact Parameter to target vs mass',100,0.,2.,100,0.,100.)
 ut.bookHist(h,'HNL','reconstructed Mass',500,0.,2.) #need this
 ut.bookHist(h,'HNLw','reconstructed Mass with weights',500,0.,2.)#need this
