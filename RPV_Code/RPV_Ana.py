@@ -1058,7 +1058,7 @@ def finStateMuKa():
 
                                 if kaonMotherkey == muonMotherkey and true_mother.GetPdgCode() == 9900015:   # check if mother keys are the same
                                     wgRPV = true_mother.GetWeight()   # hidden particle weighting
-                                    #wgRPV = 1
+                                    wgRPV = 1
                                     fitstatus_kaon = reco_part2.getFitStatus()
                                     if fitstatus_kaon.isFitConverged():
                                         veto[0] += 1
@@ -1195,7 +1195,7 @@ def finStateMuKa():
         #----------------------------------------------------------------ACCEPTANCE-------------------------------------------------------------------
 
         if simcount == 0: 
-            print('\nNo simulations of the desired decay channel found')
+            print('No simulations of the desired decay channel found')
         else:
             for i,value in enumerate(weight_veto):
                 acceptance[i] = value/float(simcount)   # calculates signal acceptance
@@ -1225,7 +1225,7 @@ def finStateMuKa():
 
             print('\t' + str(ka_decaycheck) + ' kaons decayed to muons before detection (' + str(ka_decaycheck - ka_veto[0]) + ' after track checks)\n')
 
-            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[10,10],1e3,1,True)
+            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.1,0.1],1e3,1,True)
             prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K+ mu-')
 
@@ -1240,11 +1240,11 @@ def finStateMuKa():
             print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
             print('Branching ratio of N -> K+ mu- = ' + str(decay_brRatio))
         
-            N_neut = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]#*Prob   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
-            print('\nNumber of neutralinos observable at SHiP via N -> K+ mu- = ' + str(N_neut))
+            N_nlino = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+            print('\nNumber of neutralinos observable at SHiP via N -> K+ mu- = ' + str(N_nlino))
             print('\n-----------------------------------------------------------------------------------------------------------')
 
-            #-------------------------------------PROBABILITIES-----------------------------------
+        #-------------------------------------PROBABILITIES-----------------------------------
         
         h['Muon_ProbMeasr'] = createRatio(h['Muon_SmearedMass'],h['Total_SmearedMass'],'Muon_ProbMeasr')
         h['Kaon_ProbMeasr'] = createRatio(h['Kaon_SmearedMass'],h['Total_SmearedMass'],'Kaon_ProbMeasr')
@@ -1333,23 +1333,7 @@ def finStateMuKa_exc():
                                                                         piminusMotherkey = true_piminus.GetMotherId()   # stores a number index of MC track of mother
                                                         
                                                                         if piplusMotherkey == piminusMotherkey:
-                                                                            
-                                                                            #if abs(true_kaon.GetPdgCode()) == 130:   # if neutral kaon was K_long (can decay to Pi+ Pi- Pi0)
-                                                                            #    Pion0_4Mom = ROOT.TLorentzVector()
-                                                                            #    Px_tot = 0
-                                                                            #    Py_tot = 0
-                                                                            #    Pz_tot = 0
-                                                                            #    E_tot = 0
-                                                                            #    for hits in sTree.EcalPoint:
-                                                                            #        if hits.GetPdgCode() == 22:   # this section doesn't currently work
-                                                                            #            Px_tot += hits.GetPx()
-                                                                            #            Py_tot += hits.GetPy()
-                                                                            #            Pz_tot += hits.GetPz()
-                                                                            #            E_tot += ROOT.TMath.Sqrt((hits.GetPx()**2) + (hits.GetPy()**2) + (hits.GetPz()**2))
-                                                                            #    Pion0_4Mom.SetPxPyPzE(Px_tot,Py_tot,Pz_tot,E_tot)
-
                                                                             wgRPV_Exc = true_motherN.GetWeight()   # hidden particle weighting
-                                                                            if not wgRPV_Exc > 0. : wgRPV_Exc = 1.   # in case the weighting information doesn't exist
 
                                                                             fitstatus_piplus = reco_piplus.getFitStatus() 
                                                                             fitstatus_piminus = reco_piminus.getFitStatus()
@@ -1494,41 +1478,54 @@ def finStateMuKa_exc():
                                                                             successful_events.append(n)   # adds entries to the list
 
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------                                 
+        
+        if simcount == 0: 
+            print('\nNo simulations of the desired decay channel found')
+        else:
+            for i,value in enumerate(weight_veto):
+                acceptance[i] = value/float(simcount)   # calculates signal acceptance
 
-        for i,value in enumerate(weight_veto):
-            acceptance[i] = value/float(simcount)   # calculates signal acceptance
+            for j in range(8):
+                if not acceptance[j] == 0:
+                    efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))   # calculates signal efficiency
 
-        for j in range(8):
-            efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))   # calculates signal efficiency
+            accepted = len(successful_events)
+            print('\n\t' + str(simcount) + ' events generated for this decay mode')
+            print('\t' + str(veto[0]) + ' charged final state events reconstructed for this decay mode')
+            print('\t' + str(veto[9]) + ' successful RedoVertexing extrapolations')
+            print('\t' + str(accepted) + ' not rejected:\n')
+            print('\t|---------------------------------|------------------|-------------------|-------------------------|')
+            print('\t| Selection                       | Events remaining |    Acceptance     | Selection Efficiency (%)|')
+            print('\t|---------------------------------|------------------|-------------------|-------------------------|')
+            print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |           ---           |'%(acceptance[0]))
+            print('\t| Reduced chi squared < ' + str(chi2Cut) + '         |       ' + str(veto[1]) + '       | %.14f  |          %.2f          |'%(acceptance[1],efficiency[1]))
+            print('\t| No. of track measurements > ' + str(measCut) + '  |       ' + str(veto[2]) + '       | %.14f  |          %.2f          |'%(acceptance[2],efficiency[2]))
+            print('\t| Decay vertex in fiducial volume |       ' + str(veto[3]) + '       | %.14f  |          %.2f          |'%(acceptance[3],efficiency[3]))
+            print('\t| Both tracks in fiducial volume  |       ' + str(veto[4]) + '       | %.14f  |          %.2f         |'%(acceptance[4],efficiency[4]))
+            print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   |       ' + str(veto[5]) + '       | %.14f  |          %.2f          |'%(acceptance[5],efficiency[5]))
+            print('\t| Muon hits in 1st & 2nd stations |       ' + str(veto[6]) + '       | %.14f  |          %.2f          |'%(acceptance[6],efficiency[6]))
+            print('\t| DOCA < ' + str(docaCut) + ' cm                     |       ' + str(veto[7]) + '       | %.14f  |          %.2f          |'%(acceptance[7],efficiency[7]))
+            print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8],efficiency[8]))
+            print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
-        accepted = len(successful_events)
-        print('\n\t' + str(simcount) + ' events generated for this decay mode')
-        print('\t' + str(veto[0]) + ' charged final state events reconstructed for this decay mode')
-        print('\t' + str(veto[9]) + ' successful RedoVertexing extrapolations')
-        print('\t' + str(accepted) + ' not rejected:\n')
-        print('\t|---------------------------------|------------------|-------------------|-------------------------|')
-        print('\t| Selection                       | Events remaining |    Acceptance     | Selection Efficiency (%)|')
-        print('\t|---------------------------------|------------------|-------------------|-------------------------|')
-        print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |           ---           |'%(acceptance[0]))
-        print('\t| Reduced chi squared < ' + str(chi2Cut) + '         |       ' + str(veto[1]) + '       | %.14f  |          %.2f          |'%(acceptance[1],efficiency[1]))
-        print('\t| No. of track measurements > ' + str(measCut) + '  |       ' + str(veto[2]) + '       | %.14f  |          %.2f          |'%(acceptance[2],efficiency[2]))
-        print('\t| Decay vertex in fiducial volume |       ' + str(veto[3]) + '       | %.14f  |          %.2f          |'%(acceptance[3],efficiency[3]))
-        print('\t| Both tracks in fiducial volume  |       ' + str(veto[4]) + '       | %.14f  |          %.2f         |'%(acceptance[4],efficiency[4]))
-        print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   |       ' + str(veto[5]) + '       | %.14f  |          %.2f          |'%(acceptance[5],efficiency[5]))
-        print('\t| Muon hits in 1st & 2nd stations |       ' + str(veto[6]) + '       | %.14f  |          %.2f          |'%(acceptance[6],efficiency[6]))
-        print('\t| DOCA < ' + str(docaCut) + ' cm                     |       ' + str(veto[7]) + '       | %.14f  |          %.2f          |'%(acceptance[7],efficiency[7]))
-        print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8],efficiency[8]))
-        print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
+            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[1,1],1e3,1,True)
+            prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
+            decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
 
-        rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.003162278,0.003162278],1e3,1,True)
-        prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
-        decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
-        print('\nBranching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
-        print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
+            Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
+            ctau = (c*100)*Nlifetime   # cm
+            l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
+            Nstart = true_motherN.GetStartZ()   # neutralino production vertex Z coordinate
+            l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
+            Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
 
-        N_neut = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
-        print('\nNumber of neutralinos observable at SHiP via N -> K*+ mu- = ' + str(N_neut))
-        print('\n-----------------------------------------------------------------------------------------------------------')
+            print('\nProbability that neutralino decays within fiducial volume = ' + str(Prob))
+            print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
+            print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
+
+            N_nlino = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+            print('\nNumber of neutralinos observable at SHiP via N -> K*+ mu- = ' + str(N_nlino))
+            print('\n-----------------------------------------------------------------------------------------------------------')
 
 def finStateDarkPhot():
     if sTree.GetBranch('FitTracks'):
