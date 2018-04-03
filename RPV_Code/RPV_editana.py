@@ -20,7 +20,7 @@ import shipDet_conf
 import shipVeto
 shipRoot_conf.configure()
 
-import rpvsusy, darkphoton
+import rpvsusy, rpvsusycp, darkphoton
 from ROOT import TCanvas, TH1D, TF1, TMultiGraph,TGraphErrors, THStack, TFile, TLatex
 from ROOT import kBlack, kBlue, kRed, kGreen, kGray, kMagenta
 from ROOT import gROOT, gPad, gStyle
@@ -368,6 +368,40 @@ def create_Hists(partList):
     print(partList)
     print('\n')
 
+def makeVetPlots():
+    # Veto Histograms (same for all)
+    ut.bookCanvas(h,key='Vetos',title='Veto Results',nx=1500,ny=800,cx=3,cy=2)
+    cv = h['Vetos'].cd(1)
+    h['IP_target'].SetLineColor(1)
+    h['IP_target'].SetFillColor(17)
+    h['IP_target'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['Vetos'].cd(2)
+    h['ecalE'].SetLineColor(1)
+    h['ecalE'].SetFillColor(17)
+    h['ecalE'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['Vetos'].cd(3)
+    h['doca'].SetLineColor(1)
+    h['doca'].SetFillColor(17)
+    h['doca'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['Vetos'].cd(4)
+    h['nmeas'].SetLineColor(1)
+    h['nmeas'].SetFillColor(17)
+    h['nmeas'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['Vetos'].cd(5)
+    h['Chi2'].SetLineColor(1)
+    h['Chi2'].SetFillColor(17)
+    h['Chi2'].Draw()
+    #----------------------------------------------------------------------------------------------------------------------
+    cv = h['Vetos'].cd(6)
+    h['recovertex'].SetLineColor(1)
+    h['recovertex'].SetFillColor(17)
+    h['recovertex'].Draw()
+    h['Vetos'].Print('Vetos.png')
+
 def makePlots2(partList):
     
     key='DAUGHTERS'
@@ -606,21 +640,21 @@ def makePlots2(partList):
     graph['partIDProb'].GetXaxis().SetRangeUser(0,1.5)
     gPad.BuildLegend()
     #h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
-    #h[key + '_PROB'].Print('DaughterProbGraph.png')
+    h[key + '_PROB'].Print('DaughterProbGraph.png')
 
     title='NeutralinoPlots'
     key = 'Neutralino'
-    h[key] = TCanvas(key,title,800,800)
-    h[key].Divide(1,1)
+    h[key] = TCanvas(key,title,1300,800)
+    h[key].Divide(3,1)
     cv = h[key].cd(1)
-    #h['Neutralino_RecoMass'].Draw()
-    #print('\nNeutralino mass Gaussian fit:\n')
-    #fitSingleGauss('Neutralino_RecoMass',0.985,1.015)
-    #h['Neutralino_TrueMass'].Draw('same')
-    #cv = h[key].cd(2)
-    #h['Neutralino_TrueMom'].Draw()
-    #h['Neutralino_RecoMom'].Draw('same')
-    #cv = h[key].cd(3)
+    h['Neutralino_RecoMass'].Draw()
+    print('\nNeutralino mass Gaussian fit:\n')
+    fitSingleGauss('Neutralino_RecoMass',0.985,1.015)
+    h['Neutralino_TrueMass'].Draw('same')
+    cv = h[key].cd(2)
+    h['Neutralino_TrueMom'].Draw()
+    h['Neutralino_RecoMom'].Draw('same')
+    cv = h[key].cd(3)
     h['Neutralino_DeltaMom'].Draw()
     #cv = h[key].cd(1)
     #h['Neutralino_Beta'].Draw()
@@ -828,7 +862,7 @@ def ImpactParameter(point,tPos,tMom):
   t = 0
   if hasattr(tMom,'P'): P = tMom.P()
   else:                 P = tMom.Mag()
-  for i in range(3):   t += tMom(i)/P*(point(i)-tPos(i)) 
+  for i in range(3):   t += (tMom(i)/P)*(point(i)-tPos(i)) 
   dist = 0
   for i in range(3):   dist += (point(i)-tPos(i)-t*tMom(i)/P)**2
   dist = ROOT.TMath.Sqrt(dist)
@@ -836,11 +870,12 @@ def ImpactParameter(point,tPos,tMom):
 
 def ecalMinIon(partkey):
     ecalE_tot = 0
+    true_part = sTree.MCTrack[partkey]
     if sTree.GetBranch('EcalPoint'):
         ecal_Etot = 0
         for hits in sTree.EcalPoint:
             ecal_TrackID = hits.GetTrackID()
-            if ecal_TrackID == partkey:
+            if ecal_TrackID == partkey and hits.GetPdgCode() == true_part.GetPdgCode():
                 ecalE = hits.GetEnergyLoss()
                 ecalE_tot += ecalE
     return ecalE_tot
@@ -1155,13 +1190,13 @@ def getBranchingRatio(stEntry,dark):
         dark_instance = darkphoton.DarkPhoton(0.2,0.00000008)
         bRatio = dark_instance.findBranchingRatio(stEntry)
     else:
-        rpvsusy_instance = rpvsusy.RPVSUSY(1.,[0.2,0.03],1e3,1,True)
+        rpvsusy_instance = rpvsusycp.RPVSUSY(0.85,[0.0341,0.0341],1e3,1,True)
         bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
 
     return bRatio
 
-def signalAcceptance(bRatio,recEntry,simEntry):
-    accp=bRatio*(float(recEntry)/simEntry)
+def signalAcceptance(recEntry,simEntry):
+    accp=(float(recEntry)/simEntry)
     return accp
 
 def effTable(veto,acceptance,selectionEff,dark):
@@ -1251,14 +1286,14 @@ def finStateMuKa():
                             fit_status2 = reco_part2.getFitStatus()
                             p2Partkey = sTree.fitTrack2MC[index2]                 # matches track to MC particle key
                             true_part2 = sTree.MCTrack[p2Partkey]                 # gives MC particle data
-                            wgKaon = true_part2.GetWeight()
-                            if not wgKaon>0.: wgKaon = 1.
+                            #wgNeutralino = true_part2.GetWeight()
+                            #if not wgNeutralino>0.: wgNeutralino = 1.
 
                             if abs(true_part2.GetPdgCode()) == 321:               # checks particle is kaon
                                 part2MotherKey = true_part2.GetMotherId()            # stores a number index of MC track of mother
                                 true_mother = sTree.MCTrack[part2MotherKey]          # obtains mother particle data
                                 wgNeutralino = true_mother.GetWeight()
-                                if not wgNeutralino>0. : wgNeutralino = 1.
+                                #if not wgNeutralino>0. : wgNeutralino = 1.
 
                                     
                                 if (part2MotherKey==MuMotherKey and true_mother.GetPdgCode() == 9900015):#and daught2=='K+/-') or (true_mother.GetPdgCode() == daught2_PDG and daught2!='K+/-'):                 # check if keys are the same
@@ -1268,13 +1303,13 @@ def finStateMuKa():
                                     #####  CHECKS  #####                                        
                                     if fit_status2.isFitConverged():
                                         veto[0] += 1
-                                        vetoWg[0] += wgKaon
+                                        vetoWg[0] += wgNeutralino
                                     else: continue
 
                                     Neutralino_LVec,Mu_LVec,part2_LVec,X,Y,Z,doca = RedoVertexing(index,index2) # uses RedoVertexing to iterate track fitting
                                     if not Neutralino_LVec == -1: 
                                         veto[9] += 1
-                                        vetoWg[9] += wgKaon
+                                        vetoWg[9] += wgNeutralino
                                     else: 
                                         print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
                                         Mu_LVec = SingleTrack_4Mom(index)
@@ -1292,7 +1327,7 @@ def finStateMuKa():
                                     h['Chi2'].Fill(rchi2_kaon)
                                     if rchi2_muon < chi2Cut and rchi2_kaon < chi2Cut:
                                         veto[1] += 1
-                                        vetoWg[1] += wgKaon
+                                        vetoWg[1] += wgNeutralino
                                     else: event = False
 
                                     h['nmeas'].Fill(nmeas_muon)
@@ -1300,20 +1335,20 @@ def finStateMuKa():
                                     if event == True:
                                         if nmeas_muon > measCut and nmeas_kaon > measCut:
                                             veto[2] += 1
-                                            vetoWg[2] += wgKaon
+                                            vetoWg[2] += wgNeutralino
                                         else: event = False
 
                                     h['recovertex'].Fill(Z)
                                     if event == True:
                                         if isInFiducial(X,Y,Z):
                                             veto[3] += 1
-                                            vetoWg[3] += wgKaon
+                                            vetoWg[3] += wgNeutralino
                                         else: event = False
 
                                     if event == True:
                                         if checkFiducialVolume(sTree,index,dy) and checkFiducialVolume(sTree,index2,dy): 
                                             veto[4] += 1
-                                            vetoWg[4] += wgKaon
+                                            vetoWg[4] += wgNeutralino
                                         else: event = False
 
                                     ecalE_muon = ecalMinIon(muPartkey)
@@ -1323,36 +1358,37 @@ def finStateMuKa():
                                     if event == True:
                                         if ecalE_muon > ecalCut and ecalE_kaon > ecalCut:
                                             veto[5] += 1
-                                            vetoWg[5] += wgKaon
+                                            vetoWg[5] += wgNeutralino
                                         else: event = False
 
                                     if event == True:
                                         if muonstationHits(muPartkey):
                                             veto[6] += 1
-                                            vetoWg[6] += wgKaon
+                                            vetoWg[6] += wgNeutralino
                                         else: event = False
                                     
                                     h['doca'].Fill(doca)
                                     if event == True:
                                         if doca < docaCut: 
                                             veto[7] +=1
-                                            vetoWg[7] += wgKaon
+                                            vetoWg[7] += wgNeutralino
                                         else: event = False
 
                                         
-                                    NProduction_X = true_mother.GetStartX()
-                                    NProduction_Y = true_mother.GetStartY()
-                                    NProduction_Z = true_mother.GetStartZ()
-                                    NProduction_T = true_mother.GetStartT()
-                                    Neutralino_Pos = ROOT.TLorentzVector()
-                                    Neutralino_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
+                                    #NProduction_X = true_mother.GetStartX()
+                                    #NProduction_Y = true_mother.GetStartY()
+                                    #NProduction_Z = true_mother.GetStartZ()
+                                    #NProduction_T = true_mother.GetStartT()
+                                    #Neutralino_Pos = ROOT.TLorentzVector()
+                                    #Neutralino_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
+                                    Neutralino_Pos = ROOT.TVector3(X,Y,Z)
                                     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
                                     ip = ImpactParameter(tr,Neutralino_Pos,Neutralino_LVec)
                                     h['IP_target'].Fill(ip)
                                     if event == True:
                                         if ip < ipCut:
                                             veto[8] += 1
-                                            vetoWg[8] += wgKaon
+                                            vetoWg[8] += wgNeutralino
                                         else: event = False
 
                                     if event == False: continue
@@ -1410,14 +1446,15 @@ def finStateMuKa():
                                     time_res(muP,'Mu_',muPartkey,n,m)
                                     time_res(p2P,'K+/-_',p2Partkey, n, m)
 
-    brRatio = getBranchingRatio('N -> K+ mu-', False)
-    print('Branch ratio of N -> K+ mu- is:' + str(brRatio))
+    rpvsusy_instance = rpvsusycp.RPVSUSY(0.85,[0.0341,0.0341],1e3,1,True)
+    prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
+    decay_brRatio = getBranchingRatio('N -> K+ mu-', False)
+    #print('Branch ratio of D+ -> N mu+ is: ' + str(prod_brRatio))
+    #print('Branch ratio of N -> K+ mu- is: ' + str(brRatio))
     for eRemn in range(9):
-        #if eRemn == 0:
-        #    acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],n+1)
-        #else:
-        print('vetowg = '+ str(vetoWg[eRemn]))
-        acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],simcount)
+        #print('vetowg = '+ str(vetoWg[eRemn]))
+        if not simcount == 0:
+            acceptance[eRemn] = signalAcceptance(vetoWg[eRemn],simcount)
 
     for accp in range(1,9):
         if not acceptance[accp]==0 and not acceptance[accp-1]==0:
@@ -1432,12 +1469,31 @@ def finStateMuKa():
     effTable(veto,acceptance,selectionEff,False)
     print('\t' + str(accepted) + ' events not rejected (i.e. '+ str(rejected) + ' events rejected)')
     print('\t' + str(k2mu_MotherHP) + ' kaons (mother HP) decayed to muons before detection (' + str(k2mu_MotherHP-HP2ka_veto[0]) + ' after track checks)')
+    
+
+    Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # outputs in seconds
+    c = 2.99792458*(10**8)   # speed of light
+    ctau = (c*100)*Nlifetime   # in cm
+    l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
+    Nstart = true_mother.GetStartZ()   # neutralino production vertex Z coordinate
+    l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - Nstart
+    e = 2.7182818284590452353602874713527   # Euler's number
+    Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
+
+    print('\nProbability that neutralino actually decayed within fiducial volume = ' + str(Prob))
+    print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
+    print('Branching ratio of N -> K+ mu- = ' + str(decay_brRatio))
+        
+    N_neut = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]#*Prob   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+    print('\nNumber of neutralinos observable at SHiP via N -> K+ mu- = ' + str(N_neut))
+    
     print(2*' ' + 110*'_'+ '\n')
 
     h['Mu_' + 'ProbMeasr'] = createRatio(h['Mu_' + 'SmearedMass'],h['TotalSmearedMass'],'Mu_' + 'ProbMeasr')
     h['K+/-_' + 'ProbMeasr'] = createRatio(h['K+/-_' + 'SmearedMass'],h['TotalSmearedMass'],'K+/-_' + 'ProbMeasr')
 
     makePlots2(particleList)
+    makeVetPlots()
 
 def finStateMuKa_exc():
     particleList=['Neutralino_','Kaon_','Pi+_','Pi-_']

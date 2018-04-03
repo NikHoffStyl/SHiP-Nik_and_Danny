@@ -109,10 +109,11 @@ def configurerpvsusy(P8gen, mass, couplings, sfermionmass, benchmark, inclusive,
         # add RPVSUSY
         rpvsusy_instance = rpvsusy.RPVSUSY(mass, couplings, sfermionmass, benchmark, debug=True)
         ctau = rpvsusy_instance.computeNLifetime(system="FairShip") * u.c_light * u.cm
+        #print "RPVSUSY ctau ",ctau
         P8gen.SetParameters("9900015:new = N2 N2 2 0 0 "+str(mass)+" 0.0 0.0 0.0 "+str(ctau/u.mm)+"  0   1   0   1   0") 
-	if debug: cf.write('P8gen.SetParameters("9900015:new = N2 N2 2 0 0 '+str(mass)+' 0.0 0.0 0.0 '+str(ctau/u.mm)+'  0   1   0   1   0")\n')
+	if debug: cf.write('P8gen.SetParameters("9900015:new = N2 N2 2 0 0 '+str(mass)+' 0.0 0.0 0.0 '+str(ctau/u.mm)+'  0   1   0   1   0")\n')#needs indenting?
         P8gen.SetParameters("9900015:isResonance = false")
-	if debug: cf.write('P8gen.SetParameters("9900015:isResonance = false"\n')
+	if debug: cf.write('P8gen.SetParameters("9900015:isResonance = false"\n')#needs indenting?
         # Configuring decay modes...
         rpvsusy_instance.AddChannelsToPythia(P8gen)
         # Finish HNL setup...
