@@ -1190,7 +1190,7 @@ def getBranchingRatio(stEntry,dark):
         dark_instance = darkphoton.DarkPhoton(0.2,0.00000008)
         bRatio = dark_instance.findBranchingRatio(stEntry)
     else:
-        rpvsusy_instance = rpvsusycp.RPVSUSY(0.85,[0.0341,0.0341],1e3,1,True)
+        rpvsusy_instance = rpvsusycp.RPVSUSY(1.,[0.0111,0.0111],1e3,1,True)
         bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
 
     return bRatio
@@ -1446,7 +1446,7 @@ def finStateMuKa():
                                     time_res(muP,'Mu_',muPartkey,n,m)
                                     time_res(p2P,'K+/-_',p2Partkey, n, m)
 
-    rpvsusy_instance = rpvsusycp.RPVSUSY(0.85,[0.0341,0.0341],1e3,1,True)
+    rpvsusy_instance = rpvsusycp.RPVSUSY(1.,[0.0111,0.0111],1e3,1,True)
     prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
     decay_brRatio = getBranchingRatio('N -> K+ mu-', False)
     #print('Branch ratio of D+ -> N mu+ is: ' + str(prod_brRatio))
