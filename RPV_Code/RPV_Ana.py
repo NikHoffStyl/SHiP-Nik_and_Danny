@@ -1502,11 +1502,10 @@ def finStateMuKa_exc():
             print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8],efficiency[8]))
             print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
-            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[42.16965034,42.16965034],1e3,1,True)
+            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.0133,0.0133],1e3,1,True)
             prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
             brRatio_K_pipi = 0.692
-
             Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
             ctau = (c*100)*Nlifetime   # cm
             l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
