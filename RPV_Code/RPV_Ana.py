@@ -437,6 +437,7 @@ def time_res(partkey,n,m):
                 x_array.append(hits.GetX())   # adds data to the lists
                 y_array.append(hits.GetY())
                 z_array.append(hits.GetZ())
+                h['straw'].Fill(hits.GetZ())
                 px_array.append(hits.GetPx())
                 py_array.append(hits.GetPy())
                 pz_array.append(hits.GetPz())
@@ -480,6 +481,7 @@ def time_res(partkey,n,m):
                         ecal_x = 0.01*hits.GetX()   # positions, time and momenta of ECAL hit
                         ecal_y = 0.01*hits.GetY()   # stored in units of cm 
                         ecal_z = 0.01*hits.GetZ()
+                        h['straw'].Fill(hits.GetZ())
                         ecal_time = hits.GetTime()
                         ecalPx = hits.GetPx()
                         ecalPy = hits.GetPy()
@@ -625,6 +627,7 @@ def createHists(choice):
         h['Kaon_ProbMeasr'] = ROOT.TH1D('Kaon_ProbMeasr','Prob. Identifying Kaon',85,array('d',edgesarray))
 
         # Not drawn on canvas
+        h['straw'] = ROOT.TH1D('straw','Straw trackers and ECAL Position; Z / [cm]; arbitrary units',300,2500,4000)
         ut.bookHist(h,'MuonPath','Muon Straw-ECAL Length',150,11,12)
         ut.bookHist(h,'KaonPath','Muon Straw-ECAL Length',150,11,12)
         ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
