@@ -1190,7 +1190,7 @@ def getBranchingRatio(stEntry,dark):
         dark_instance = darkphoton.DarkPhoton(0.2,0.00000008)
         bRatio = dark_instance.findBranchingRatio(stEntry)
     else:
-        rpvsusy_instance = rpvsusycp.RPVSUSY(1.,[0.0111,0.0111],1e3,1,True)
+        rpvsusy_instance = rpvsusycp.RPVSUSY(1.,[0.0133,0.0133],1e3,2,True)
         bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
 
     return bRatio
@@ -1446,8 +1446,8 @@ def finStateMuKa():
                                     time_res(muP,'Mu_',muPartkey,n,m)
                                     time_res(p2P,'K+/-_',p2Partkey, n, m)
 
-    rpvsusy_instance = rpvsusycp.RPVSUSY(1.,[0.0111,0.0111],1e3,1,True)
-    prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
+    rpvsusy_instance = rpvsusycp.RPVSUSY(1.,[0.0133,0.0133],1e3,2,True)
+    prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D_s+ -> N mu+')
     decay_brRatio = getBranchingRatio('N -> K+ mu-', False)
     #print('Branch ratio of D+ -> N mu+ is: ' + str(prod_brRatio))
     #print('Branch ratio of N -> K+ mu- is: ' + str(brRatio))
@@ -1481,7 +1481,7 @@ def finStateMuKa():
     Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
 
     print('\nProbability that neutralino actually decayed within fiducial volume = ' + str(Prob))
-    print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
+    print('Branching ratio of D_s+ -> N mu+ = ' + str(prod_brRatio))
     print('Branching ratio of N -> K+ mu- = ' + str(decay_brRatio))
         
     N_neut = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]#*Prob   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
