@@ -1506,7 +1506,6 @@ def finStateMuKa_exc():
             prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
             brRatio_K_pipi = 0.692
-
             Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
             ctau = (c*100)*Nlifetime   # cm
             l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
