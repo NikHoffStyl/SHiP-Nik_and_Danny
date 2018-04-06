@@ -416,7 +416,7 @@ def SingleTrack_4Mom(tr):
 
     return LV
 
-def time_res(partkey,n,m):
+def time_res(partkey,n):
     tnosmear = -1   # declares variable
     true_part = sTree.MCTrack[partkey]   # finds MC particle
     pdg = true_part.GetPdgCode()   # identifies particles from PDG code
@@ -463,14 +463,8 @@ def time_res(partkey,n,m):
         num_hits = len(z_array)   # number of elements in the list
         if abs(pdg) == 13:   # muon
             h['num_muon'].Fill(num_hits)
-            for hit in pz_array:
-                if n == m:
-                    h['track_muon'].Fill(hit)   # muon z-momentum through straw tubes for particular event
         if abs(pdg) == 321:   # kaon
             h['num_kaon'].Fill(num_hits)
-            for hit in pz_array:
-                if n == m:
-                    h['track_kaon'].Fill(hit)   # kaon z-momentum through straw tubes for particular event
   
         if sTree.GetBranch('EcalPoint'):
             ecal_time = 0
@@ -490,7 +484,6 @@ def time_res(partkey,n,m):
 
         if not ecal_time <= 0:
             pdiff = strawP - ecalP   # between 1st straw tube hit and ECAL
-
             r = ROOT.TMath.Sqrt(((ecal_x - firststraw_x)**2) + ((ecal_y - firststraw_y)**2) + ((ecal_z - firststraw_z)**2))
             #h['straight_path'].Fill(r)
             max_z_index = z_array.index(max(z_array))   # gives index of the largest element in the list
@@ -503,7 +496,7 @@ def time_res(partkey,n,m):
             rdiff = abs(R - r)
             h['path_diff'].Fill(rdiff)
             
-            sigma = 0.01   # standard deviation for Gaussian
+            sigma = 0.1   # standard deviation for Gaussian
             straw_smear = np.random.normal(loc=straw_time,scale=sigma,size=None)
             ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
             tsmear = abs(straw_smear - ecal_smear)   # smeared time of flight
@@ -595,22 +588,22 @@ def createHists(choice):
         h['RPV_theta'] = ROOT.TH1D('RPV_theta','Angle between neutralino momnentum and beam line; Angle / [mrad]; Count',100,0,50)
 
         # Canvas 2
-        ut.bookHist(h,'Muon_truemom','True Muon Momentum',100,0.,140.)   # RPV muon daughter reco momentum
-        ut.bookHist(h,'Kaon_truemom','True Kaon Momentum',100,0.,140.)   # RPV pion daughter reco momentum
-        ut.bookHist(h,'Muon_recomom','Reconstructed Muon Momentum',100,0.,140.)   # RPV muon daughter true momentum
-        ut.bookHist(h,'Kaon_recomom','Reconstructed Kaon Momentum',100,0.,140.)   # RPV pion daughter true momentum
-        ut.bookHist(h,'ecalstraw_mom','Straw-Ecal Momentum Difference',500,0,0.4)   # includes both kaon and muon
-        ut.bookHist(h,'MuonDir_nosmear','Muon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter muon time of flight
-        ut.bookHist(h,'KaonDir_nosmear','Kaon Straw-ECAL Time (directly)',150,37.5,40.)   # daughter kaon time of flight
+        h['Muon_truemom'] = ROOT.TH1D('Muon_truemom','True Muon Momentum; Momentum / [GeV/c]; Count',100,0,140)
+        h['Kaon_truemom'] = ROOT.TH1D('Kaon_truemom','True Kaon Momentum; Momentum / [GeV/c]; Count',100,0,140)
+        h['Muon_recomom'] = ROOT.TH1D('Muon_recomom','Reconstructed Muon Momentum; Momentum / [GeV/c]; Count',100,0,140)
+        h['Kaon_recomom'] = ROOT.TH1D('Kaon_recomom','Reconstructed Kaon Momentum; Momentum / [GeV/c]; Count',100,0,140)
+        h['ecalstraw_mom'] = ROOT.TH1D('ecalstraw_mom','Straw-Ecal Momentum Difference; Momentum Difference / [GeV/c]; Count',500,0,0.4)
+        h['MuonDir_nosmear'] = ROOT.TH1D('MuonDir_nosmear','Muon Straw-ECAL Time (directly); Time / [ns]; Count',150,37.9,38.5)
+        h['KaonDir_nosmear'] = ROOT.TH1D('KaonDir_nosmear','Kaon Straw-ECAL Time (directly); Time / [ns]; Count',150,37.9,38.5)
 
         # Canvas 3
-        ut.bookHist(h,'MuonDir','Smeared Muon Straw-ECAL Time',150,37.5,40.)   # daughter muon time of flight (Gaussian blurred)
-        ut.bookHist(h,'KaonDir','Smeared Kaon Straw-ECAL Time',150,37.5,40.)   # daughter kaon time of flight (Gaussian blurred)
-        ut.bookHist(h,'tmass_muon','Time Deduced Muon Mass',150,0.,3.)   # time, momentum --> velocity --> gamma (L) --> mass from p=mvL
-        ut.bookHist(h,'tmass_kaon','Time Deduced Kaon Mass',150,0.,3.)
-        ut.bookHist(h,'tsmearmass_muon_samebins','Muon Mass',150,0.,3.)   # same as above, but for smeared mass
-        ut.bookHist(h,'tsmearmass_kaon_samebins','Kaon Mass',150,0.,3.)
-        ut.bookHist(h,'daughter_masses','Kaon and muon true masses',50,0,1)
+        h['MuonDir'] = ROOT.TH1D('MuonDir','Smeared Muon Straw-ECAL Time; Time / [ns]; Count',150,37.5,40.)
+        h['KaonDir'] = ROOT.TH1D('KaonDir','Smeared Kaon Straw-ECAL Time; Time / [ns]; Count',150,37.5,40.)
+        h['tmass_muon'] = ROOT.TH1D('tmass_muon','Time Deduced Muon Mass; Mass / [GeV/c2]; Count',150,0,3)
+        h['tmass_kaon'] = ROOT.TH1D('tmass_kaon','Time Deduced Kaon Mass; Mass / [GeV/c2]; Count',150,0,3)
+        h['tsmearmass_muon_samebins'] = ROOT.TH1D('tmass_muon_samebins','Time Deduced Muon Mass (#Deltat = 15 ps); Mass / [GeV/c2]; Count',150,0,3)
+        h['tsmearmass_kaon_samebins'] = ROOT.TH1D('tmass_kaon_samebins','Time Deduced Kaon Mass (#Deltat = 15 ps); Mass / [GeV/c2]; Count',150,0,3)
+        h['daughter_masses'] = ROOT.TH1D('daughter_masses','Kaon and muon true masses; Mass / [GeV/c2]; Arbitrary Units',50,0,1)
 
         edgesarray = []
         edgesarray.append(0)
@@ -618,18 +611,19 @@ def createHists(choice):
             edgesarray.append(edgesarray[binNumber] + 0.015)
         for binNumber in range(40,86):
             edgesarray.append(edgesarray[binNumber] + 0.045)
-        h['Muon_SmearedMass'] = ROOT.TH1D('Muon_SmearedMass','Prob. particle is muon',85,array('d',edgesarray))
-        h['Kaon_SmearedMass'] = ROOT.TH1D('Kaon_SmearedMass','Prob. particle is kaon',85,array('d',edgesarray))
+        h['Muon_SmearedMass'] = ROOT.TH1D('Muon_SmearedMass','Time Deduced Muon Mass',85,array('d',edgesarray))
+        h['Kaon_SmearedMass'] = ROOT.TH1D('Kaon_SmearedMass','Time Deduced Kaon Mass',85,array('d',edgesarray))
+        h['Kaon_SmearedMass'].SetLineColor(2)
         h['Total_SmearedMass'] = ROOT.TH1D('Total_SmearedMass','Smeared Mass',85,array('d',edgesarray))
 
         # Canvas 4
-        h['Muon_ProbMeasr'] = ROOT.TH1D('Muon_ProbMeasr','Prob. Identifying Muon',85,array('d',edgesarray))
-        h['Kaon_ProbMeasr'] = ROOT.TH1D('Kaon_ProbMeasr','Prob. Identifying Kaon',85,array('d',edgesarray))
+        h['Muon_ProbMeasr'] = ROOT.TH1D('Muon_ProbMeasr','Prob. Identifying Muon; Mass / [GeV/c2]; Probability',85,array('d',edgesarray))
+        h['Kaon_ProbMeasr'] = ROOT.TH1D('Kaon_ProbMeasr','Prob. Identifying Kaon; Mass / [GeV/c2]; Probability',85,array('d',edgesarray))
 
         # Not drawn on canvas
         h['straw'] = ROOT.TH1D('straw','Straw trackers and ECAL Position; Z / [cm]; arbitrary units',300,2500,4000)
-        ut.bookHist(h,'MuonPath','Muon Straw-ECAL Length',150,11,12)
-        ut.bookHist(h,'KaonPath','Muon Straw-ECAL Length',150,11,12)
+        ut.bookHist(h,'MuonPath','Muon Straw-ECAL Length',150,11.36,11.5)
+        ut.bookHist(h,'KaonPath','Kaon Straw-ECAL Length',150,11.36,11.5)
         ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
         ut.bookHist(h,'num_kaon','No. of kaon hits in straw tubes',25,25,50)
         ut.bookHist(h,'path_diff','Difference between straight path and better approximation',100,0,0.001)
@@ -719,8 +713,6 @@ def makePlots(choice):
         #======================================================================================================================
         ut.bookCanvas(h,key='KaMu',title='Results 2',nx=1000,ny=1000,cx=2,cy=2)
         cv = h['KaMu'].cd(1)
-        h['Kaon_truemom'].SetXTitle('Momentum / [GeV/c]')
-        h['Kaon_truemom'].SetYTitle('No. of Particles')
         h['Kaon_truemom'].SetLineColor(2)
         h['ths2'] = ROOT.THStack('Kamom','Kaon True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
         h['ths2'].Add(h['Kaon_truemom'])
@@ -729,8 +721,6 @@ def makePlots(choice):
         ROOT.gPad.BuildLegend()
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['KaMu'].cd(2)
-        h['Muon_truemom'].SetXTitle('Momentum / [GeV/c]')
-        h['Muon_truemom'].SetYTitle('No. of Particles')
         h['Muon_truemom'].SetLineColor(2)
         h['ths3'] = ROOT.THStack('Mumom','Muon True & Reconstructed Momentum ; Momentum / [GeV/c] ; No. of Particles')
         h['ths3'].Add(h['Muon_truemom'])
@@ -739,14 +729,10 @@ def makePlots(choice):
         ROOT.gPad.BuildLegend()
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['KaMu'].cd(3)
-        h['ecalstraw_mom'].SetXTitle('Momentum Difference [GeV/c]')
-        h['ecalstraw_mom'].SetYTitle('Frequency')
         h['ecalstraw_mom'].SetLineColor(1)
         h['ecalstraw_mom'].Draw()
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['KaMu'].cd(4)
-        h['MuonDir_nosmear'].SetXTitle('Time / [ns]')
-        h['MuonDir_nosmear'].SetYTitle('No. of particles')
         h['KaonDir_nosmear'].SetLineColor(2)
         h['ths4'] = ROOT.THStack('MuKaDirTime','Kaon & Muon Straw-ECAL Time ; Time / [ns] ; No. of Particles')
         h['ths4'].Add(h['MuonDir_nosmear'])
@@ -757,24 +743,18 @@ def makePlots(choice):
         #======================================================================================================================
         ut.bookCanvas(h,key='Time_Mass',title='Results 3',nx=1000,ny=1000,cx=2,cy=2)
         cv = h['Time_Mass'].cd(1)
-        h['MuonDir'].SetXTitle('Time / [ns]')
-        h['MuonDir'].SetYTitle('Frequency')
         h['MuonDir'].Draw()
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['Time_Mass'].cd(2)
-        h['KaonDir'].SetXTitle('Time / [ns]')
-        h['KaonDir'].SetYTitle('Frequency')
         h['KaonDir'].SetLineColor(2)
         h['KaonDir'].Draw()
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['Time_Mass'].cd(3)
-        h['tmass_kaon'].SetXTitle('Mass / [GeV/c2]')
-        h['tmass_kaon'].SetYTitle('Frequency')
         h['tmass_kaon'].SetLineColor(2)
         h['daughter_masses'].SetLineColor(1)
         h['daughter_masses'].SetLineStyle(2)
         h['daughter_masses'].Draw('same')
-        h['ths5'] = ROOT.THStack('tmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Frequency')
+        h['ths5'] = ROOT.THStack('tmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Count')
         h['ths5'].Add(h['tmass_kaon'])
         h['ths5'].Add(h['tmass_muon'])
         #h['ths5'].Add(h['daughter_masses'])
@@ -782,11 +762,7 @@ def makePlots(choice):
         ROOT.gPad.BuildLegend()
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['Time_Mass'].cd(4)
-        h['tsmearmass_kaon_samebins'].SetXTitle('Mass / [GeV/c2]')
-        h['tsmearmass_kaon_samebins'].SetYTitle('Frequency')
         h['tsmearmass_kaon_samebins'].SetLineColor(2)
-        h['tsmearmass_muon_samebins'].SetXTitle('Mass / [GeV/c2]')
-        h['tsmearmass_muon_samebins'].SetYTitle('Frequency')
         #print('\nLandau fits for mass (time of flight):\n')
         #h['tsmearmass_kaon_samebins'].Fit('landau')
         #h['tsmearmass_kaon_samebins'].GetFunction('landau').SetLineColor(1)
@@ -795,7 +771,7 @@ def makePlots(choice):
         #par0 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(0)
         #par1 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(1)
         #par2 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(2)
-        h['ths6'] = ROOT.THStack('smeartmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Frequency')
+        h['ths6'] = ROOT.THStack('smeartmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Count')
         h['ths6'].Add(h['tsmearmass_kaon_samebins'])
         h['ths6'].Add(h['tsmearmass_muon_samebins'])
         h['ths6'].Draw('nostack')
@@ -804,9 +780,9 @@ def makePlots(choice):
         #======================================================================================================================
         ut.bookCanvas(h,key='Probs',title='Results 4',nx=1000,ny=1000,cx=2,cy=2)
         cv = h['Probs'].cd(1)
+        h['Muon_ProbMeasr'].SetLineColor(4)
         h['Muon_ProbMeasr'].SetXTitle('Mass / [GeV/c2]')
         h['Muon_ProbMeasr'].SetYTitle('Probability')
-        h['Muon_ProbMeasr'].SetLineColor(4)
         h['Muon_ProbMeasr'].SetMarkerColor(4)
         h['Muon_ProbMeasr'].SetMarkerStyle(33)
         h['Muon_ProbMeasr'].SetMarkerSize(1)
@@ -816,9 +792,9 @@ def makePlots(choice):
         h['Muon_ProbMeasr'].Draw('E')
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['Probs'].cd(2) 
+        h['Kaon_ProbMeasr'].SetLineColor(2)
         h['Kaon_ProbMeasr'].SetXTitle('Mass / [GeV/c2]')
         h['Kaon_ProbMeasr'].SetYTitle('Probability')
-        h['Kaon_ProbMeasr'].SetLineColor(2)
         h['Kaon_ProbMeasr'].SetMarkerColor(2)
         h['Kaon_ProbMeasr'].SetMarkerStyle(33)
         h['Kaon_ProbMeasr'].SetMarkerSize(1)
@@ -832,6 +808,10 @@ def makePlots(choice):
         h['Probs'].Print('Probs.png')
         #======================================================================================================================
         h['track_kaon'].SetLineColor(2)   # RPV SUSY: N --> K+ mu-
+        h['MuonPath'].SetXTitle('Straw-ECAL Distance / [m]')
+        h['MuonPath'].SetYTitle('Count')
+        h['KaonPath'].SetXTitle('Straw-ECAL Distance / [m]')
+        h['KaonPath'].SetYTitle('Count')
 
     if choice == 2:
         ut.bookCanvas(h,key='Exc_RPV_N',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
@@ -951,42 +931,42 @@ def makePlots(choice):
     ut.bookCanvas(h,key='Vetos',title='Veto Results',nx=1500,ny=800,cx=3,cy=2)
     cv = h['Vetos'].cd(1)
     h['IP_target'].SetXTitle('Impact Parameter / [cm]')
-    h['IP_target'].SetYTitle('Frequency')
+    h['IP_target'].SetYTitle('Count')
     h['IP_target'].SetLineColor(1)
     h['IP_target'].SetFillColor(17)
     h['IP_target'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(2)
     h['ecalE'].SetXTitle('Energy / [GeV/c2]')
-    h['ecalE'].SetYTitle('Frequency')
+    h['ecalE'].SetYTitle('Count')
     h['ecalE'].SetLineColor(1)
     h['ecalE'].SetFillColor(17)
     h['ecalE'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(3)
     h['doca'].SetXTitle('Distance / [cm]')
-    h['doca'].SetYTitle('Frequency')
+    h['doca'].SetYTitle('Count')
     h['doca'].SetLineColor(1)
     h['doca'].SetFillColor(17)
     h['doca'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(4)
     h['nmeas'].SetXTitle('ndf')
-    h['nmeas'].SetYTitle('No. of tracks')
+    h['nmeas'].SetYTitle('Count')
     h['nmeas'].SetLineColor(1)
     h['nmeas'].SetFillColor(17)
     h['nmeas'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(5)
     h['Chi2'].SetXTitle('#chi^{2}/ndf')
-    h['Chi2'].SetYTitle('Frequency')
+    h['Chi2'].SetYTitle('Count')
     h['Chi2'].SetLineColor(1)
     h['Chi2'].SetFillColor(17)
     h['Chi2'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(6)
     h['recovertex'].SetXTitle('Z / [cm]')
-    h['recovertex'].SetYTitle('Frequency')
+    h['recovertex'].SetYTitle('Count')
     h['recovertex'].SetLineColor(1)
     h['recovertex'].SetFillColor(17)
     h['recovertex'].Draw()
@@ -1183,11 +1163,9 @@ def finStateMuKa():
                                     
                                     #------------------------------------TIME-RESOLUTION------------------------------------------
 
-                                    m = successful_events[0]   # arbitrarily picks the first successful event as an example
-
-                                    time_res(muPartkey,n,m)   # calculates particle time of flight and smeared mass        
+                                    time_res(muPartkey,n)   # calculates particle time of flight and smeared mass        
                                       
-                                    time_res(kaPartkey,n,m)   # calculates particle time of flight and smeared mass      
+                                    time_res(kaPartkey,n)   # calculates particle time of flight and smeared mass      
 
         #----------------------------------------------------------------ACCEPTANCE-------------------------------------------------------------------
 
@@ -1505,8 +1483,8 @@ def finStateMuKa_exc():
             print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8],efficiency[8]))
             print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
-            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.0133,0.0133],1e3,1,True)
-            prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
+            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.0133,0.0133],1e3,2,True)   # (neutralino mass, [coupling1,coupling2], sfermion mass, benchmark, bool)
+            prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D_s+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
             brRatio_K_pipi = 0.692
             Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
