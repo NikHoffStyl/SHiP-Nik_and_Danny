@@ -496,7 +496,7 @@ def time_res(partkey,n):
             rdiff = abs(R - r)
             h['path_diff'].Fill(rdiff)
             
-            sigma = 0.1   # standard deviation for Gaussian
+            sigma = 0.015   # standard deviation for Gaussian
             straw_smear = np.random.normal(loc=straw_time,scale=sigma,size=None)
             ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
             tsmear = abs(straw_smear - ecal_smear)   # smeared time of flight
@@ -569,7 +569,7 @@ def print_menu():
     print('\n' + 30*'-' + 'MENU' + 30*'-')
     print('1. RPV SUSY Benchmark 1: N --> K+ mu+  visible final state')
     print('2. RPV SUSY Benchmark 1: N --> K*+ mu+ visible final state')
-    print('3. Dark Photon         : A --> e- e+   visible final state')
+    print('3. Dark Photon         : A --> l- l+   visible final state')
     print('0. Exit')
     print(64 * '-' + '\n')
 
@@ -627,8 +627,6 @@ def createHists(choice):
         ut.bookHist(h,'num_muon','No. of muon hits in straw tubes',25,25,50)
         ut.bookHist(h,'num_kaon','No. of kaon hits in straw tubes',25,25,50)
         ut.bookHist(h,'path_diff','Difference between straight path and better approximation',100,0,0.001)
-        ut.bookHist(h,'track_muon','Muon z-momentum through straw tubes (for particular event)',500,20,21)
-        ut.bookHist(h,'track_kaon','Kaon z-momentum through straw tubes (for particular event)',500,44,45)
 
     # RPV SUSY: N --> K*+ mu-
     if choice == 2:
@@ -807,7 +805,6 @@ def makePlots(choice):
         h['Muon_ProbMeasr'].Draw('E same')
         h['Probs'].Print('Probs.png')
         #======================================================================================================================
-        h['track_kaon'].SetLineColor(2)   # RPV SUSY: N --> K+ mu-
         h['MuonPath'].SetXTitle('Straw-ECAL Distance / [m]')
         h['MuonPath'].SetYTitle('Count')
         h['KaonPath'].SetXTitle('Straw-ECAL Distance / [m]')
@@ -1487,6 +1484,7 @@ def finStateMuKa_exc():
             prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D_s+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
             brRatio_K_pipi = 0.692
+            brRatio_Kexc_Kshort = 0.5
             Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
             ctau = (c*100)*Nlifetime   # cm
             l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
@@ -1498,7 +1496,7 @@ def finStateMuKa_exc():
             print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
             print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
 
-            N_nlino = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]*brRatio_K_pipi   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+            N_nlino = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]*brRatio_K_pipi*brRatio_Kexc_Kshort   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
             print('\nNumber of neutralinos observable at SHiP via N -> K*+ mu- = ' + str(N_nlino))
             print('\n-----------------------------------------------------------------------------------------------------------')
 
