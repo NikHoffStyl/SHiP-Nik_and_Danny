@@ -20,13 +20,26 @@ import shipDet_conf
 import shipVeto
 shipRoot_conf.configure()
 
-import rpvsusy, rpvsusycp, darkphoton
+import rpvsusy, rpvsusycp, darkphoton,proton_bremsstrahlung
 from ROOT import TCanvas, TH1D, TF1, TMultiGraph,TGraphErrors, THStack, TFile, TLatex
 from ROOT import kBlack, kBlue, kRed, kGreen, kGray, kMagenta
 from ROOT import gROOT, gPad, gStyle
 from inspect import currentframe
 import datetime
 
+#For RPV
+RPV_parmtrs = [1.,0.0133,0.0133,1e3,1,True] # [mass(GeV), couplng1,couplng2,sfermionMass(GeV), bool]
+
+#For DP
+DP_parmtrs =[0.2,0.00000008, 'pbrems'] #[mass (GeV), epsilon, pMechanismOptions='meson']
+#DPprodRate = 4.9356962*10**(-16)
+
+MesonID = 'D+'
+if MesonID == 'D+':NmesonsExpect = (4.8*(10**16)) 
+if MesonID == 'D_s':NmesonsExpect = (6.67*(10**15))
+if MesonID == 'B+':NmesonsExpect = (1.5687*(10**13)) 
+if MesonID == 'B0':NmesonsExpect = (1.512*(10**13))
+if MesonID == 'B0_s':NmesonsExpect = (2.646*(10**13))#None of the benchmarks make use of this
 
 debug = False
 loop=True 
@@ -41,6 +54,7 @@ measCut = 25
 ecalCut = 0.150 #GeV
 docaCut = 2. #cm
 ipCut = 250 #cm
+
 
 #e = 2.718281828459   # Euler's number
 currentDate = datetime.datetime.now().strftime('%y_%m_%d_%H%M')
@@ -213,22 +227,22 @@ graph = {}
 def veto_Hists():
     #######################
     ####  Veto Checks  ####
-    h['IP_target'] = TH1D('IP_target','Impact parameter to target; Impact parameter to target [cm]; Arbitrary units',300,0,10)
+    h['IP_target'] = TH1D('IP_target','Impact parameter to target; Impact parameter to target (cm); Arbitrary units',300,0,10)
     h['IP_target'].SetLineColor(kMagenta+4)
     h['IP_target'].SetFillColor(kMagenta-1)
-    h['ecalE'] = TH1D('ecalE','Energy deposited in ECAL ; Energy [GeV/c2] ; Arbitrary units',300,0,100)
+    h['ecalE'] = TH1D('ecalE','Energy deposited in ECAL ; Energy (GeV/c^{2}) ; Arbitrary units',300,0,100)
     h['ecalE'].SetLineColor(kMagenta+4)
     h['ecalE'].SetFillColor(kMagenta-1)
-    h['doca'] = TH1D('doca','Distance of closest approach between muon and kaon tracks ; DOCA of daughter tracks [cm] ; Arbitrary units',300,0,3)
+    h['doca'] = TH1D('doca','Distance of closest approach between muon and kaon tracks ; DOCA of daughter tracks (cm) ; Arbitrary units',300,0,3)
     h['doca'].SetLineColor(kMagenta+4)
     h['doca'].SetFillColor(kMagenta+-1)
-    h['nmeas'] = TH1D('nmeas','No. of measurements in fitted tracks (ndf) ; Minimum daughters ndf ; Arbitrary units',300,0,50)
+    h['nmeas'] = TH1D('nmeas','No. of measurements in fitted tracks (ndf) ; Daughters ndf ; Arbitrary units',300,0,50)
     h['nmeas'].SetLineColor(kMagenta+4)
     h['nmeas'].SetFillColor(kMagenta-1)
-    h['Chi2'] = TH1D('Chi2','Fitted Tracks #chi^{2} ; Maximum daughters #chi^{2} /ndf ; Arbitrary units',300,0,3)
+    h['Chi2'] = TH1D('Chi2','Fitted Tracks #chi^{2} ; Daughters #chi^{2} /ndf ; Arbitrary units',300,0,3)
     h['Chi2'].SetLineColor(kMagenta+4)
     h['Chi2'].SetFillColor(kMagenta-1)
-    h['recovertex'] = TH1D('recovertex','Reconstructed decay vertex z-coordinate ; Reconstructed decay vertex z-coordinate  [cm] ; Arbitrary units',100,-4000,4000)
+    h['recovertex'] = TH1D('recovertex','Reconstructed decay vertex z-coordinate ; Reconstructed decay vertex z-coordinate  (cm) ; Arbitrary units',100,-4000,4000)
     h['recovertex'].SetLineColor(kMagenta+4)
     h['recovertex'].SetFillColor(kMagenta-1)
 
@@ -247,109 +261,89 @@ def create_Hists(partList):
     ####  Daughter Histograms  ####
     for partName,val in dictionList.items():
         if partList[3] == None and partList[0] == 'Neutralino_':
-            h[partName + 'StrawTime'] = TH1D(partName + 'StrawTime',partName + ' ; ' + partName + ' Straw Time [ns] ; No. of Particles',300,321.7,323.5)                       # straw time
+            h[partName + 'StrawTime'] = TH1D(partName + 'StrawTime',partName + ' ; ' + partName + ' Straw Time (ns) ; No. of Particles',300,321.7,323.5)                       # straw time
             h[partName + 'StrawTime'].SetLineColor(val[0])
-            #h[partName + 'StrawTime'].SetFillColor(val[1])
-            h[partName + 'EcalTime'] = TH1D(partName + 'EcalTime',partName + ' ; ' + partName + ' Ecal Time [ns] ; No. of Particles',300,359.7,361.2)                          # ecal time
+            h[partName + 'EcalTime'] = TH1D(partName + 'EcalTime',partName + ' ; ' + partName + ' Ecal Time (ns) ; No. of Particles',300,359.7,361.2)                          # ecal time
             h[partName + 'EcalTime'].SetLineColor(val[0])
-            #h[partName + 'EcalTime'].SetFillColor(val[1])
-            h[partName + 'DirDeltaTimeSmeared'] = TH1D(partName + 'DirDeltaTimeSmeared',partName + ' ; ' + partName + ' Straw-ECAL Smeared Time of Flight (directly) [ns] ; No. of Particles',600,37.8,38.4)# smeared time of flight
+            h[partName + 'DirDeltaTimeSmeared'] = TH1D(partName + 'DirDeltaTimeSmeared',partName + ' ; ' + partName + ' Straw-ECAL Smeared Time of Flight (directly) (ns) ; No. of Particles',600,37.8,38.4)# smeared time of flight
             h[partName + 'DirDeltaTimeSmeared'].SetLineColor(val[0])
-            #h[partName + 'DirDeltaTimeSmeared'].SetFillColor(val[1])
-            h[partName + 'DirDeltaTime'] = TH1D(partName + 'DirDeltaTime',partName + ' ; ' + partName + ' Straw-ECAL Time of Flight (directly) [ns] ; No. of Particles',600,37.8,38.4)# time of flight
+            h[partName + 'DirDeltaTime'] = TH1D(partName + 'DirDeltaTime',partName + ' ; ' + partName + ' Straw-ECAL Time of Flight (directly) (ns) ; No. of Particles',600,37.8,38.4)# time of flight
             h[partName + 'DirDeltaTime'].SetLineColor(val[0])
-            #h[partName + 'DirDeltaTime'].SetFillColor(val[1])
-            h[partName + 'StrawHits'] = TH1D(partName + 'StrawHits',partName + ' ; ' + partName + ' Position [cm] ; No. of hits in straw tubes ',300,25,50)                     #number of straw hits
+            h[partName + 'StrawHits'] = TH1D(partName + 'StrawHits',partName + ' ; ' + partName + ' Position (cm) ; No. of hits in straw tubes ',300,25,50)                     #number of straw hits
             h[partName + 'StrawHits'].SetLineColor(val[0])
-            #h[partName + 'StrawHits'].SetFillColor(val[1])
-            h[partName + 'StrawHitsMom'] = TH1D(partName + 'StrawHitsMom',partName + ' ; ' + partName + ' z-momentum through straw tubes (for particular event) [GeV/c] ; No. of Hits',500,0,45)     #momenta of straw hits
+            h[partName + 'StrawHitsMom'] = TH1D(partName + 'StrawHitsMom',partName + ' ; ' + partName + ' z-momentum through straw tubes (for particular event) (GeV/c) ; No. of Hits',500,0,45)     #momenta of straw hits
             h[partName + 'StrawHitsMom'].SetLineColor(val[0])
-            #h[partName + 'StrawHitsMom'].SetFillColor(val[1])
-            h[partName + 'FlightLen'] = TH1D(partName + 'FlightLen',partName + ' ; ' + partName + ' Straw-ECAL Straight Flight Lenght [cm] ; No. of Particles',300,11.375,11.42)# flight Length
+            h[partName + 'FlightLen'] = TH1D(partName + 'FlightLen',partName + ' ; ' + partName + ' Straw-ECAL Straight Flight Lenght (cm) ; No. of Particles',300,11.375,11.42)# flight Length
             h[partName + 'FlightLen'].SetLineColor(val[0])
-            #h[partName + 'FlightLen'].SetFillColor(val[1])
-            h[partName + 'FlightLenImproved'] = TH1D(partName + 'FlightLenImproved',partName + ' ; ' + partName + ' Straw-ECAL Curved Flight Lenght [cm] ;  No. of Particles',300,11.375,11.42)      # corrected flight Length        
+            h[partName + 'FlightLenImproved'] = TH1D(partName + 'FlightLenImproved',partName + ' ; ' + partName + ' Straw-ECAL Curved Flight Lenght (cm) ;  No. of Particles',300,11.375,11.42)      # corrected flight Length        
             h[partName + 'FlightLenImproved'].SetLineColor(val[0])
-            #h[partName + 'FlightLenImproved'].SetFillColor(val[1])
-            h[partName + 'FlightLenDelta'] = TH1D(partName + 'FlightLenDelta',partName + ' ; ' + partName + ' Difference between straight path and better approximation [cm] ; No. of Particles',300,0,0.001)# delta flight Length        
+            h[partName + 'FlightLenDelta'] = TH1D(partName + 'FlightLenDelta',partName + ' ; ' + partName + ' Difference between straight path and better approximation (cm) ; No. of Particles',300,0,0.001)# delta flight Length        
             h[partName + 'FlightLenDelta'].SetLineColor(val[0])
-            #h[partName + 'FlightLenDelta'].SetFillColor(val[1])
             h[partName + 'SpeedSmeared'] = TH1D(partName + 'SpeedSmeared',partName + ' ; ' + partName + ' Smeared Beta value ; No. of Particles',300,0.997,1.001)               # smeared speed
             h[partName + 'SpeedSmeared'].SetLineColor(val[0])
-            #h[partName + 'SpeedSmeared'].SetFillColor(val[1])
             h[partName + 'Speed'] = TH1D(partName + 'Speed',partName + ' ; ' + partName + ' Beta value ; No. of Particles',300,0.997,1.001)                                     # speed
             h[partName + 'Speed'].SetLineColor(val[0])
-            #h[partName + 'Speed'].SetFillColor(val[1])
-            h[partName + 'StrawMom'] = TH1D(partName + 'StrawMom',partName + ' ; ' + partName + ' Straw Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                    # straw momentum
+            h[partName + 'StrawMom'] = TH1D(partName + 'StrawMom',partName + ' ; ' + partName + ' Straw Momentum (GeV/c) ; No. of Particles',300,-0.05,120.)                    # straw momentum
             h[partName + 'StrawMom'].SetLineColor(val[0])
-            #h[partName + 'StrawMom'].SetFillColor(val[1])
-            h[partName + 'EcalMom'] = TH1D(partName + 'EcalMom',partName + ' ; ' + partName + ' Ecal Momentum [GeV/c]; No. of Particles',300,-0.05,120.)                        # ecal  momentum
+            h[partName + 'EcalMom'] = TH1D(partName + 'EcalMom',partName + ' ; ' + partName + ' Ecal Momentum (GeV/c); No. of Particles',300,-0.05,120.)                        # ecal  momentum
             h[partName + 'EcalMom'].SetLineColor(val[0])
-            #h[partName + 'EcalMom'].SetFillColor(val[1])
-            h[partName + 'DeltaMom'] = TH1D(partName + 'DeltaMom',partName + ' ; ' + partName + ' Straw-Ecal Momentum [GeV/c]; No. of Particles',300,0.02,0.13)                 # delta momentum
+            h[partName + 'DeltaMom'] = TH1D(partName + 'DeltaMom',partName + ' ; ' + partName + ' Straw-Ecal Momentum (GeV/c0; No. of Particles',300,0.02,0.13)                 # delta momentum
             h[partName + 'DeltaMom'].SetLineColor(val[0])
-            #h[partName + 'DeltaMom'].SetFillColor(val[1])
-            h[partName + 'TrueMass'] = TH1D(partName + 'TrueMass',partName + ' ; ' + partName + ' True Mass [GeV/c2] ; No. of Particles',300,0.,0.6)                            # true  mass
+            h[partName + 'TrueMass'] = TH1D(partName + 'TrueMass',partName + ' ; ' + partName + ' True Mass (GeV/c^{2}) ; No. of Particles',300,0.,0.6)                            # true  mass
             h[partName + 'TrueMass'].SetLineColor(1)
-            #h[partName + 'TrueMass'].SetFillColor(val[1])
-            h[partName + 'MassT'] = TH1D(partName + 'MassT',partName + ' ; ' + partName + ' Time Deduced Mass / [GeV/c2]; No. of Particles ',150,0.,3.)                         # time deduced mass
+            h[partName + 'MassT'] = TH1D(partName + 'MassT',partName + ' ; ' + partName + ' Time Deduced Mass / (GeV/c^{2}); No. of Particles ',150,0.,3.)                         # time deduced mass
             h[partName + 'MassT'].SetLineColor(val[0])
-            #h[partName + 'MassT'].SetFillColor(val[1])
-            h[partName + 'SmearedMass'] = TH1D(partName + 'SmearedMass',partName + ' ; ' + partName + ' Smeared Mass [GeV/c2]; No. of Particles',85,array('d',edgesarray))      # smrd  mass
+            h[partName + 'SmearedMass'] = TH1D(partName + 'SmearedMass',partName + ' ; ' + partName + ' Smeared Mass (GeV/c^{2}); No. of Particles',85,array('d',edgesarray))      # smrd  mass
             h[partName + 'SmearedMass'].SetLineColor(val[0])
-            #h[partName + 'SmearedMass'].SetFillColor(val[1])
-            h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr',partName + ' ; Mass [GeV/c2] ; Prob(particle = ' + partName + ')',85,array('d',edgesarray))                 # ID Prob
-        h[partName + 'RecoMom'] = TH1D(partName + 'RecoMom',partName + ' ; ' + partName + ' Reco Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                       # reco  momentum
+            h[partName + 'ProbMeasr'] = TH1D(partName + 'ProbMeasr',partName + ' ; Mass (GeV/c^{2}) ; Prob(particle = ' + partName + ')',85,array('d',edgesarray))                 # ID Prob
+        h[partName + 'RecoMom'] = TH1D(partName + 'RecoMom',partName + ' ; ' + partName + ' Reco Momentum (GeV/c) ; No. of Particles',300,-0.05,120.)                       # reco  momentum
         h[partName + 'RecoMom'].SetLineColor(val[0])
-        #h[partName + 'RecoMom'].SetFillColor(val[1])
-        h[partName + 'TrueMom'] = TH1D(partName + 'TrueMom',partName + ' ; ' + partName + ' True Momentum [GeV/c] ; No. of Particles',300,-0.05,120.)                       # true  momentum
+        h[partName + 'TrueMom'] = TH1D(partName + 'TrueMom',partName + ' ; ' + partName + ' True Momentum (GeV/c) ; No. of Particles',300,-0.05,120.)                       # true  momentum
         h[partName + 'TrueMom'].SetLineColor(val[0])
-        #h[partName + 'TrueMom'].SetFillColor(val[1])
-        h[partName + 'RecoMass'] = TH1D(partName + 'RecoMass',partName + ' ; ' + partName + ' Reco Mass [GeV/c2]; No. of Particles',300,0.,0.6)                             # reco  mass
+        h[partName + 'RecoMass'] = TH1D(partName + 'RecoMass',partName + ' ; ' + partName + ' Reco Mass (GeV/c^{2}); No. of Particles',300,0.,0.6)                             # reco  mass
         h[partName + 'RecoMass'].SetLineColor(val[0])
-        #h[partName + 'RecoMass'].SetFillColor(val[1])
         
     if partList[3] == None and partList[0] == 'Neutralino_':                      
-        h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass ; Smeared Mass [GeV/c2] ; No. of Particles',85,array('d',edgesarray))                             # Total mass
+        h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass ; Smeared Mass (GeV/c^{2}) ; No. of Particles',85,array('d',edgesarray))                             # Total mass
         h['TotalSmearedMass'].SetLineColor(2)
         h['TotalSmearedMass'].SetFillColor(kGray+2)
-        h['StrawTime'] = THStack('StackStrawTime','Gaussian Straw t measurement ; Time [ns] ; No. of Particles')                                                        # straw time
-        h['EcalTime'] = THStack('StackEcalTime','Gaussian Ecal t measurement ; Time [ns] ; No. of Particles')                                                           # ecal time
-        h['DirDeltaTimeSmeared'] = THStack('StackDirDeltaTimeSmeared','Straw-ECAL Smeared Time of Flight (directly) ; Time of Flight [ns] ; No. of Particles')          # smeared time of flight
-        h['DirDeltaTime'] = THStack('StackDirDeltaTime','Straw-ECAL Time of Flight (directly) ; Time of Flight [ns] ; No. of Particles')                                # time of flight
-        h['StrawHits'] = THStack('StackStrawHits','No. of hits in straw tubes ; Position [cm] ; No. of Particles')                                                      # number of straw hits
-        h['StrawHitsMom'] = THStack('StackStrawHitsMom','z-momentum through straw tubes (for particular event) ; Momentum [GeV/c] ; No. of Particles')                  # momenta of straw hits
-        h['FlightLen'] = THStack('StackFlightLen','Straw-ECAL Straight Flight Lenght ; Flight Length [cm] ; No. of Particles')                                          # flight Length
-        h['FlightLenImproved'] = THStack('StackFlightLenImproved','Straw-ECAL Curved Flight Lenght ; Flight Length [cm] ; No. of Particles')                            #corrected flight Length
-        h['FlightLenDelta'] = THStack('StackFlightLenDelta','Difference between straight path and better approximation ; Delta Flight Length [cm] ; No. of Particles')  # delta flight Length
+        h['StrawTime'] = THStack('StackStrawTime','Gaussian Straw t measurement ; Time (ns) ; No. of Particles')                                                        # straw time
+        h['EcalTime'] = THStack('StackEcalTime','Gaussian Ecal t measurement ; Time (ns) ; No. of Particles')                                                           # ecal time
+        h['DirDeltaTimeSmeared'] = THStack('StackDirDeltaTimeSmeared','Straw-ECAL Smeared Time of Flight (directly) ; Time of Flight (ns) ; No. of Particles')          # smeared time of flight
+        h['DirDeltaTime'] = THStack('StackDirDeltaTime','Straw-ECAL Time of Flight (directly) ; Time of Flight (ns) ; No. of Particles')                                # time of flight
+        h['StrawHits'] = THStack('StackStrawHits','No. of hits in straw tubes ; Position (cm) ; No. of Particles')                                                      # number of straw hits
+        h['StrawHitsMom'] = THStack('StackStrawHitsMom','z-momentum through straw tubes (for particular event) ; Momentum (GeV/c) ; No. of Particles')                  # momenta of straw hits
+        h['FlightLen'] = THStack('StackFlightLen','Straw-ECAL Straight Flight Lenght ; Flight Length (cm) ; No. of Particles')                                          # flight Length
+        h['FlightLenImproved'] = THStack('StackFlightLenImproved','Straw-ECAL Curved Flight Lenght ; Flight Length (cm) ; No. of Particles')                            #corrected flight Length
+        h['FlightLenDelta'] = THStack('StackFlightLenDelta','Difference between straight path and better approximation ; Delta Flight Length (cm) ; No. of Particles')  # delta flight Length
         h['SpeedSmeared'] = THStack('StackSpeedSmeared','Smeared Beta value ; Smeared Beta value ; No. of Particles')                                                   # smeared speed
         h['Speed'] = THStack('StackSpeed','Beta value ; Beta value ; No. of Particles')                                                                                 # speed
-        h['StrawMom'] = THStack('StackStrawMom','Straw Momentum ; Straw Momentum [GeV/c] ; No. of Particles')                                                           # straw momentum
-        h['EcalMom'] = THStack('StackEcalMom','Ecal Momentum ; Ecal Momentum [GeV/c] ; No. of Particles')                                                               # ecal  momentum
-        h['DeltaMom'] = THStack('StackDeltaMom','Straw-Ecal Momentum ; Straw-Ecal Momentum [GeV/c] ; No. of Particles')                                                 # delta momentum
-        h['RecoMom'] = THStack('StackRecoMom','Reco Momentum ; Reco Momentum [GeV/c] ; No. of Particles')                                                               # reco  momentum
-        h['TrueMom'] = THStack('StackTrueMom','True Momentum ; True Momentum [GeV/c] ; No. of Particles')                                                               # true  momentum
-        h['RecoMass'] = THStack('StackRecoMass','Reco Mass ; Reco Mass [GeV/c2] ; No. of Particles')                                                                    # reco  mass
-        h['TrueMass'] = THStack('StackTrueMass','True Mass ; True Mass [GeV/c2] ; No. of Particles')                                                                    # true  mass
-        h['SmearedMass'] = THStack('StackSmearedMass','Smeared Mass ; Smeared Mass [GeV/c2] ; No. of Particles')                                                        # smrd  mass
-        h['ProbMeasr'] = THStack('StackProbMeasr','Probs identifying Particle ; Mass [GeV/c2] ; Prob(particle ID correct )')                                            # ID Prob
+        h['StrawMom'] = THStack('StackStrawMom','Straw Momentum ; Straw Momentum (GeV/c) ; No. of Particles')                                                           # straw momentum
+        h['EcalMom'] = THStack('StackEcalMom','Ecal Momentum ; Ecal Momentum (GeV/c) ; No. of Particles')                                                               # ecal  momentum
+        h['DeltaMom'] = THStack('StackDeltaMom','Straw-Ecal Momentum ; Straw-Ecal Momentum (GeV/c) ; No. of Particles')                                                 # delta momentum
+        h['RecoMom'] = THStack('StackRecoMom','Reco Momentum ; Reco Momentum (GeV/c) ; No. of Particles')                                                               # reco  momentum
+        h['TrueMom'] = THStack('StackTrueMom','True Momentum ; True Momentum (GeV/c) ; No. of Particles')                                                               # true  momentum
+        h['RecoMass'] = THStack('StackRecoMass','Reco Mass ; Reco Mass (GeV/c^{2}) ; No. of Particles')                                                                    # reco  mass
+        h['TrueMass'] = THStack('StackTrueMass','True Mass ; True Mass (GeV/c^{2}) ; No. of Particles')                                                                    # true  mass
+        h['SmearedMass'] = THStack('StackSmearedMass','Smeared Mass ; Smeared Mass (GeV/c^{2}) ; No. of Particles')                                                        # smrd  mass
+        h['ProbMeasr'] = THStack('StackProbMeasr','Probs identifying Particle ; Mass (GeV/c^{2}) ; Prob(particle ID correct )')                                            # ID Prob
 
 
     #################################
     ####  Neutralino Histograms  ####
-    h[partList[0] + 'TrueMass'] = TH1D(partList[0] + 'TrueMass','Monte Carlo Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.99,1.01)                            # true mass
+    h[partList[0] + 'TrueMass'] = TH1D(partList[0] + 'TrueMass','Monte Carlo Mass ; Invariant mass (GeV/c^{2}) ; No. of Particles',300,0.99,1.01)                            # true mass
     h[partList[0] + 'TrueMass'].SetLineColor(1)
     h[partList[0] + 'TrueMass'].SetFillColor(1)
-    h[partList[0] + 'RecoMass'] = TH1D(partList[0] + 'RecoMass','Reconstructed Mass ; Invariant mass [GeV/c2] ; No. of Particles',300,0.97,1.03)                          # reco mass
+    h[partList[0] + 'RecoMass'] = TH1D(partList[0] + 'RecoMass','Reconstructed Mass ; Invariant mass (GeV/c^{2}) ; No. of Particles',300,0.97,1.03)                          # reco mass
     h[partList[0] + 'RecoMass'].SetLineColor(1)
     h[partList[0] + 'RecoMass'].SetFillColor(kGray+2)
-    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum [GeV/c] ; No. of Particles',300,0.,180.)                     # true momentum 
+    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum (GeV/c) ; No. of Particles',300,0.,180.)                     # true momentum 
     h[partList[0] + 'TrueMom'].SetLineColor(2)
     h[partList[0] + 'TrueMom'].SetFillColor(kRed+2)
-    h[partList[0] + 'RecoMom'] = TH1D(partList[0] + 'RecoMom','Reconstructed Momentum ; Momentum [GeV/c] ; No. of Particles',300,0.,180.)                                 # reco momentum
+    h[partList[0] + 'RecoMom'] = TH1D(partList[0] + 'RecoMom','Reconstructed Momentum ; Momentum (GeV/c) ; No. of Particles',300,0.,180.)                                 # reco momentum
     h[partList[0] + 'RecoMom'].SetLineColor(1)
     h[partList[0] + 'RecoMom'].SetFillColor(kGray+2)
-    h[partList[0] + 'DeltaMom'] = TH1D(partList[0] + 'DeltaMom','True/Reco Momentum Difference ; Momentum Difference [GeV/c] ; No. of Particles',300,-3.,3)               # true-reco momentum difference
+    h[partList[0] + 'DeltaMom'] = TH1D(partList[0] + 'DeltaMom','True/Reco Momentum Difference ; Momentum Difference (GeV/c) ; No. of Particles',300,-3.,3)               # true-reco momentum difference
     h[partList[0] + 'DeltaMom'].SetLineColor(1)
     h[partList[0] + 'DeltaMom'].SetFillColor(kGray+2)
     h[partList[0] + 'Beta'] = TH1D(partList[0] + 'Beta','Reconstructed Neutralino Beta in Z-direction; Beta; No. of Particles',300,0.994,1)
@@ -358,7 +352,7 @@ def create_Hists(partList):
     h[partList[0] + 'Gamma'] = TH1D(partList[0] + 'Gamma','Reconstructed Neutralino Gamma in Z-direction; Gamma; No. of Particles',300,0,200)
     h[partList[0] + 'Gamma'].SetLineColor(1)
     h[partList[0] + 'Gamma'].SetFillColor(kGray+2)
-    h[partList[0] + 'Theta'] = TH1D(partList[0] + 'Theta','Angle between neutralino momentum and beam line; Theta / [mrad]; No. of Particles',300,0,50)
+    h[partList[0] + 'Theta'] = TH1D(partList[0] + 'Theta','Angle between neutralino momentum and beam line; Theta / (mrad); No. of Particles',300,0,50)
     h[partList[0] + 'Theta'].SetLineColor(1)
     h[partList[0] + 'Theta'].SetFillColor(kGray+2)
 
@@ -569,7 +563,7 @@ def makePlots2(partList):
     #    polyFit2.SetLineColor(3)
     #    h[partList[3] + 'ProbMeasr'].Fit('polyFit2')
     #    h[partList[3] + 'ProbMeasr'].Draw('E2')
-    #    h[partList[3] + 'ProbMeasr'].SetXTitle('Mass [GeV/c2]')
+    #    h[partList[3] + 'ProbMeasr'].SetXTitle('Mass [GeV/c^{2}]')
     #    h[partList[3] + 'ProbMeasr'].SetYTitle('Prob( particle = pion )')
     #    h[partList[3] + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
 
@@ -634,7 +628,7 @@ def makePlots2(partList):
         graph['partIDProb'].Add(graph['3'], 'PC')
     graph['partIDProb'].Draw('A pfc plc')#P PLC PFCPLC PFC
     for ckey in graph:
-        graph[ckey].GetXaxis().SetTitle( 'Mass [GeV/c2]' )
+        graph[ckey].GetXaxis().SetTitle( 'Mass [GeV/c^{2}]' )
     graph['partIDProb'].GetYaxis().SetTitle( 'Prob(particle=(kaon or muon' + partString + '))' )
     graph['partIDProb'].GetYaxis().SetTitleOffset(1.5)
     graph['partIDProb'].GetXaxis().SetRangeUser(0,1.5)
@@ -1185,16 +1179,6 @@ def createRatio(h1, h2, histname):
     x.SetRangeUser(0,1.5)
     return h3
 
-def getBranchingRatio(stEntry,dark):
-    if dark == True:
-        dark_instance = darkphoton.DarkPhoton(0.2,0.00000008)
-        bRatio = dark_instance.findBranchingRatio(stEntry)
-    else:
-        rpvsusy_instance = rpvsusycp.RPVSUSY(1.,[0.0133,0.0133],1e3,2,True)
-        bRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
-
-    return bRatio
-
 def signalAcceptance(recEntry,simEntry):
     accp=(float(recEntry)/simEntry)
     return accp
@@ -1225,6 +1209,8 @@ def print_menu():
     print (64 * '-'+ '\n') 
 
 nEvents = min(sTree.GetEntries(),nEvents)
+c = 2.99792458*(10**8)   # speed of light
+e = 2.7182818284590452353602874713527   # Euler's number
 
 ########################################
 #########  ANALYSIS FUNCTIONS  #########
@@ -1446,11 +1432,6 @@ def finStateMuKa():
                                     time_res(muP,'Mu_',muPartkey,n,m)
                                     time_res(p2P,'K+/-_',p2Partkey, n, m)
 
-    rpvsusy_instance = rpvsusycp.RPVSUSY(1.,[0.0133,0.0133],1e3,2,True)
-    prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D_s+ -> N mu+')
-    decay_brRatio = getBranchingRatio('N -> K+ mu-', False)
-    #print('Branch ratio of D+ -> N mu+ is: ' + str(prod_brRatio))
-    #print('Branch ratio of N -> K+ mu- is: ' + str(brRatio))
     for eRemn in range(9):
         #print('vetowg = '+ str(vetoWg[eRemn]))
         if not simcount == 0:
@@ -1459,33 +1440,35 @@ def finStateMuKa():
     for accp in range(1,9):
         if not acceptance[accp]==0 and not acceptance[accp-1]==0:
             selectionEff[accp] = (acceptance[accp]/acceptance[accp-1])*100
-
-                                        
+            
     print(2*' ' + 110*'_')
     accepted = len(successful_events)
     rejected = veto[0] - accepted
     print('\n\t' + str(simcount) +  ' total number of events generated for N -> K+ mu-')
     print('\t' + str(finStateEvents) + ' number of events produced final state ')
+    print('\t' + str(veto[9]) + ' successful RedoVertexing extrapolations')
+    print('\t' + str(accepted) + ' events not rejected:\n')
     effTable(veto,acceptance,selectionEff,False)
-    print('\t' + str(accepted) + ' events not rejected (i.e. '+ str(rejected) + ' events rejected)')
     print('\t' + str(k2mu_MotherHP) + ' kaons (mother HP) decayed to muons before detection (' + str(k2mu_MotherHP-HP2ka_veto[0]) + ' after track checks)')
     
+    rpvsusy_instance = rpvsusycp.RPVSUSY(RPV_parmtrs[0],[RPV_parmtrs[1],RPV_parmtrs[2]],RPV_parmtrs[3],RPV_parmtrs[4],RPV_parmtrs[5])
+    prod_brRatio = rpvsusy_instance.findProdBranchingRatio(MesonID +' -> N mu+')
+    decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K+ mu-')
 
     Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # outputs in seconds
-    c = 2.99792458*(10**8)   # speed of light
     ctau = (c*100)*Nlifetime   # in cm
     l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
     Nstart = true_mother.GetStartZ()   # neutralino production vertex Z coordinate
     l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - Nstart
-    e = 2.7182818284590452353602874713527   # Euler's number
     Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
 
+    print('\nctau = ' + str(ctau/100000) + ' km')
     print('\nProbability that neutralino actually decayed within fiducial volume = ' + str(Prob))
-    print('Branching ratio of D_s+ -> N mu+ = ' + str(prod_brRatio))
+    print('Branching ratio of '+ MesonID +' -> N mu+ = ' + str(prod_brRatio))
     print('Branching ratio of N -> K+ mu- = ' + str(decay_brRatio))
         
-    N_neut = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]#*Prob   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
-    print('\nNumber of neutralinos observable at SHiP via N -> K+ mu- = ' + str(N_neut))
+    N_nlino = NmesonsExpect*prod_brRatio*decay_brRatio*acceptance[8]#*Prob   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+    print('\nNumber of neutralinos observable at SHiP via N -> K+ mu- = ' + str(N_nlino))
     
     print(2*' ' + 110*'_'+ '\n')
 
@@ -1738,9 +1721,6 @@ def finStateMuKa_exc():
 
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------                                 
 
-        brRatio = getBranchingRatio('N -> K*+ mu-',False)
-        print('\nBranching ratio of N -> K*+ mu- = ' + str(brRatio))
-
         for i,value in enumerate(weight_veto):
             acceptance[i] = value/float(simcount)
 
@@ -1754,6 +1734,27 @@ def finStateMuKa_exc():
         print('\t' + str(accepted) + ' not rejected')
 
         effTable(veto,acceptance,efficiency,False)
+
+        rpvsusy_instance = rpvsusycp.RPVSUSY(RPV_parmtrs[0],[RPV_parmtrs[1],RPV_parmtrs[2]],RPV_parmtrs[3],RPV_parmtrs[4],RPV_parmtrs[5])   # (neutralino mass, [coupling1,coupling2], sfermion mass, benchmark, bool)
+        prod_brRatio = rpvsusy_instance.findProdBranchingRatio(MesonID +' -> N mu+')
+        decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
+        print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
+        brRatio_K_pipi = 0.692
+        brRatio_Kexc_Kshort = 0.5
+        Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
+        ctau = (c*100)*Nlifetime   # cm
+        l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
+        l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
+        Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
+
+        print('\nctau = ' + str(ctau/100000) + ' km')
+        print('Probability that neutralino decays within fiducial volume = %.14f'%(Prob))
+        print('Branching ratio of '+ MesonID +' -> N mu+ = ' + str(prod_brRatio))
+        print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
+
+        N_nlino = NmesonsExpect*prod_brRatio*decay_brRatio*acceptance[8]*brRatio_K_pipi*brRatio_Kexc_Kshort   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+        print('\nNumber of neutralinos observable at SHiP via N -> K*+ mu- = ' + str(N_nlino))
+        print('\n-----------------------------------------------------------------------------------------------------------')
 
         makePlots_MuKa_exc()
 
@@ -1925,8 +1926,8 @@ def finStateDarkPhot():
                                     successful_events.append(n)   # adds entries to the list
                                     
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
-        brRatio = getBranchingRatio('A -> e- e+',True)
-        print('Branch ratio of A -> e- e+ is:' + str(brRatio))
+        dark_instance = darkphoton.DarkPhoton(DP_parmtrs[0],DP_parmtrs[1])
+        decay_brRatio = dark_instance.findBranchingRatio('A -> e- e+')
 
         # calculate acceptance
         for eRemn in range(9):
@@ -1952,6 +1953,33 @@ def finStateDarkPhot():
         effTable(veto,acceptance,selectionEff,True)
         print('\t' + str(accepted) + ' events not rejected (i.e. '+ str(rejected) + ' events rejected)')
         print(2*' ' + 110*'_')
+
+        #rpvsusy_instance = rpvsusycp.RPVSUSY(RPV_parmtrs[0],[RPV_parmtrs[1],RPV_parmtrs[2]],RPV_parmtrs[3],RPV_parmtrs[4],RPV_parmtrs[5])   # (neutralino mass, [coupling1,coupling2], sfermion mass, benchmark, bool)
+        #prod_brRatio = rpvsusy_instance.findProdBranchingRatio(MesonID +' -> N mu+')
+        #decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
+        #print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
+        #brRatio_K_pipi = 0.692
+        #brRatio_Kexc_Kshort = 0.5
+        #Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
+        ctau = dark_instance.cTau() #cm
+        DPlifetime = dark_instance.lifetime()
+        #l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
+        #l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
+        #Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
+
+        #print('\nctau = ' + str(ctau/100000) + ' km')
+        #print('Probability that neutralino decays within fiducial volume = %.14f'%(Prob))
+        #print('Branching ratio of '+ MesonID +' -> N mu+ = ' + str(prod_brRatio))
+
+        print('Branch ratio of A -> e- e+ is:' + str(decay_brRatio))
+        if DP_parmtrs[2] == 'pbrems':
+            norm=proton_bremsstrahlung.prodRate(mass, epsilon)
+            print "A' production rate per p.o.t: \t %.8g"%norm
+            N_nlino = (2*10**20)*norm*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+            print('\nNumber of neutralinos observable at SHiP via A -> e- e+ = ' + str(N_nlino))
+        elif DP_parmtrs[2] == 'mesons':
+            N_nlino = -1
+        print('\n-----------------------------------------------------------------------------------------------------------')
 
         makePlots_DarkPhot()
 
