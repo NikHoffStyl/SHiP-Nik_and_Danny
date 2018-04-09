@@ -1764,6 +1764,7 @@ def finStateDarkPhot():
         print('\nRunning analysis for dark photon :\n')
         create_Hists(particleList)
         successful_events = []
+        simcount = 0
         finStateEvents=0
         veto = 10*[0]   # creates list of veto counts for each possible veto cause
         vetoWg = 10*[0.]
@@ -1773,6 +1774,14 @@ def finStateDarkPhot():
         for n in range(nEvents):   # loops over events
             rc = sTree.GetEntry(n)   # loads tree entry
             event = True
+
+            for particle in sTree.MCTrack:
+                if abs(particle.GetPdgCode()) == 11:
+                    motherkey = particle.GetMotherId()
+                    if motherkey == 1:
+                        motherN = sTree.MCTrack[motherkey]
+                        if motherN.GetPdgCode() == 9900015:
+                            simcount += 1
 
             #-----------------------------------------------TRACK-LOOPS------------------------------------------------
 
@@ -1812,12 +1821,16 @@ def finStateDarkPhot():
                                     
                                     #-------------------------------------------------TRACK-CHECKS-------------------------------------------------------
 
-                                    DP_4Mom,eminus_4Mom,eplus_4Mom,NDecay_X,NDecay_Y,NDecay_Z,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
-                                    if DP_4Mom == -1: 
+                                    DP_4Mom,eminus_4Mom,eplus_4Mom,DPDecay_X,DPDecay_Y,DPDecay_Z,doca = RedoVertexing(index,index2)   # uses RedoVertexing to iterate track fitting
+                                    if not DP_4Mom == -1: 
                                         print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
                                         veto[9] += 1
                                         vetoWg[9] += wgDark
-                                        continue
+                                    else:
+                                        print('RedoVertexing extrapolation failed (event ' + str(n) + ')')
+                                        eminus_4Mom = SingleTrack_4Mom(index)
+                                        eplus_4Mom = SingleTrack_4Mom(index2)
+                                        DP_4Mom = eminus_4Mom + eplus_4Mom
 
                                     nmeas_eplus = fitstatus_eplus.getNdf()
                                     chi2_eplus = fitstatus_eplus.getChi2()
@@ -1840,9 +1853,9 @@ def finStateDarkPhot():
                                             vetoWg[2] += wgDark
                                         else: event = False
 
-                                    h['recovertex'].Fill(NDecay_Z)
+                                    h['recovertex'].Fill(DPDecay_Z)
                                     if event == True:
-                                        if isInFiducial(NDecay_X,NDecay_Y,NDecay_Z):
+                                        if isInFiducial(DPDecay_X,DPDecay_Y,DPDecay_Z):
                                             veto[3] += 1
                                             vetoWg[3] += wgDark
                                         else: event = False
@@ -1876,8 +1889,9 @@ def finStateDarkPhot():
                                     NProduction_T = true_mother.GetStartT()
                                     DP_Pos = ROOT.TLorentzVector()
                                     DP_Pos.SetXYZT(NProduction_X,NProduction_Y,NProduction_Z,NProduction_T)
+                                    DP_DecayPos = ROOT.TVector3(DPDecay_X,DPDecay_Y,DPDecay_Z)
                                     tr = ROOT.TVector3(0,0,ShipGeo.target.z0)
-                                    ip = ImpactParameter(tr,DP_Pos,DP_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
+                                    ip = ImpactParameter(tr,DP_DecayPos,DP_4Mom)   # gives the same result as line 706 in ShipAna.py (i.e. using sTree.Particles)
                                     h['IP_target'].Fill(ip)
                                     if event == True:
                                         if ip < ipCut:
@@ -1930,17 +1944,20 @@ def finStateDarkPhot():
         decay_brRatio = dark_instance.findBranchingRatio('A -> e- e+')
 
         # calculate acceptance
-        for eRemn in range(9):
-            print('vetoWg = %.6f' %vetoWg[eRemn])
-            if eRemn == 0:
-                acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],n+1)
-            else:
-                acceptance[eRemn] = signalAcceptance(brRatio, vetoWg[eRemn],n+1)
+        for i,value in enumerate(vetoWg):
+            acceptance[i] = value/float(simcount)   # calculates signal acceptance
+        #for eRemn in range(9):
+
+        #    print('vetoWg = %.6f' %vetoWg[eRemn])
+        #    if eRemn == 0:
+        #        acceptance[eRemn] = signalAcceptance(vetoWg[eRemn],n+1)
+        #    else:
+        #        acceptance[eRemn] = signalAcceptance(vetoWg[eRemn],n+1)
 
         # calculate selection efficiency
         for accp in range(9):
             if not acceptance[accp]==0 and not acceptance[accp-1]==0:
-                selectionEff[accp] = (acceptance[accp]/acceptance[accp-1])*100
+                selectionEff[accp+1] = (acceptance[accp+1]/acceptance[accp])*100
         if not acceptance[accp]==0 and not acceptance[accp-1]==0:
             selectionEff[7] = (acceptance[7]/acceptance[5])*100
 
@@ -1962,7 +1979,7 @@ def finStateDarkPhot():
         #brRatio_Kexc_Kshort = 0.5
         #Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
         ctau = dark_instance.cTau() #cm
-        DPlifetime = dark_instance.lifetime()
+        #DPlifetime = dark_instance.lifetime()
         #l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
         #l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
         #Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
@@ -1973,7 +1990,7 @@ def finStateDarkPhot():
 
         print('Branch ratio of A -> e- e+ is:' + str(decay_brRatio))
         if DP_parmtrs[2] == 'pbrems':
-            norm=proton_bremsstrahlung.prodRate(mass, epsilon)
+            norm=proton_bremsstrahlung.prodRate(DP_parmtrs[0], DP_parmtrs[1])
             print "A' production rate per p.o.t: \t %.8g"%norm
             N_nlino = (2*10**20)*norm*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
             print('\nNumber of neutralinos observable at SHiP via A -> e- e+ = ' + str(N_nlino))
