@@ -1940,23 +1940,13 @@ def finStateDarkPhot():
                                     successful_events.append(n)   # adds entries to the list
                                     
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
-        dark_instance = darkphoton.DarkPhoton(DP_parmtrs[0],DP_parmtrs[1])
-        decay_brRatio = dark_instance.findBranchingRatio('A -> e- e+')
-
         # calculate acceptance
         for i,value in enumerate(vetoWg):
             acceptance[i] = value/float(simcount)   # calculates signal acceptance
-        #for eRemn in range(9):
-
-        #    print('vetoWg = %.6f' %vetoWg[eRemn])
-        #    if eRemn == 0:
-        #        acceptance[eRemn] = signalAcceptance(vetoWg[eRemn],n+1)
-        #    else:
-        #        acceptance[eRemn] = signalAcceptance(vetoWg[eRemn],n+1)
-
+        
         # calculate selection efficiency
         for accp in range(9):
-            if not acceptance[accp]==0 and not acceptance[accp-1]==0:
+            if not acceptance[accp]==0:
                 selectionEff[accp+1] = (acceptance[accp+1]/acceptance[accp])*100
         if not acceptance[accp]==0 and not acceptance[accp-1]==0:
             selectionEff[7] = (acceptance[7]/acceptance[5])*100
@@ -1971,23 +1961,18 @@ def finStateDarkPhot():
         print('\t' + str(accepted) + ' events not rejected (i.e. '+ str(rejected) + ' events rejected)')
         print(2*' ' + 110*'_')
 
-        #rpvsusy_instance = rpvsusycp.RPVSUSY(RPV_parmtrs[0],[RPV_parmtrs[1],RPV_parmtrs[2]],RPV_parmtrs[3],RPV_parmtrs[4],RPV_parmtrs[5])   # (neutralino mass, [coupling1,coupling2], sfermion mass, benchmark, bool)
-        #prod_brRatio = rpvsusy_instance.findProdBranchingRatio(MesonID +' -> N mu+')
-        #decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
-        #print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
-        #brRatio_K_pipi = 0.692
-        #brRatio_Kexc_Kshort = 0.5
+        dark_instance = darkphoton.DarkPhoton(DP_parmtrs[0],DP_parmtrs[1])
+        decay_brRatio = dark_instance.findBranchingRatio('A -> e- e+')
+        
         #Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
         ctau = dark_instance.cTau() #cm
         #DPlifetime = dark_instance.lifetime()
-        #l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
-        #l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
-        #Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
+        l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
+        l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
+        Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual A' decayed in fiducial volume
 
-        #print('\nctau = ' + str(ctau/100000) + ' km')
-        #print('Probability that neutralino decays within fiducial volume = %.14f'%(Prob))
-        #print('Branching ratio of '+ MesonID +' -> N mu+ = ' + str(prod_brRatio))
-
+        print('\nctau = ' + str(ctau/100000) + ' km')
+        print('Probability that neutralino decays within fiducial volume = %.14f'%(Prob))
         print('Branch ratio of A -> e- e+ is:' + str(decay_brRatio))
         if DP_parmtrs[2] == 'pbrems':
             norm=proton_bremsstrahlung.prodRate(DP_parmtrs[0], DP_parmtrs[1])
