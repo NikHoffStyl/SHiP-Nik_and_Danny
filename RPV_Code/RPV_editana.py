@@ -28,10 +28,10 @@ from inspect import currentframe
 import datetime
 
 #For RPV
-RPV_parmtrs = [1.,0.0133,0.0133,1e3,1,True] # [mass(GeV), couplng1,couplng2,sfermionMass(GeV), bool]
+RPV_parmtrs = [1.,0.0111,0.0111,1e3,1,True] # [mass(GeV), couplng1,couplng2,sfermionMass(GeV), bool]
 
 #For DP
-DP_parmtrs =[0.2,0.00000008, 'pbrems'] #[mass (GeV), epsilon, pMechanismOptions='meson']
+DP_parmtrs =[0.2,0.00000008, 'mesons'] #[mass (GeV), epsilon, pMechanismOptions='meson', 'pbrems']
 #DPprodRate = 4.9356962*10**(-16)
 
 MesonID = 'D+'
@@ -58,8 +58,8 @@ ipCut = 250 #cm
 
 #e = 2.718281828459   # Euler's number
 currentDate = datetime.datetime.now().strftime('%y_%m_%d_%H%M')
-polyFit1 = TF1('polyFit1','pol3')
-polyFit2 = TF1('polyFit2','pol3')
+polyFit1 = TF1('polyFit1','pol4')
+polyFit2 = TF1('polyFit2','pol4')
 
 ##############################################
 #####  SETS INPUT OPTIONS AND ARGUMENTS  #####
@@ -227,22 +227,22 @@ graph = {}
 def veto_Hists():
     #######################
     ####  Veto Checks  ####
-    h['IP_target'] = TH1D('IP_target','Impact parameter to target; Impact parameter to target (cm); Arbitrary units',300,0,10)
+    h['IP_target'] = TH1D('IP to target',' ; Impact parameter to target (cm); Arbitrary units',300,0,10)
     h['IP_target'].SetLineColor(kMagenta+4)
     h['IP_target'].SetFillColor(kMagenta-1)
-    h['ecalE'] = TH1D('ecalE','Energy deposited in ECAL ; Energy (GeV/c^{2}) ; Arbitrary units',300,0,100)
+    h['ecalE'] = TH1D('ECAL Energy','  ; Particle Energy (GeV) ; Arbitrary units',300,0,100)
     h['ecalE'].SetLineColor(kMagenta+4)
     h['ecalE'].SetFillColor(kMagenta-1)
-    h['doca'] = TH1D('doca','Distance of closest approach between muon and kaon tracks ; DOCA of daughter tracks (cm) ; Arbitrary units',300,0,3)
+    h['doca'] = TH1D('DOCA','  ; DOCA of daughter tracks (cm) ; Arbitrary units',300,0,3)
     h['doca'].SetLineColor(kMagenta+4)
     h['doca'].SetFillColor(kMagenta+-1)
-    h['nmeas'] = TH1D('nmeas','No. of measurements in fitted tracks (ndf) ; Daughters ndf ; Arbitrary units',300,0,50)
+    h['nmeas'] = TH1D('ndf',' ; Daughters ndf ; Arbitrary units',50,0,50)
     h['nmeas'].SetLineColor(kMagenta+4)
     h['nmeas'].SetFillColor(kMagenta-1)
-    h['Chi2'] = TH1D('Chi2','Fitted Tracks #chi^{2} ; Daughters #chi^{2} /ndf ; Arbitrary units',300,0,3)
+    h['Chi2'] = TH1D('#chi^{2}/ndf','  ; Daughters #chi^{2} /ndf ; Arbitrary units',300,0,3)
     h['Chi2'].SetLineColor(kMagenta+4)
     h['Chi2'].SetFillColor(kMagenta-1)
-    h['recovertex'] = TH1D('recovertex','Reconstructed decay vertex z-coordinate ; Reconstructed decay vertex z-coordinate  (cm) ; Arbitrary units',100,-4000,4000)
+    h['recovertex'] = TH1D('Coordinate',' ; Reconstructed decay vertex z-coordinate  (cm) ; Arbitrary units',100,-4000,4000)
     h['recovertex'].SetLineColor(kMagenta+4)
     h['recovertex'].SetFillColor(kMagenta-1)
 
@@ -273,9 +273,9 @@ def create_Hists(partList):
             h[partName + 'StrawHits'].SetLineColor(val[0])
             h[partName + 'StrawHitsMom'] = TH1D(partName + 'StrawHitsMom',partName + ' ; ' + partName + ' z-momentum through straw tubes (for particular event) (GeV/c) ; No. of Hits',500,0,45)     #momenta of straw hits
             h[partName + 'StrawHitsMom'].SetLineColor(val[0])
-            h[partName + 'FlightLen'] = TH1D(partName + 'FlightLen',partName + ' ; ' + partName + ' Straw-ECAL Straight Flight Lenght (cm) ; No. of Particles',300,11.375,11.42)# flight Length
+            h[partName + 'FlightLen'] = TH1D(partName + 'FlightLen',partName + ' ; ' + partName + ' Straw-ECAL Straight Flight Lenght (cm) ; No. of Particles',300,11.36,11.43)# flight Length
             h[partName + 'FlightLen'].SetLineColor(val[0])
-            h[partName + 'FlightLenImproved'] = TH1D(partName + 'FlightLenImproved',partName + ' ; ' + partName + ' Straw-ECAL Curved Flight Lenght (cm) ;  No. of Particles',300,11.375,11.42)      # corrected flight Length        
+            h[partName + 'FlightLenImproved'] = TH1D(partName + 'FlightLenImproved',partName + ' ; ' + partName + ' Straw-ECAL Curved Flight Lenght (cm) ;  No. of Particles',300,11.36,11.43)      # corrected flight Length        
             h[partName + 'FlightLenImproved'].SetLineColor(val[0])
             h[partName + 'FlightLenDelta'] = TH1D(partName + 'FlightLenDelta',partName + ' ; ' + partName + ' Difference between straight path and better approximation (cm) ; No. of Particles',300,0,0.001)# delta flight Length        
             h[partName + 'FlightLenDelta'].SetLineColor(val[0])
@@ -304,57 +304,57 @@ def create_Hists(partList):
         h[partName + 'RecoMass'].SetLineColor(val[0])
         
     if partList[3] == None and partList[0] == 'Neutralino_':                      
-        h['TotalSmearedMass'] = TH1D('TotalSmearedMass','Smeared Mass ; Smeared Mass (GeV/c^{2}) ; No. of Particles',85,array('d',edgesarray))                             # Total mass
+        h['TotalSmearedMass'] = TH1D('TotalSmearedMass','  ; Smeared Mass (GeV/c^{2}) ; No. of Particles',85,array('d',edgesarray))                             # Total mass
         h['TotalSmearedMass'].SetLineColor(2)
         h['TotalSmearedMass'].SetFillColor(kGray+2)
-        h['StrawTime'] = THStack('StackStrawTime','Gaussian Straw t measurement ; Time (ns) ; No. of Particles')                                                        # straw time
-        h['EcalTime'] = THStack('StackEcalTime','Gaussian Ecal t measurement ; Time (ns) ; No. of Particles')                                                           # ecal time
-        h['DirDeltaTimeSmeared'] = THStack('StackDirDeltaTimeSmeared','Straw-ECAL Smeared Time of Flight (directly) ; Time of Flight (ns) ; No. of Particles')          # smeared time of flight
-        h['DirDeltaTime'] = THStack('StackDirDeltaTime','Straw-ECAL Time of Flight (directly) ; Time of Flight (ns) ; No. of Particles')                                # time of flight
-        h['StrawHits'] = THStack('StackStrawHits','No. of hits in straw tubes ; Position (cm) ; No. of Particles')                                                      # number of straw hits
-        h['StrawHitsMom'] = THStack('StackStrawHitsMom','z-momentum through straw tubes (for particular event) ; Momentum (GeV/c) ; No. of Particles')                  # momenta of straw hits
-        h['FlightLen'] = THStack('StackFlightLen','Straw-ECAL Straight Flight Lenght ; Flight Length (cm) ; No. of Particles')                                          # flight Length
-        h['FlightLenImproved'] = THStack('StackFlightLenImproved','Straw-ECAL Curved Flight Lenght ; Flight Length (cm) ; No. of Particles')                            #corrected flight Length
-        h['FlightLenDelta'] = THStack('StackFlightLenDelta','Difference between straight path and better approximation ; Delta Flight Length (cm) ; No. of Particles')  # delta flight Length
-        h['SpeedSmeared'] = THStack('StackSpeedSmeared','Smeared Beta value ; Smeared Beta value ; No. of Particles')                                                   # smeared speed
-        h['Speed'] = THStack('StackSpeed','Beta value ; Beta value ; No. of Particles')                                                                                 # speed
-        h['StrawMom'] = THStack('StackStrawMom','Straw Momentum ; Straw Momentum (GeV/c) ; No. of Particles')                                                           # straw momentum
-        h['EcalMom'] = THStack('StackEcalMom','Ecal Momentum ; Ecal Momentum (GeV/c) ; No. of Particles')                                                               # ecal  momentum
-        h['DeltaMom'] = THStack('StackDeltaMom','Straw-Ecal Momentum ; Straw-Ecal Momentum (GeV/c) ; No. of Particles')                                                 # delta momentum
-        h['RecoMom'] = THStack('StackRecoMom','Reco Momentum ; Reco Momentum (GeV/c) ; No. of Particles')                                                               # reco  momentum
-        h['TrueMom'] = THStack('StackTrueMom','True Momentum ; True Momentum (GeV/c) ; No. of Particles')                                                               # true  momentum
-        h['RecoMass'] = THStack('StackRecoMass','Reco Mass ; Reco Mass (GeV/c^{2}) ; No. of Particles')                                                                    # reco  mass
-        h['TrueMass'] = THStack('StackTrueMass','True Mass ; True Mass (GeV/c^{2}) ; No. of Particles')                                                                    # true  mass
-        h['SmearedMass'] = THStack('StackSmearedMass','Smeared Mass ; Smeared Mass (GeV/c^{2}) ; No. of Particles')                                                        # smrd  mass
-        h['ProbMeasr'] = THStack('StackProbMeasr','Probs identifying Particle ; Mass (GeV/c^{2}) ; Prob(particle ID correct )')                                            # ID Prob
+        h['StrawTime'] = THStack('StackStrawTime','  ; Time (ns) ; No. of Particles')                                                        # straw time
+        h['EcalTime'] = THStack('StackEcalTime','  ; Time (ns) ; No. of Particles')                                                           # ecal time
+        h['DirDeltaTimeSmeared'] = THStack('StackDirDeltaTimeSmeared','  ; Time of Flight (ns) ; No. of Particles')          # smeared time of flight
+        h['DirDeltaTime'] = THStack('StackDirDeltaTime','  ; Time of Flight (ns) ; No. of Particles')                                # time of flight
+        h['StrawHits'] = THStack('StackStrawHits','  ; Position (cm) ; No. of Particles')                                                      # number of straw hits
+        h['StrawHitsMom'] = THStack('StackStrawHitsMom','  ; Momentum (GeV/c) ; No. of Particles')                  # momenta of straw hits
+        h['FlightLen'] = THStack('StackFlightLen','  ; Flight Length (cm) ; No. of Particles')                                          # flight Length
+        h['FlightLenImproved'] = THStack('StackFlightLenImproved','  ; Flight Length (cm) ; No. of Particles')                            #corrected flight Length
+        h['FlightLenDelta'] = THStack('StackFlightLenDelta','  ; Delta Flight Length (cm) ; No. of Particles')  # delta flight Length
+        h['SpeedSmeared'] = THStack('StackSpeedSmeared','  ; Smeared Beta value ; No. of Particles')                                                   # smeared speed
+        h['Speed'] = THStack('StackSpeed','  ; Beta value ; No. of Particles')                                                                                 # speed
+        h['StrawMom'] = THStack('StackStrawMom','  ; Straw Momentum (GeV/c) ; No. of Particles')                                                           # straw momentum
+        h['EcalMom'] = THStack('StackEcalMom','  ; Ecal Momentum (GeV/c) ; No. of Particles')                                                               # ecal  momentum
+        h['DeltaMom'] = THStack('StackDeltaMom','  ; Straw-Ecal Momentum (GeV/c) ; No. of Particles')                                                 # delta momentum
+        h['RecoMom'] = THStack('StackRecoMom','  ; Reco Momentum (GeV/c) ; No. of Particles')                                                               # reco  momentum
+        h['TrueMom'] = THStack('StackTrueMom','  ; True Momentum (GeV/c) ; No. of Particles')                                                               # true  momentum
+        h['RecoMass'] = THStack('StackRecoMass','  ; Reco Mass (GeV/c^{2}) ; No. of Particles')                                                                    # reco  mass
+        h['TrueMass'] = THStack('StackTrueMass','  ; True Mass (GeV/c^{2}) ; No. of Particles')                                                                    # true  mass
+        h['SmearedMass'] = THStack('StackSmearedMass','  ; Smeared Mass (GeV/c^{2}) ; No. of Particles')                                                        # smrd  mass
+        h['ProbMeasr'] = THStack('StackProbMeasr','  ; Mass (GeV/c^{2}) ; Prob(particle ID correct )')                                            # ID Prob
 
 
     #################################
     ####  Neutralino Histograms  ####
-    h[partList[0] + 'TrueMass'] = TH1D(partList[0] + 'TrueMass','Monte Carlo Mass ; Invariant mass (GeV/c^{2}) ; No. of Particles',300,0.99,1.01)                            # true mass
+    h[partList[0] + 'TrueMass'] = TH1D(partList[0] + 'TrueMass','  ; Invariant mass (GeV/c^{2}) ; No. of Particles',100,0.99,1.01)                            # true mass
     h[partList[0] + 'TrueMass'].SetLineColor(1)
     h[partList[0] + 'TrueMass'].SetFillColor(1)
-    h[partList[0] + 'RecoMass'] = TH1D(partList[0] + 'RecoMass','Reconstructed Mass ; Invariant mass (GeV/c^{2}) ; No. of Particles',300,0.97,1.03)                          # reco mass
+    h[partList[0] + 'RecoMass'] = TH1D(partList[0] + 'RecoMass','  ; Invariant mass (GeV/c^{2}) ; No. of Particles',100,0.97,1.03)                          # reco mass
     h[partList[0] + 'RecoMass'].SetLineColor(1)
-    h[partList[0] + 'RecoMass'].SetFillColor(kGray+2)
-    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','True (red) & Reco. (blue) Momentum ; Momentum (GeV/c) ; No. of Particles',300,0.,180.)                     # true momentum 
+    h[partList[0] + 'RecoMass'].SetFillColor(17)
+    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','  ; Momentum (GeV/c) ; No. of Particles',100,0.,180.)                     # true momentum 
     h[partList[0] + 'TrueMom'].SetLineColor(2)
-    h[partList[0] + 'TrueMom'].SetFillColor(kRed+2)
-    h[partList[0] + 'RecoMom'] = TH1D(partList[0] + 'RecoMom','Reconstructed Momentum ; Momentum (GeV/c) ; No. of Particles',300,0.,180.)                                 # reco momentum
+    #h[partList[0] + 'TrueMom'].SetFillColor(17)
+    h[partList[0] + 'RecoMom'] = TH1D(partList[0] + 'RecoMom','  ; Momentum (GeV/c) ; No. of Particles',100,0.,180.)                                 # reco momentum
     h[partList[0] + 'RecoMom'].SetLineColor(1)
-    h[partList[0] + 'RecoMom'].SetFillColor(kGray+2)
-    h[partList[0] + 'DeltaMom'] = TH1D(partList[0] + 'DeltaMom','True/Reco Momentum Difference ; Momentum Difference (GeV/c) ; No. of Particles',300,-3.,3)               # true-reco momentum difference
+    #h[partList[0] + 'RecoMom'].SetFillColor(17)
+    h[partList[0] + 'DeltaMom'] = TH1D(partList[0] + 'DeltaMom','  ; Momentum Difference (GeV/c) ; No. of Particles',100,-3.,3)               # true-reco momentum difference
     h[partList[0] + 'DeltaMom'].SetLineColor(1)
-    h[partList[0] + 'DeltaMom'].SetFillColor(kGray+2)
-    h[partList[0] + 'Beta'] = TH1D(partList[0] + 'Beta','Reconstructed Neutralino Beta in Z-direction; Beta; No. of Particles',300,0.994,1)
+    h[partList[0] + 'DeltaMom'].SetFillColor(17)
+    h[partList[0] + 'Beta'] = TH1D(partList[0] + 'Beta',' ; #beta; No. of Particles',100,0.994,1)
     h[partList[0] + 'Beta'].SetLineColor(1)
-    h[partList[0] + 'Beta'].SetFillColor(kGray+2)
-    h[partList[0] + 'Gamma'] = TH1D(partList[0] + 'Gamma','Reconstructed Neutralino Gamma in Z-direction; Gamma; No. of Particles',300,0,200)
+    h[partList[0] + 'Beta'].SetFillColor(17)
+    h[partList[0] + 'Gamma'] = TH1D(partList[0] + 'Gamma',' ; #gamma; No. of Particles',100,0,200)
     h[partList[0] + 'Gamma'].SetLineColor(1)
-    h[partList[0] + 'Gamma'].SetFillColor(kGray+2)
-    h[partList[0] + 'Theta'] = TH1D(partList[0] + 'Theta','Angle between neutralino momentum and beam line; Theta / (mrad); No. of Particles',300,0,50)
+    h[partList[0] + 'Gamma'].SetFillColor(17)
+    h[partList[0] + 'Theta'] = TH1D(partList[0] + 'Theta',' ; Theta / (mrad); No. of Particles',100,0,50)
     h[partList[0] + 'Theta'].SetLineColor(1)
-    h[partList[0] + 'Theta'].SetFillColor(kGray+2)
+    h[partList[0] + 'Theta'].SetFillColor(17)
 
     veto_Hists()
 
@@ -364,145 +364,165 @@ def create_Hists(partList):
 
 def makeVetPlots():
     # Veto Histograms (same for all)
-    ut.bookCanvas(h,key='Vetos',title='Veto Results',nx=1500,ny=800,cx=3,cy=2)
+    ut.bookCanvas(h,key='Vetos',title='Veto Results',nx=600,ny=600,cx=1,cy=1)
     cv = h['Vetos'].cd(1)
     h['IP_target'].SetLineColor(1)
     h['IP_target'].SetFillColor(17)
     h['IP_target'].Draw()
+    h['Vetos'].Print('IP.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(2)
     h['ecalE'].SetLineColor(1)
     h['ecalE'].SetFillColor(17)
     h['ecalE'].Draw()
+    h['ecalE'].GetYaxis().SetTitleOffset(1.2)
+    h['Vetos'].Print('Ecal.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(3)
     h['doca'].SetLineColor(1)
     h['doca'].SetFillColor(17)
     h['doca'].Draw()
+    h['Vetos'].Print('Doca.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(4)
     h['nmeas'].SetLineColor(1)
     h['nmeas'].SetFillColor(17)
     h['nmeas'].Draw()
+    h['nmeas'].GetYaxis().SetTitleOffset(1.2)
+    h['Vetos'].Print('ndf.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(5)
     h['Chi2'].SetLineColor(1)
     h['Chi2'].SetFillColor(17)
     h['Chi2'].Draw()
+    h['Vetos'].Print('Chi2.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(6)
     h['recovertex'].SetLineColor(1)
     h['recovertex'].SetFillColor(17)
     h['recovertex'].Draw()
-    h['Vetos'].Print('Vetos.png')
+    h['Vetos'].Print('VertCoord.png')
+    #h['Vetos'].Print('Vetos.png')
 
 def makePlots2(partList):
     
     key='DAUGHTERS'
 
-    #title='Time and velocity plots'
-    #h[key + '_TV']=TCanvas(key + '_TV',title,800,600)
-    #h[key + '_TV'].Divide(1,1)
-    #cv = h[key + '_TV'].cd(1)
-    #h['StrawTime'].Add(h[partList[1] + 'StrawTime'])
-    #h['StrawTime'].Add(h[partList[2] + 'StrawTime'])
-    #if not partList[3]==None:
-    #    h['StrawTime'].Add(h[partList[3] + 'StrawTime'])
-    #h['StrawTime'].Draw('nostack')
+    title='Time and velocity plots'
+    h[key + '_TV']=TCanvas(key + '_TV',title,600,600)
+    h[key + '_TV'].Divide(1,1)
+    cv = h[key + '_TV'].cd(1)
+    h['StrawTime'].Add(h[partList[1] + 'StrawTime'])
+    h['StrawTime'].Add(h[partList[2] + 'StrawTime'])
+    if not partList[3]==None:
+        h['StrawTime'].Add(h[partList[3] + 'StrawTime'])
+    h['StrawTime'].Draw('nostack')
+    h[key + '_TV'].Print('StrawTime.png')
 
-    #cv = h[key + '_TV'].cd(2)
-    #h['EcalTime'].Add(h[partList[1] + 'EcalTime'])
-    #h['EcalTime'].Add(h[partList[2] + 'EcalTime'])
-    #if not partList[3]==None:
-    #    h['EcalTime'].Add(h[partList[3] + 'EcalTime'])
-    #h['EcalTime'].Draw('nostack')
+    cv = h[key + '_TV'].cd(2)
+    h['EcalTime'].Add(h[partList[1] + 'EcalTime'])
+    h['EcalTime'].Add(h[partList[2] + 'EcalTime'])
+    if not partList[3]==None:
+        h['EcalTime'].Add(h[partList[3] + 'EcalTime'])
+    h['EcalTime'].Draw('nostack')
+    h[key + '_TV'].Print('EcalTime.png')
     
 
-    #cv = h[key + '_TV'].cd(1)
-    #h['DirDeltaTime'].Add(h[partList[2] + 'DirDeltaTime'])
-    #h['DirDeltaTime'].Add(h[partList[1] + 'DirDeltaTime'])
-    #if not partList[3]==None:
-    #    h['DirDeltaTime'].Add(h[partList[3] + 'DirDeltaTime'])
-    #h['DirDeltaTime'].Draw('nostack')
-    #h['DirDeltaTime'].GetYaxis().SetTitleOffset(1.)
+    cv = h[key + '_TV'].cd(3)
+    h['DirDeltaTime'].Add(h[partList[2] + 'DirDeltaTime'])
+    h['DirDeltaTime'].Add(h[partList[1] + 'DirDeltaTime'])
+    if not partList[3]==None:
+        h['DirDeltaTime'].Add(h[partList[3] + 'DirDeltaTime'])
+    h['DirDeltaTime'].Draw('nostack')
+    h['DirDeltaTime'].GetYaxis().SetTitleOffset(1.)
+    h[key + '_TV'].Print('DirDeltaTime.png')
 
-    ##cv = h[key + '_TV'].cd(1)
-    #h['DirDeltaTimeSmeared'].Add(h[partList[2] + 'DirDeltaTimeSmeared'])
-    #h['DirDeltaTimeSmeared'].Add(h[partList[1] + 'DirDeltaTimeSmeared'])
-    #if not partList[3]==None:
-    #    h['DirDeltaTimeSmeared'].Add(h[partList[3] + 'DirDeltaTimeSmeared'])
-    #h['DirDeltaTimeSmeared'].Draw('nostack')
-    #h['DirDeltaTimeSmeared'].GetYaxis().SetTitleOffset(1.)
+    cv = h[key + '_TV'].cd(1)
+    h['DirDeltaTimeSmeared'].Add(h[partList[2] + 'DirDeltaTimeSmeared'])
+    h['DirDeltaTimeSmeared'].Add(h[partList[1] + 'DirDeltaTimeSmeared'])
+    if not partList[3]==None:
+        h['DirDeltaTimeSmeared'].Add(h[partList[3] + 'DirDeltaTimeSmeared'])
+    h['DirDeltaTimeSmeared'].Draw('nostack')
+    h['DirDeltaTimeSmeared'].GetYaxis().SetTitleOffset(1.)
+    h[key + '_TV'].Print('DirDeltaTimeSmeared.png')
 
-    #cv = h[key + '_TV'].cd(2)
-    #h['FlightLen'].Add(h[partList[2] + 'FlightLen'])
-    #h['FlightLen'].Add(h[partList[1] + 'FlightLen'])
-    #if not partList[3]==None:
-    #    h['FlightLen'].Add(h[partList[3] + 'FlightLen'])
-    #h['FlightLen'].Draw('nostack')
-    #h['FlightLen'].GetYaxis().SetTitleOffset(1.)
+    cv = h[key + '_TV'].cd(4)
+    h['FlightLen'].Add(h[partList[2] + 'FlightLen'])
+    h['FlightLen'].Add(h[partList[1] + 'FlightLen'])
+    if not partList[3]==None:
+        h['FlightLen'].Add(h[partList[3] + 'FlightLen'])
+    h['FlightLen'].Draw('nostack')
+    h['FlightLen'].GetYaxis().SetTitleOffset(1.)
+    h[key + '_TV'].Print('FlightLen.png')
 
-    #cv = h[key + '_TV'].cd(3)
-    #h['Speed'].Add(h[partList[2] + 'Speed'])
-    #h['Speed'].Add(h[partList[1] + 'Speed'])
-    #if not partList[3]==None:
-    #    h['Speed'].Add(h[partList[3] + 'Speed'])
-    #h['Speed'].Draw('nostack')
-    #h['Speed'].GetYaxis().SetTitleOffset(1.)
+    cv = h[key + '_TV'].cd(5)
+    h['Speed'].Add(h[partList[2] + 'Speed'])
+    h['Speed'].Add(h[partList[1] + 'Speed'])
+    if not partList[3]==None:
+        h['Speed'].Add(h[partList[3] + 'Speed'])
+    h['Speed'].Draw('nostack')
+    h['Speed'].GetYaxis().SetTitleOffset(1.)
+    h[key + '_TV'].Print('Speed.png')
         
-    ##cv = h[key + '_TV'].cd(3)
-    #h['SpeedSmeared'].Add(h[partList[2] + 'SpeedSmeared'])
-    #h['SpeedSmeared'].Add(h[partList[1] + 'SpeedSmeared'])
-    #if not partList[3]==None:
-    #    h['SpeedSmeared'].Add(h[partList[3] + 'SpeedSmeared'])
-    #h['SpeedSmeared'].Draw('nostack')
-    #h['SpeedSmeared'].GetYaxis().SetTitleOffset(1.)
+    cv = h[key + '_TV'].cd(6)
+    h['SpeedSmeared'].Add(h[partList[2] + 'SpeedSmeared'])
+    h['SpeedSmeared'].Add(h[partList[1] + 'SpeedSmeared'])
+    if not partList[3]==None:
+        h['SpeedSmeared'].Add(h[partList[3] + 'SpeedSmeared'])
+    h['SpeedSmeared'].Draw('nostack')
+    h['SpeedSmeared'].GetYaxis().SetTitleOffset(1.)
+    h[key + '_TV'].Print('SpeedSmeared.png')
 
     #h[key + '_TV'].Print('DaughterTVProp'+ currentDate + '.png')
-    #h[key + '_TV'].Print('DaughterSpeedSmeared.png')
+    #h[key + '_TV'].Print('ToF.png')
 
     title='Momenta and mass plots'
-    h[key + '_MOM']=TCanvas(key + '_MOM',title,800,600)
+    h[key + '_MOM']=TCanvas(key + '_MOM',title,600,600)
     h[key + '_MOM'].Divide(1,1)
     cv = h[key + '_MOM'].cd(1)
-    #h['StrawMom'].Add(h[partList[2] + 'StrawMom'])
-    #h['StrawMom'].Add(h[partList[1] + 'StrawMom'])
-    #if not partList[3]==None:
-    #    h['StrawMom'].Add(h[partList[3] + 'StrawMom'])
-    #h['StrawMom'].Draw('nostack')
+    h['StrawMom'].Add(h[partList[2] + 'StrawMom'])
+    h['StrawMom'].Add(h[partList[1] + 'StrawMom'])
+    if not partList[3]==None:
+        h['StrawMom'].Add(h[partList[3] + 'StrawMom'])
+    h['StrawMom'].Draw('nostack')
+    h['DAUGHTERS_MOM'].Print('StrawMom.png')
 
 
-    #cv = h[key + '_MOM'].cd(2)
-    #h['EcalMom'].Add(h[partList[2] + 'EcalMom'])
-    #h['EcalMom'].Add(h[partList[1] + 'EcalMom'])
-    #if not partList[3]==None:
-    #    h['EcalMom'].Add(h[partList[3] + 'EcalMom'])
-    #h['EcalMom'].Draw('nostack')
+    cv = h[key + '_MOM'].cd(2)
+    h['EcalMom'].Add(h[partList[2] + 'EcalMom'])
+    h['EcalMom'].Add(h[partList[1] + 'EcalMom'])
+    if not partList[3]==None:
+        h['EcalMom'].Add(h[partList[3] + 'EcalMom'])
+    h['EcalMom'].Draw('nostack')
+    h['DAUGHTERS_MOM'].Print('EcalMom.png')
 
-    #cv = h[key + '_MOM'].cd(3)
-    #h['RecoMom'].Add(h[partList[2] + 'RecoMom'])
-    #h['RecoMom'].Add(h[partList[1] + 'RecoMom'])
-    #if not partList[3]==None:
-    #    h['RecoMom'].Add(h[partList[3] + 'RecoMom'])
-    #h['RecoMom'].Draw('nostack')
+    cv = h[key + '_MOM'].cd(3)
+    h['RecoMom'].Add(h[partList[2] + 'RecoMom'])
+    h['RecoMom'].Add(h[partList[1] + 'RecoMom'])
+    if not partList[3]==None:
+        h['RecoMom'].Add(h[partList[3] + 'RecoMom'])
+    h['RecoMom'].Draw('nostack')
+    h['DAUGHTERS_MOM'].Print('RecoMom.png')
     
-    #cv = h[key + '_MOM'].cd(4)
-    #h['DeltaMom'].Add(h[partList[2] + 'DeltaMom'])
-    #h['DeltaMom'].Add(h[partList[1] + 'DeltaMom'])
-    #if not partList[3]==None:
-    #    h['DeltaMom'].Add(h[partList[3] + 'DeltaMom'])
-    #h['DeltaMom'].Draw('nostack')
+    cv = h[key + '_MOM'].cd(4)
+    h['DeltaMom'].Add(h[partList[2] + 'DeltaMom'])
+    h['DeltaMom'].Add(h[partList[1] + 'DeltaMom'])
+    if not partList[3]==None:
+        h['DeltaMom'].Add(h[partList[3] + 'DeltaMom'])
+    h['DeltaMom'].Draw('nostack')
+    h['DAUGHTERS_MOM'].Print('DeltaMom.png')
 
-    #cv = h[key + '_MOM'].cd(5)
-    #h['RecoMass'].Add(h[partList[2] + 'RecoMass'])
-    #h['RecoMass'].Add(h[partList[1] + 'RecoMass'])
+    cv = h[key + '_MOM'].cd(5)
+    h['RecoMass'].Add(h[partList[2] + 'RecoMass'])
+    h['RecoMass'].Add(h[partList[1] + 'RecoMass'])
 
-    #if not partList[3]==None:
-    #    h['RecoMass'].Add(h[partList[3] + 'RecoMass'])
-    #h['RecoMass'].Draw('nostack')
-    #h['RecoMass'].GetYaxis().SetTitleOffset(1.2)
+    if not partList[3]==None:
+        h['RecoMass'].Add(h[partList[3] + 'RecoMass'])
+    h['RecoMass'].Draw('nostack')
+    h['RecoMass'].GetYaxis().SetTitleOffset(1.2)
+    h['DAUGHTERS_MOM'].Print('RecoMass.png')
 
-    #cv = h[key + '_MOM'].cd(6)
+    cv = h[key + '_MOM'].cd(6)
     #h[partList[1] + 'SmearedMass'].Fit('landau')
     #h[partList[1] + 'SmearedMass'].GetFunction('landau').SetLineColor(kBlack)
     #h[partList[2] + 'SmearedMass'].Fit('landau')
@@ -511,51 +531,65 @@ def makePlots2(partList):
     #    h[partList[3] + 'SmearedMass'].Fit('landau')
     #    h[partList[3] + 'SmearedMass'].GetFunction('landau').SetLineColor(kBlack)
 
-    #h['SmearedMass'].Add(h[partList[2] + 'SmearedMass'])
-    #h['SmearedMass'].Add(h[partList[1] + 'SmearedMass'])
-    #h[partList[2] + 'TrueMass'].GetYaxis().SetRangeUser(0,65)
-    #h[partList[1] + 'TrueMass'].GetYaxis().SetRangeUser(0,65)
-    #h['SmearedMass'].Add(h[partList[2] + 'TrueMass'])
-    #h['SmearedMass'].Add(h[partList[1] + 'TrueMass'])
-    #if not partList[3]==None:
-    #    h['SmearedMass'].Add(h[partList[3] + 'SmearedMass'])
-    #h['SmearedMass'].Draw('nostack')
-    #h['SmearedMass'].GetYaxis().SetTitleOffset(1.)
+    h['SmearedMass'].Add(h[partList[2] + 'SmearedMass'])
+    h['SmearedMass'].Add(h[partList[1] + 'SmearedMass'])
+    h[partList[2] + 'TrueMass'].GetYaxis().SetRangeUser(0,65)
+    h[partList[1] + 'TrueMass'].GetYaxis().SetRangeUser(0,65)
+    h['SmearedMass'].Add(h[partList[2] + 'TrueMass'])
+    h['SmearedMass'].Add(h[partList[1] + 'TrueMass'])
+    if not partList[3]==None:
+        h['SmearedMass'].Add(h[partList[3] + 'SmearedMass'])
+    h['SmearedMass'].Draw('nostack')
+    h['SmearedMass'].GetYaxis().SetTitleOffset(1.)
+    h['DAUGHTERS_MOM'].Print('SmearedMass.png')
 
     #h['DAUGHTERS_MOM'].Print('DaughterPProp'+ currentDate + '.png')
-    #h['DAUGHTERS_MOM'].Print('DaughterSmearedMass.png')
+    #h['DAUGHTERS_MOM'].Print('Daughters.png')
 
     if partList[3]==None:
         partString=''
     else:
         partString=' or pion'
     title='Probability Plots'
-    h[key + '_PROB'] = TCanvas(key + '_PROB',title,1300,700)
-    h[key + '_PROB'].Divide(3,1)
+    h[key + '_PROB'] = TCanvas(key + '_PROB',title,600,600)
+    h[key + '_PROB'].Divide(1,1)
     cv = h[key + '_PROB'].cd(1)
     h[partList[1] + 'ProbMeasr'].SetMarkerColor(38)
     h[partList[1] + 'ProbMeasr'].SetMarkerStyle(33)
     h[partList[1] + 'ProbMeasr'].SetMarkerSize(1)
     polyFit1.SetLineColor(4)
-    h[partList[1] + 'ProbMeasr'].Fit('polyFit1')
+    #h[partList[1] + 'ProbMeasr'].Fit('polyFit1')
     h[partList[1] + 'ProbMeasr'].Draw('E')
     h[partList[1] + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+    h[key + '_PROB'].Print(partList[1] + 'ProbMeasr.png')
 
     cv = h[key + '_PROB'].cd(2)
     h[partList[2] + 'ProbMeasr'].SetMarkerColor(46)
     h[partList[2] + 'ProbMeasr'].SetMarkerStyle(33)
     h[partList[2] + 'ProbMeasr'].SetMarkerSize(1)
     polyFit2.SetLineColor(2)
-    h[partList[2] + 'ProbMeasr'].Fit('polyFit2')
+    #h[partList[2] + 'ProbMeasr'].Fit('polyFit2')
     h[partList[2] + 'ProbMeasr'].Draw('E')
     h[partList[2] + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
+    h[key + '_PROB'].Print(partList[2] + 'ProbMeasr.png')
 
-    #h['ProbMeasr'].Add(h[partList[2] + 'ProbMeasr'])
-    #h['ProbMeasr'].Add(h[partList[1] + 'ProbMeasr'])
-    #if not partList[3]==None:
-    #    h['ProbMeasr'].Add(h[partList[3] + 'ProbMeasr'])
-    #h['ProbMeasr'].Draw('nostack')
-    #h['ProbMeasr'].GetYaxis().SetTitleOffset(1.2)
+    cv = h[key + '_PROB'].cd(3)
+    h['ProbMeasr'].Add(h[partList[2] + 'ProbMeasr'])
+    h['ProbMeasr'].Add(h[partList[1] + 'ProbMeasr'])
+    if not partList[3]==None:
+        h['ProbMeasr'].Add(h[partList[3] + 'ProbMeasr'])
+    h['ProbMeasr'].Draw('nostack')
+    h['ProbMeasr'].GetYaxis().SetTitleOffset(1.2)
+    h[key + '_PROB'].Print('ProbMeasrTots.png')
+
+    cv = h[key + '_PROB'].cd(3)
+    h[partList[2] + 'ProbMeasr'].SetXTitle('Mass / (GeV/c^{2})')
+    h[partList[2] + 'ProbMeasr'].SetYTitle('#P(particle=(K^{+} or #mu^{-}')
+    h[partList[1] + 'ProbMeasr'].SetXTitle('Mass / (GeV/c^{2})')
+    h[partList[1] + 'ProbMeasr'].SetYTitle('#P(particle=(K^{+} or #mu^{-}')
+    h[partList[2] + 'ProbMeasr'].Draw('E')
+    h[partList[1] + 'ProbMeasr'].Draw('E same')
+    h[key + '_PROB'].Print('ProbMeasrTots2.png')
 
     #if not partList[3]==None:
     #    cv = h[key + '_PROB'].cd(3)
@@ -567,7 +601,7 @@ def makePlots2(partList):
     #    h[partList[3] + 'ProbMeasr'].SetYTitle('Prob( particle = pion )')
     #    h[partList[3] + 'ProbMeasr'].GetYaxis().SetTitleOffset(1.5)
 
-    cv = h[key + '_PROB'].cd(3)
+    cv = h[key + '_PROB'].cd(4)
     graph['partIDProb'] = TMultiGraph()
     graph['partIDProb'].SetName('Prob(correct ID paticle)')
     x1, y1 = array( 'd' ), array( 'd' )
@@ -596,8 +630,8 @@ def makePlots2(partList):
             ey3.append(ROOT.TMath.Sqrt((h[partList[1] + 'ProbMeasr'].GetBinContent(i))/10))
         n=n+1
     graph['1'] = TGraphErrors( n, x1, y1, ex1, ey1 )
-    graph['1'].SetName('Prob(ID = ' + partList[1] + ')')
-    graph['1'].SetTitle('Prob(ID = ' + partList[1] + ')')
+    graph['1'].SetName('Prob(ID = #\mu^{-})')
+    graph['1'].SetTitle('Prob(ID = #\mu^{-})')
     graph['1'].GetYaxis().SetTitle( 'Prob(particle = muon)' )
     graph['1'].SetLineColor( 4 )
     graph['1'].SetLineWidth( 1 )
@@ -617,7 +651,7 @@ def makePlots2(partList):
     graph['partIDProb'].Add(graph['2'], 'PC')
     if not partList[3]==None:
         graph['3'] = TGraphErrors( n, x3, y3, ex3, ey3 )
-        graph['3'].SetName('Prob(ID = ' + partList[3] + ')')
+        graph['3'].SetName('Prob(ID = ' + partList[3] +')')
         graph['3'].SetTitle('Prob(ID = ' + partList[3] + ')') 
         graph['3'].GetYaxis().SetTitle( 'Prob(particle = pion)' )
         graph['3'].SetLineColor( 3 )
@@ -628,36 +662,47 @@ def makePlots2(partList):
         graph['partIDProb'].Add(graph['3'], 'PC')
     graph['partIDProb'].Draw('A pfc plc')#P PLC PFCPLC PFC
     for ckey in graph:
-        graph[ckey].GetXaxis().SetTitle( 'Mass [GeV/c^{2}]' )
-    graph['partIDProb'].GetYaxis().SetTitle( 'Prob(particle=(kaon or muon' + partString + '))' )
+        graph[ckey].GetXaxis().SetTitle( 'Mass (GeV/c^{2})' )
+    graph['partIDProb'].GetYaxis().SetTitle( '#P(particle=(K^{+} or #mu^{-}' + partString + '))' )
     graph['partIDProb'].GetYaxis().SetTitleOffset(1.5)
     graph['partIDProb'].GetXaxis().SetRangeUser(0,1.5)
-    gPad.BuildLegend()
+    #gPad.BuildLegend()
     #h[key + '_PROB'].Print('DaughterProb'+ currentDate + '.png')
     h[key + '_PROB'].Print('DaughterProbGraph.png')
 
     title='NeutralinoPlots'
     key = 'Neutralino'
-    h[key] = TCanvas(key,title,1300,800)
-    h[key].Divide(3,1)
+    h[key] = TCanvas(key,title,600,600)
+    h[key].Divide(1,1)
     cv = h[key].cd(1)
     h['Neutralino_RecoMass'].Draw()
     print('\nNeutralino mass Gaussian fit:\n')
     fitSingleGauss('Neutralino_RecoMass',0.985,1.015)
     h['Neutralino_TrueMass'].Draw('same')
+    h[key].Print(key + 'TrueMass.png')
+
     cv = h[key].cd(2)
-    h['Neutralino_TrueMom'].Draw()
-    h['Neutralino_RecoMom'].Draw('same')
+    h['Neutralino_RecoMom'].Draw()
+    h['Neutralino_TrueMom'].Draw('same')
+    h[key].Print(key + 'MomCompare.png')
+
     cv = h[key].cd(3)
     h['Neutralino_DeltaMom'].Draw()
-    #cv = h[key].cd(1)
-    #h['Neutralino_Beta'].Draw()
-    #cv = h[key].cd(2)
-    #h['Neutralino_Gamma'].Draw()
-    #cv = h[key].cd(1)
-    #h['Neutralino_Theta'].Draw()
+    h[key].Print(key + 'DeltaMom.png')
 
-    h[key].Print(key + 'MomDelta.png')
+    cv = h[key].cd(4)
+    h['Neutralino_Beta'].Draw()
+    cv = h[key].cd(5)
+    h[key].Print(key + 'Beta.png')
+
+    h['Neutralino_Gamma'].Draw()
+    cv = h[key].cd(6)
+    h[key].Print(key + 'Gamma.png')
+
+    h['Neutralino_Theta'].Draw()
+    h[key].Print(key + 'Theta.png')
+
+    #h[key].Print(key + 'MomDelta.png')
 
 
 
@@ -1184,7 +1229,6 @@ def signalAcceptance(recEntry,simEntry):
     return accp
 
 def effTable(veto,acceptance,selectionEff,dark):
-    print('\n\t' + str(veto[0]) + ' events reconstructed for this decay mode')
     print('\t' + str(veto[9]) + ' events with successful RedoVertexing extrapolations')
     print('\n\t|---------------------------------|------------------|-------------------|-------------------------|')
     print('\t| Selection                       | Events remaining |    Acceptances    | Selection Efficiency (%)|')
@@ -1770,6 +1814,7 @@ def finStateDarkPhot():
         vetoWg = 10*[0.]
         acceptance = 10*[0.]
         selectionEff = 10*[0.]
+        N_mesonProd = 7*[0]
 
         for n in range(nEvents):   # loops over events
             rc = sTree.GetEntry(n)   # loads tree entry
@@ -1796,7 +1841,16 @@ def finStateDarkPhot():
                     if not fitstatus_eminus.isFitConverged():
                         continue
 
-                    if true_mother.GetPdgCode() == 9900015:   # checks mother is RPV 
+                    if true_mother.GetPdgCode() == 9900015:   # checks mother is DP
+                        DP_Motherkey = true_mother.GetMotherId()  
+                        true_Meson = sTree.MCTrack[DP_Motherkey] 
+                        if true_Meson.GetPdgCode() == 111: N_mesonProd[0]+=1  #Meson = pi0
+                        if true_Meson.GetPdgCode() == 211: N_mesonProd[1]+=1  #Meson = pi+
+                        if true_Meson.GetPdgCode() == 221: N_mesonProd[2]+=1  #Meson = eta0
+                        if true_Meson.GetPdgCode() == 213: N_mesonProd[3]+=1  #Meson = rho+
+                        if true_Meson.GetPdgCode() == 113: N_mesonProd[4]+=1  #Meson = rho0
+                        if true_Meson.GetPdgCode() == 223: N_mesonProd[5]+=1  #Meson = omega
+
                         for index2,reco_part2 in enumerate(sTree.FitTracks):   # loops over index and data of track particles
                             eplusPartkey = sTree.fitTrack2MC[index2]   # matches track to MC particle key
                             true_eplus = sTree.MCTrack[eplusPartkey]   # gives MC particle data
@@ -1940,23 +1994,20 @@ def finStateDarkPhot():
                                     successful_events.append(n)   # adds entries to the list
                                     
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
-        dark_instance = darkphoton.DarkPhoton(DP_parmtrs[0],DP_parmtrs[1])
-        decay_brRatio = dark_instance.findBranchingRatio('A -> e- e+')
-
+        print('Total number of p.o.t. simulated = %d '%n)
+        print('Meson is #pi^{+}  = %d' %N_mesonProd[0])
+        print('Meson is #pi^{0}  = %d' %N_mesonProd[1])
+        print('Meson is #eta^{0} = %d' %N_mesonProd[2])
+        print('Meson is #rho^{+} = %d' %N_mesonProd[3])
+        print('Meson is #rho^{0} = %d' %N_mesonProd[4])
+        print('Meson is #omega   = %d' %N_mesonProd[5])
         # calculate acceptance
         for i,value in enumerate(vetoWg):
             acceptance[i] = value/float(simcount)   # calculates signal acceptance
-        #for eRemn in range(9):
-
-        #    print('vetoWg = %.6f' %vetoWg[eRemn])
-        #    if eRemn == 0:
-        #        acceptance[eRemn] = signalAcceptance(vetoWg[eRemn],n+1)
-        #    else:
-        #        acceptance[eRemn] = signalAcceptance(vetoWg[eRemn],n+1)
-
+        
         # calculate selection efficiency
         for accp in range(9):
-            if not acceptance[accp]==0 and not acceptance[accp-1]==0:
+            if not acceptance[accp]==0:
                 selectionEff[accp+1] = (acceptance[accp+1]/acceptance[accp])*100
         if not acceptance[accp]==0 and not acceptance[accp-1]==0:
             selectionEff[7] = (acceptance[7]/acceptance[5])*100
@@ -1971,31 +2022,34 @@ def finStateDarkPhot():
         print('\t' + str(accepted) + ' events not rejected (i.e. '+ str(rejected) + ' events rejected)')
         print(2*' ' + 110*'_')
 
-        #rpvsusy_instance = rpvsusycp.RPVSUSY(RPV_parmtrs[0],[RPV_parmtrs[1],RPV_parmtrs[2]],RPV_parmtrs[3],RPV_parmtrs[4],RPV_parmtrs[5])   # (neutralino mass, [coupling1,coupling2], sfermion mass, benchmark, bool)
-        #prod_brRatio = rpvsusy_instance.findProdBranchingRatio(MesonID +' -> N mu+')
-        #decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
-        #print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
-        #brRatio_K_pipi = 0.692
-        #brRatio_Kexc_Kshort = 0.5
+        dark_instance = darkphoton.DarkPhoton(DP_parmtrs[0],DP_parmtrs[1])
+        decay_brRatio = dark_instance.findBranchingRatio('A -> e- e+')
+        mdp= DP_parmtrs[0]
+        epsilo = DP_parmtrs[1]
+        mEta= 0.547862
+        BR={}
+        BR['pi -> 2gamma'] = 0.98823
+        prod_brRatio = 2*(epsilo**2)*((1-((mdp**2)/(mEta**2)))**3)*BR['pi -> 2gamma']
+
+        
         #Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
         ctau = dark_instance.cTau() #cm
         #DPlifetime = dark_instance.lifetime()
-        #l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
-        #l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
-        #Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual neutralino decayed in fiducial volume
+        l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
+        l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
+        Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual A' decayed in fiducial volume
 
-        #print('\nctau = ' + str(ctau/100000) + ' km')
-        #print('Probability that neutralino decays within fiducial volume = %.14f'%(Prob))
-        #print('Branching ratio of '+ MesonID +' -> N mu+ = ' + str(prod_brRatio))
-
+        print('\nctau = ' + str(ctau/100000) + ' km')
+        print('Probability that neutralino decays within fiducial volume = %.14f'%(Prob))
         print('Branch ratio of A -> e- e+ is:' + str(decay_brRatio))
         if DP_parmtrs[2] == 'pbrems':
             norm=proton_bremsstrahlung.prodRate(DP_parmtrs[0], DP_parmtrs[1])
-            print "A' production rate per p.o.t: \t %.8g"%norm
-            N_nlino = (2*10**20)*norm*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
-            print('\nNumber of neutralinos observable at SHiP via A -> e- e+ = ' + str(N_nlino))
+            print ("A' production rate per p.o.t: \t %.8g" %norm)
+            N_dp = (2*10**20)*norm*decay_brRatio*acceptance[8]   # no. of A' for brems observed after acceptance citeria
+            print("\n Number of A' observable at SHiP via A -> e- e+ = " + str(N_dp))
         elif DP_parmtrs[2] == 'mesons':
-            N_nlino = -1
+            N_dp = (2*10**20)*(N_mesonProd[2]/float(n+1))*prod_brRatio*decay_brRatio*acceptance[8]
+            print("\n Ratio Number of A' observable at SHiP via A -> e- e+ over N etas expected = " + str(N_dp))
         print('\n-----------------------------------------------------------------------------------------------------------')
 
         makePlots_DarkPhot()
