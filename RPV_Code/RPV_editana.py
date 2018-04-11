@@ -2048,7 +2048,7 @@ def finStateDarkPhot():
             N_dp = (2*10**20)*norm*decay_brRatio*acceptance[8]   # no. of A' for brems observed after acceptance citeria
             print("\n Number of A' observable at SHiP via A -> e- e+ = " + str(N_dp))
         elif DP_parmtrs[2] == 'mesons':
-            N_dp = prod_brRatio*decay_brRatio*acceptance[8]
+            N_dp = (2*10**20)*(N_mesonProd[2]/float(n+1))*prod_brRatio*decay_brRatio*acceptance[8]
             print("\n Ratio Number of A' observable at SHiP via A -> e- e+ over N etas expected = " + str(N_dp))
         print('\n-----------------------------------------------------------------------------------------------------------')
 
