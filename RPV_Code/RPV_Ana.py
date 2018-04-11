@@ -567,8 +567,8 @@ def getDecayBranchingRatio(stEntry,dark):
 
 def print_menu(): 
     print('\n' + 30*'-' + 'MENU' + 30*'-')
-    print('1. RPV SUSY Benchmark 1: N --> K+ mu+  visible final state')
-    print('2. RPV SUSY Benchmark 1: N --> K*+ mu+ visible final state')
+    print('1. RPV SUSY Benchmark 1/2: N --> K+ mu+  visible final state')
+    print('2. RPV SUSY Benchmark 1/2: N --> K*+ mu+ visible final state')
     print('3. Dark Photon         : A --> l- l+   visible final state')
     print('0. Exit')
     print(64 * '-' + '\n')
@@ -1197,7 +1197,7 @@ def finStateMuKa():
 
             print('\t' + str(ka_decaycheck) + ' kaons decayed to muons before detection (' + str(ka_decaycheck - ka_veto[0]) + ' after track checks)\n')
 
-            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.0111,0.0111],1e3,1,True)
+            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.00523,0.00523],1e3,1,True)
             prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K+ mu-')
 
@@ -1212,7 +1212,9 @@ def finStateMuKa():
             print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
             print('Branching ratio of N -> K+ mu- = ' + str(decay_brRatio))
         
-            N_nlino = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+            N_D = 4.8*(10**16)   # total number of D+ mesons expected at SHiP
+            N_Ds = 6.7*(10**15)   # total number of Ds mesons expected at SHiP
+            N_nlino = N_Ds*prod_brRatio*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
             print('\nNumber of neutralinos observable at SHiP via N -> K+ mu- = ' + str(N_nlino))
             print('\n-----------------------------------------------------------------------------------------------------------')
 
@@ -1472,11 +1474,11 @@ def finStateMuKa_exc():
             print('\t| Events reconstructed            |       ' + str(veto[0]) + '       | %.14f  |           ---           |'%(acceptance[0]))
             print('\t| Reduced chi squared < ' + str(chi2Cut) + '         |       ' + str(veto[1]) + '       | %.14f  |          %.2f          |'%(acceptance[1],efficiency[1]))
             print('\t| No. of track measurements > ' + str(measCut) + '  |       ' + str(veto[2]) + '       | %.14f  |          %.2f          |'%(acceptance[2],efficiency[2]))
-            print('\t| Decay vertex in fiducial volume |       ' + str(veto[3]) + '       | %.14f  |          %.2f          |'%(acceptance[3],efficiency[3]))
-            print('\t| Both tracks in fiducial volume  |       ' + str(veto[4]) + '       | %.14f  |          %.2f         |'%(acceptance[4],efficiency[4]))
+            print('\t| K0 decay vtx in fiducial volume |       ' + str(veto[3]) + '       | %.14f  |          %.2f          |'%(acceptance[3],efficiency[3]))
+            print('\t| All tracks in fiducial volume   |       ' + str(veto[4]) + '       | %.14f  |          %.2f         |'%(acceptance[4],efficiency[4]))
             print('\t| Each track > ' + str(ecalCut) + ' GeV in ECAL   |       ' + str(veto[5]) + '       | %.14f  |          %.2f          |'%(acceptance[5],efficiency[5]))
             print('\t| Muon hits in 1st & 2nd stations |       ' + str(veto[6]) + '       | %.14f  |          %.2f          |'%(acceptance[6],efficiency[6]))
-            print('\t| DOCA < ' + str(docaCut) + ' cm                     |       ' + str(veto[7]) + '       | %.14f  |          %.2f          |'%(acceptance[7],efficiency[7]))
+            print('\t| pi+ pi- DOCA < ' + str(docaCut) + ' cm             |       ' + str(veto[7]) + '       | %.14f  |          %.2f          |'%(acceptance[7],efficiency[7]))
             print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8],efficiency[8]))
             print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
@@ -1485,6 +1487,7 @@ def finStateMuKa_exc():
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
             brRatio_K_pipi = 0.692
             brRatio_Kexc_Kshort = 0.5
+
             Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
             ctau = (c*100)*Nlifetime   # cm
             l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
@@ -1496,7 +1499,9 @@ def finStateMuKa_exc():
             print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
             print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
 
-            N_nlino = (4.8*(10**16))*prod_brRatio*decay_brRatio*acceptance[8]*brRatio_K_pipi*brRatio_Kexc_Kshort   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+            N_D = 4.8*(10**16)   # total number of D+ mesons expected at SHiP
+            N_Ds = 6.7*(10**15)   # total number of Ds mesons expected at SHiP
+            N_nlino = N_Ds*prod_brRatio*decay_brRatio*acceptance[8]*brRatio_K_pipi*brRatio_Kexc_Kshort   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
             print('\nNumber of neutralinos observable at SHiP via N -> K*+ mu- = ' + str(N_nlino))
             print('\n-----------------------------------------------------------------------------------------------------------')
 
@@ -1586,9 +1591,9 @@ def finStateDarkPhot():
                                             weight_veto[2] += wgDark
                                         else: event = False
 
-                                    h['recovertex'].Fill(NDecay_Z)
+                                    h['recovertex'].Fill(DPDecay_Z)
                                     if event == True:
-                                        if isInFiducial(NDecay_X,NDecay_Y,NDecay_Z):
+                                        if isInFiducial(DPDecay_X,DPDecay_Y,DPDecay_Z):
                                             veto[3] += 1
                                             weight_veto[3] += wgDark
                                         else: event = False
@@ -1662,8 +1667,9 @@ def finStateDarkPhot():
                                     successful_events.append(n)   # adds entries to the list
 
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
-
-        brRatio = getDecayBranchingRatio('A -> e- e+',True)
+        print(nEvents,simcount)
+        dark_instance = darkphoton.DarkPhoton(0.2,0.00000008)
+        brRatio = dark_instance.findBranchingRatio('A -> e- e+')
         print('\nBranching ratio of A -> e- e+ = ' + str(brRatio))
 
         for i,value in enumerate(weight_veto):
