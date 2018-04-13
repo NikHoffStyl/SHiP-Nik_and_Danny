@@ -31,7 +31,7 @@ import datetime
 RPV_parmtrs = [1.,0.0111,0.0111,1e3,1,True] # [mass(GeV), couplng1,couplng2,sfermionMass(GeV), bool]
 
 #For DP
-DP_parmtrs =[0.2,0.00000008, 'mesons'] #[mass (GeV), epsilon, pMechanismOptions='meson', 'pbrems']
+DP_parmtrs =[0.2,0.00001, 'mesons'] #[mass (GeV), epsilon, pMechanismOptions='meson', 'pbrems']
 #DPprodRate = 4.9356962*10**(-16)
 
 MesonID = 'D+'
@@ -1541,10 +1541,10 @@ def finStateMuKa_exc():
                 muPartkey = sTree.fitTrack2MC[index]   # matches track to MC particle key
                 true_muon = sTree.MCTrack[muPartkey]   # gives MC particle data
 
-                if abs(true_muon.GetPdgCode()) == 13:   # checks particle is muon
+                if abs(true_muon.GetPdgCode()) == 13:   # checks particle is MUON
                     muonMotherkey = true_muon.GetMotherId()   # stores a number index of MC track of mother
                     true_motherN = sTree.MCTrack[muonMotherkey]   # obtains mother particle data
-                    if true_motherN.GetPdgCode() == 9900015:
+                    if true_motherN.GetPdgCode() == 9900015:        #NEUTRALINO
 
                         fitstatus_muon = reco_muon.getFitStatus()
                         if not fitstatus_muon.isFitConverged(): continue
@@ -1574,14 +1574,14 @@ def finStateMuKa_exc():
                                             piplusPartkey = sTree.fitTrack2MC[index3]   # matches track to MC particle key
                                             true_piplus = sTree.MCTrack[piplusPartkey]   # gives MC particle data
                             
-                                            if true_piplus.GetPdgCode() == 211:   # checks particle is pion
+                                            if true_piplus.GetPdgCode() == 211:   # checks particle is POSITIVE PION
                                                 piplusMotherkey = true_piplus.GetMotherId()   # stores a number index of MC track of mother
                                                 true_kaon = sTree.MCTrack[piplusMotherkey]
                                                 if abs(true_kaon.GetPdgCode()) == 310 or abs(true_kaon.GetPdgCode()) == 130:   # checks mother is NEUTRAL KAON
                                                     true_kaon2 = sTree.MCTrack[true_kaon.GetMotherId()]
                                                     if true_kaon2.GetPdgCode() == 310 or abs(true_kaon2.GetPdgCode()) == 130:                                     
                                                         true_kaonEx = sTree.MCTrack[true_kaon2.GetMotherId()]
-                                                        if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is charged excited kaon   
+                                                        if abs(true_kaonEx.GetPdgCode()) == 323:   # checks mother is charged EXCITED KAON   
                                                             true_motherN = sTree.MCTrack[true_kaonEx.GetMotherId()]
                                                             if true_motherN.GetPdgCode() == 9900015:
 
@@ -1589,7 +1589,7 @@ def finStateMuKa_exc():
                                                                     piminusPartkey = sTree.fitTrack2MC[index4]   # matches track to MC particle key
                                                                     true_piminus = sTree.MCTrack[piminusPartkey]   # gives MC particle data
                                                     
-                                                                    if true_piminus.GetPdgCode() == -211:   # checks particle is oppositely charged pion
+                                                                    if true_piminus.GetPdgCode() == -211:   # checks particle is NEGATIVE PION
                                                                         piminusMotherkey = true_piminus.GetMotherId()   # stores a number index of MC track of mother
                                                         
                                                                         if piplusMotherkey == piminusMotherkey:
@@ -1811,7 +1811,7 @@ def finStateDarkPhot():
 
 
             for particle in sTree.MCTrack:
-                if abs(particle.GetPdgCode()) == 11:
+                if particle.GetPdgCode() == 11:
                     motherkey = particle.GetMotherId()
                     if motherkey == 1:
                         motherN = sTree.MCTrack[motherkey]
@@ -2030,8 +2030,8 @@ def finStateDarkPhot():
         BR={}
         BR['pi -> 2gamma'] = 0.98823
         BR['eta -> 2gamma'] = 0.3941
-        if not N_mesonProd[1] == 0: prod_brRatio = 2*(epsilo**2)*((1-((mdp**2)/(mpion**2)))**3)*BR['pi -> 2gamma']
-        elif not N_mesonProd[2] == 0: prod_brRatio = 2*(epsilo**2)*((1-((mdp**2)/(mEta**2)))**3)*BR['eta -> 2gamma']
+        if not N_mesonProd[1] == 0: prod_brRatio = 2*(epsilo**2)*((1-((mdp**2)/(mpion**2)))**3)*BR['pi -> 2gamma']*10**8
+        elif not N_mesonProd[2] == 0: prod_brRatio = 2*(epsilo**2)*((1-((mdp**2)/(mEta**2)))**3)*BR['eta -> 2gamma']*10**8
 
         
         #Nlifetime = rpvsusy_instance.computeNLifetime(system='SI')   # seconds
@@ -2039,11 +2039,12 @@ def finStateDarkPhot():
         #DPlifetime = dark_instance.lifetime()
         l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
         l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
-        Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))   # probability that actual A' decayed in fiducial volume
+        Prob = (e**(-l_shield/float(ctau)))*(1 - e**(-l_fid/float(ctau)))   # probability that actual A' decayed in fiducial volume
 
-        print('\nctau = ' + str(ctau/100000) + ' km')
+        print('\nctau = ' + str(ctau/float(100000)) + ' km')
         print('Probability that neutralino decays within fiducial volume = %.14f'%(Prob))
-        print('Branch ratio of A -> e- e+ is:' + str(decay_brRatio))
+        print("BR(eta->A') = %.14f"%prod_brRatio)
+        print("BR(A' -> e- e+) = " + str(decay_brRatio))
         if DP_parmtrs[2] == 'pbrems':
             norm=proton_bremsstrahlung.prodRate(DP_parmtrs[0], DP_parmtrs[1])
             print ("A' production rate per p.o.t: \t %.8g" %norm)
@@ -2051,11 +2052,11 @@ def finStateDarkPhot():
             print("\n Number of A' observable at SHiP via A -> e- e+ = " + str(N_dp))
         elif DP_parmtrs[2] == 'mesons':
             if not N_mesonProd[1] == 0:
-                N_dp = (2*10**20)*(N_mesonProd[1]/float(n+1))*prod_brRatio*decay_brRatio*acceptance[8]
-                print("\n Ratio Number of A' observable at SHiP via A -> e- e+  = " + str(N_dp))
+                N_dp = (2*10**20)*(N_mesonProd[1]/float(n+1))*prod_brRatio*decay_brRatio*acceptance[8]*10**(-8)
+                print("\n Ratio Number of A' observable at SHiP via pi --> A -> e- e+  = " + str(N_dp))
             elif not N_mesonProd[2] == 0:
-                N_dp = (2*10**20)*(N_mesonProd[2]/float(n+1))*prod_brRatio*decay_brRatio*acceptance[8]
-                print("\n Ratio Number of A' observable at SHiP via A -> e- e+  = " + str(N_dp))
+                N_dp = (2*10**20)*(N_mesonProd[2]/float(n+1))*prod_brRatio*decay_brRatio*acceptance[8]*10**(-8)
+                print("\n Ratio Number of A' observable at SHiP via eta --> A -> e- e+  = " + str(N_dp))
         print('\n-----------------------------------------------------------------------------------------------------------')
 
         makePlots_DarkPhot()
