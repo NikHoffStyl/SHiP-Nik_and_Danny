@@ -23,7 +23,7 @@ shipRoot_conf.configure()
 # For RPV
 RPV_parmtrs = [1.,0.0111,0.0111,1e3,1,True]   # [mass (GeV),couplng1,couplng2,sfermionMass(GeV),benchmark,bool]
 # For DP
-DP_parmtrs =[0.2,0.00005,'pbrem']   # [mass (GeV),epsilon,pMechanismOptions = 'meson' or 'pbrem']
+DP_parmtrs =[0.2,0.000000001,'pbrem']   # [mass (GeV),epsilon,pMechanismOptions = 'meson' or 'pbrem']
 
 N_proton = 2*(10**20)   # total number of protons on target over 5 years of SHiP
 if RPV_parmtrs[4] == 1: N_meson = 4.8*(10**16)   # total number of D+ mesons expected at SHiP (benchmark 1)
@@ -1673,7 +1673,8 @@ def finStateDarkPhot():
             acceptance[i] = value/float(simcount)   # calculates signal acceptance
 
         for j in range(7):
-            efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))   # calculates signal efficiency
+            if not acceptance[j] == 0:
+                efficiency[j+1] = 100*(acceptance[j+1]/float(acceptance[j]))   # calculates signal efficiency
 
         accepted = len(successful_events)
         print('\n\t' + str(simcount) + ' events generated for this decay mode')
