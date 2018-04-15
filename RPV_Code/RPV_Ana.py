@@ -1,9 +1,10 @@
 #===================================================================
 #   Code performs analysis on data obtained by simulation   
-#    and reconstruction for RPV benchmark 1 final states 
-#   and dark photon model. Outputs acceptance table.
+#   and reconstruction for RPV benchmark 1/2 final states 
+#   and dark photon model. Outputs acceptance table and
+#   number of hidden particles detected.
 #
-#   Created by Nicolas Stylianou and Danny Galbinski
+#   Created by Nicolas Stylianou and Daniel Galbinski
 #===================================================================
 
 import ROOT,os,sys,getopt
@@ -15,9 +16,18 @@ from decorators import *
 import shipRoot_conf
 from array import array
 import numpy as np
-import rpvsusy,darkphoton,rpvsusy_test
+import rpvsusy,rpvsusy_test,darkphoton,proton_bremsstrahlung
 from ROOT import TLatex
 shipRoot_conf.configure()
+
+# For RPV
+RPV_parmtrs = [1.,0.0111,0.0111,1e3,1,True]   # [mass (GeV),couplng1,couplng2,sfermionMass(GeV),benchmark,bool]
+# For DP
+DP_parmtrs =[0.2,0.00005,'pbrem']   # [mass (GeV),epsilon,pMechanismOptions = 'meson' or 'pbrem']
+
+N_proton = 2*(10**20)   # total number of protons on target over 5 years of SHiP
+if RPV_parmtrs[4] == 1: N_meson = 4.8*(10**16)   # total number of D+ mesons expected at SHiP (benchmark 1)
+if RPV_parmtrs[4] == 2: N_meson = 6.7*(10**15)   # total number of Ds mesons expected at SHiP (benchmark 2)
 
 debug = False
 PDG = ROOT.TDatabasePDG.Instance()
@@ -555,16 +565,6 @@ def createRatio(h1,h2,histname):
     x.SetRangeUser(0,2)
     return h3
 
-def getDecayBranchingRatio(stEntry,dark):
-    if not dark == True:
-        rpvsusy_instance = rpvsusy.RPVSUSY(1.,[0.0111,0.0111],1e3,1,True)
-        brRatio = rpvsusy_instance.findDecayBranchingRatio(stEntry)
-    else:
-        dark_instance = darkphoton.DarkPhoton(0.2,0.00000008)
-        brRatio = dark_instance.findBranchingRatio(stEntry)
-
-    return brRatio
-
 def print_menu(): 
     print('\n' + 30*'-' + 'MENU' + 30*'-')
     print('1. RPV SUSY Benchmark 1/2: N --> K+ mu+  visible final state')
@@ -667,22 +667,22 @@ def createHists(choice):
     ut.bookHist(h,'doca','Distance of closest approach between tracks',150,0,3)
     ut.bookHist(h,'nmeas','No. of measurements in fitted tracks (ndf)',50,0,50)
     ut.bookHist(h,'Chi2','Fitted Tracks Reduced #chi^{2}',150,0,3)
-    ut.bookHist(h,'recovertex','Reconstructed neutralino decay vertex z-coordinate',100,-4000,4000)
+    ut.bookHist(h,'recovertex','Neutralino decay vertex z-coordinate',100,-4000,4000)
 
 def makePlots(choice):
     if choice == 1:
         ut.bookCanvas(h,key='RPV_N',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
         cv = h['RPV_N'].cd(1)
         h['RPV_recomass'].SetLineColor(1)
-        h['RPV_recomass'].SetStats(False)
+        #h['RPV_recomass'].SetStats(False)
         h['RPV_recomass'].Draw()
         print('\nNeutralino mass Gaussian fit:\n')
         fitSingleGauss('RPV_recomass',0.9,1.1)
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['RPV_N'].cd(2)
         h['RPV_truemom'].SetLineColor(2)
-        h['RPV_truemom'].SetStats(False)
-        h['RPV_recomom'].SetStats(False)
+        #h['RPV_truemom'].SetStats(False)
+        #h['RPV_recomom'].SetStats(False)
         h['ths1'] = ROOT.THStack('RPVmom','Simulated & Reconstructed Neutralino Momentum ; Momentum / [GeV/c]; Count')
         h['ths1'].Add(h['RPV_truemom'])
         h['ths1'].Add(h['RPV_recomom'])
@@ -695,17 +695,17 @@ def makePlots(choice):
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['RPV_N'].cd(4)
         h['RPV_beta'].SetLineColor(1)
-        h['RPV_beta'].SetStats(False)
+        #h['RPV_beta'].SetStats(False)
         h['RPV_beta'].Draw()
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['RPV_N'].cd(5)
         h['RPV_gamma'].SetLineColor(1)
-        h['RPV_gamma'].SetStats(False)
+        #h['RPV_gamma'].SetStats(False)
         h['RPV_gamma'].Draw()
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['RPV_N'].cd(6)
         h['RPV_theta'].SetLineColor(1)
-        h['RPV_theta'].SetStats(False)
+        #h['RPV_theta'].SetStats(False)
         h['RPV_theta'].Draw()
         h['RPV_N'].Print('RPV_N.png')
         #======================================================================================================================
@@ -864,8 +864,8 @@ def makePlots(choice):
         h['DP_recomass'].SetYTitle('No. of Particles')
         h['DP_recomass'].SetLineColor(1)
         h['DP_recomass'].Draw()
-        print('\nDark Photon mass Gaussian fit:\n')
-        fitSingleGauss('DP_recomass',0.1,0.3)
+        #print('\nDark Photon mass Gaussian fit:\n')
+        #fitSingleGauss('DP_recomass',0.1,0.3)
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['DP'].cd(2)
         h['DP_truemom'].SetXTitle('Momentum / [GeV/c]')
@@ -927,6 +927,7 @@ def makePlots(choice):
     # Veto Histograms (same for all)
     ut.bookCanvas(h,key='Vetos',title='Veto Results',nx=1500,ny=800,cx=3,cy=2)
     cv = h['Vetos'].cd(1)
+    h['IP_target'].SetStats(False)
     h['IP_target'].SetXTitle('Impact Parameter / [cm]')
     h['IP_target'].SetYTitle('Count')
     h['IP_target'].SetLineColor(1)
@@ -934,6 +935,7 @@ def makePlots(choice):
     h['IP_target'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(2)
+    h['ecalE'].SetStats(False)
     h['ecalE'].SetXTitle('Energy / [GeV/c2]')
     h['ecalE'].SetYTitle('Count')
     h['ecalE'].SetLineColor(1)
@@ -941,6 +943,7 @@ def makePlots(choice):
     h['ecalE'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(3)
+    h['doca'].SetStats(False)
     h['doca'].SetXTitle('Distance / [cm]')
     h['doca'].SetYTitle('Count')
     h['doca'].SetLineColor(1)
@@ -948,6 +951,7 @@ def makePlots(choice):
     h['doca'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(4)
+    h['nmeas'].SetStats(False)
     h['nmeas'].SetXTitle('ndf')
     h['nmeas'].SetYTitle('Count')
     h['nmeas'].SetLineColor(1)
@@ -955,6 +959,7 @@ def makePlots(choice):
     h['nmeas'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(5)
+    h['Chi2'].SetStats(False)
     h['Chi2'].SetXTitle('#chi^{2}/ndf')
     h['Chi2'].SetYTitle('Count')
     h['Chi2'].SetLineColor(1)
@@ -962,6 +967,7 @@ def makePlots(choice):
     h['Chi2'].Draw()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(6)
+    h['recovertex'].SetStats(False)
     h['recovertex'].SetXTitle('Z / [cm]')
     h['recovertex'].SetYTitle('Count')
     h['recovertex'].SetLineColor(1)
@@ -1197,7 +1203,7 @@ def finStateMuKa():
 
             print('\t' + str(ka_decaycheck) + ' kaons decayed to muons before detection (' + str(ka_decaycheck - ka_veto[0]) + ' after track checks)\n')
 
-            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.00523,0.00523],1e3,1,True)
+            rpvsusy_instance = rpvsusy_test.RPVSUSY(RPV_parmtrs[0],[RPV_parmtrs[1],RPV_parmtrs[2]],RPV_parmtrs[3],RPV_parmtrs[4],RPV_parmtrs[5])
             prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K+ mu-')
 
@@ -1212,9 +1218,7 @@ def finStateMuKa():
             print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
             print('Branching ratio of N -> K+ mu- = ' + str(decay_brRatio))
         
-            N_D = 4.8*(10**16)   # total number of D+ mesons expected at SHiP
-            N_Ds = 6.7*(10**15)   # total number of Ds mesons expected at SHiP
-            N_nlino = N_Ds*prod_brRatio*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+            N_nlino = N_meson*prod_brRatio*decay_brRatio*acceptance[8]   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
             print('\nNumber of neutralinos observable at SHiP via N -> K+ mu- = ' + str(N_nlino))
             print('\n-----------------------------------------------------------------------------------------------------------')
 
@@ -1482,7 +1486,7 @@ def finStateMuKa_exc():
             print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[8]) + '       | %.14f  |          %.2f         |'%(acceptance[8],efficiency[8]))
             print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
-            rpvsusy_instance = rpvsusy_test.RPVSUSY(1.,[0.0133,0.0133],1e3,2,True)   # (neutralino mass, [coupling1,coupling2], sfermion mass, benchmark, bool)
+            rpvsusy_instance = rpvsusy_test.RPVSUSY(RPV_parmtrs[0],[RPV_parmtrs[1],RPV_parmtrs[2]],RPV_parmtrs[3],RPV_parmtrs[4],RPV_parmtrs[5])   # (neutralino mass, [coupling1,coupling2], sfermion mass, benchmark, bool)
             prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D_s+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
             brRatio_K_pipi = 0.692
@@ -1499,9 +1503,7 @@ def finStateMuKa_exc():
             print('Branching ratio of D+ -> N mu+ = ' + str(prod_brRatio))
             print('Branching ratio of N -> K*+ mu- = ' + str(decay_brRatio))
 
-            N_D = 4.8*(10**16)   # total number of D+ mesons expected at SHiP
-            N_Ds = 6.7*(10**15)   # total number of Ds mesons expected at SHiP
-            N_nlino = N_Ds*prod_brRatio*decay_brRatio*acceptance[8]*brRatio_K_pipi*brRatio_Kexc_Kshort   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
+            N_nlino = N_meson*prod_brRatio*decay_brRatio*acceptance[8]*brRatio_K_pipi*brRatio_Kexc_Kshort   # no. of D+ mesons expected * Br(D+ -> N l+) * Br(N -> K+ mu-) * acceptance
             print('\nNumber of neutralinos observable at SHiP via N -> K*+ mu- = ' + str(N_nlino))
             print('\n-----------------------------------------------------------------------------------------------------------')
 
@@ -1519,7 +1521,7 @@ def finStateDarkPhot():
             event = True
 
             for particle in sTree.MCTrack:
-                if abs(particle.GetPdgCode()) == 11:
+                if particle.GetPdgCode() == 11:
                     motherkey = particle.GetMotherId()
                     if motherkey == 1:
                         motherN = sTree.MCTrack[motherkey]
@@ -1549,7 +1551,6 @@ def finStateDarkPhot():
 
                                 if eplusMotherkey == eminusMotherkey and true_mother.GetPdgCode() == 9900015:   # check if mother keys are the same
                                     wgDark = true_mother.GetWeight()   # hidden particle weighting
-                                    if not wgDark > 0. : wgDark = 1.   # in case the weighting information doesn't exist
                                     fitstatus_eplus = reco_part2.getFitStatus()
                                     
                                     if fitstatus_eplus.isFitConverged():
@@ -1667,10 +1668,6 @@ def finStateDarkPhot():
                                     successful_events.append(n)   # adds entries to the list
 
         #----------------------------------------------------------------VETO-COUNTS------------------------------------------------------------------
-        print(nEvents,simcount)
-        dark_instance = darkphoton.DarkPhoton(0.2,0.00000008)
-        brRatio = dark_instance.findBranchingRatio('A -> e- e+')
-        print('\nBranching ratio of A -> e- e+ = ' + str(brRatio))
 
         for i,value in enumerate(weight_veto):
             acceptance[i] = value/float(simcount)   # calculates signal acceptance
@@ -1696,6 +1693,27 @@ def finStateDarkPhot():
         print('\t| IP to target < ' + str(ipCut) + ' cm           |       ' + str(veto[7]) + '       | %.14f  |          %.2f         |'%(acceptance[7],efficiency[7]))
         print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
+        dark_instance = darkphoton.DarkPhoton(DP_parmtrs[0],DP_parmtrs[1])
+        decay_brRatio = dark_instance.findBranchingRatio('A -> e- e+')
+        
+        ctau = dark_instance.cTau()   # cm
+        l_fid = ShipGeo.TrackStation1.z - (ShipGeo.vetoStation.z + 100.*u.cm)
+        l_shield = (ShipGeo.vetoStation.z + 100.*u.cm) - ShipGeo.target.z0
+        Prob = (e**(-l_shield/ctau))*(1 - e**(-l_fid/ctau))
+
+        print('\nctau = ' + str(ctau/100000) + ' km')
+        print('Probability that neutralino decays within fiducial volume = ' + str(Prob))
+        print('Branching ratio of A -> e- e+ = ' + str(decay_brRatio))
+        
+        if DP_parmtrs[2] == 'pbrem':
+            norm = proton_bremsstrahlung.prodRate(DP_parmtrs[0],DP_parmtrs[1])
+            print('Dark photon production rate per p.o.t: %.8g' %norm)
+            N_dp = N_proton*norm*decay_brRatio*acceptance[7]   # no. of A' for brems observed after acceptance citeria
+            print('\nNumber of dark photons observable at SHiP via A -> e- e+ = ' + str(N_dp) + '\n')
+
+        elif DP_parmtrs[2] == 'meson':
+            print('working on this')
+        
 loop = True
 while loop:
     print_menu()
