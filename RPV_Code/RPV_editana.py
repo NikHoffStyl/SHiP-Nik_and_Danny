@@ -302,6 +302,8 @@ def create_Hists(partList):
         h[partName + 'TrueMom'].SetLineColor(val[0])
         h[partName + 'RecoMass'] = TH1D(partName + 'RecoMass','; ' + partName + ' Reco Mass (GeV/c^{2}); No. of Particles',500,0.,0.6)                             # reco  mass
         h[partName + 'RecoMass'].SetLineColor(val[0])
+        h[partName + 'DeltaMom2'] = TH1D(partName + 'DeltaMom2','; ' + partName + ' True-Reco Momentum (GeV/c); No. of Particles',300,0,1)                 # delta momentum
+        h[partName + 'DeltaMom2'].SetLineColor(val[0])
         
     if partList[3] == None and partList[0] == 'Neutralino_':                      
         h['TotalSmearedMass'] = TH1D('TotalSmearedMass','; Smeared Mass (GeV/c^{2}) ; No. of Particles',85,array('d',edgesarray))                             # Total mass
@@ -321,6 +323,7 @@ def create_Hists(partList):
         h['StrawMom'] = THStack('StackStrawMom','; Straw Momentum (GeV/c) ; No. of Particles')                                                           # straw momentum
         h['EcalMom'] = THStack('StackEcalMom','; Ecal Momentum (GeV/c) ; No. of Particles')                                                               # ecal  momentum
         h['DeltaMom'] = THStack('StackDeltaMom','; Straw-Ecal Momentum (GeV/c) ; No. of Particles')                                                 # delta momentum
+        h['DeltaMom2'] = THStack('StackDeltaMom2','; True-Reco Momentum (GeV/c) ; No. of Particles')                                                 # delta momentum
         h['RecoMom'] = THStack('StackRecoMom','; Reco Momentum (GeV/c) ; No. of Particles')                                                               # reco  momentum
         h['TrueMom'] = THStack('StackTrueMom','; True Momentum (GeV/c) ; No. of Particles')                                                               # true  momentum
         h['RecoMass'] = THStack('StackRecoMass','; Reco Mass (GeV/c^{2}) ; No. of Particles')                                                                    # reco  mass
@@ -331,30 +334,31 @@ def create_Hists(partList):
 
     #################################
     ####  Neutralino Histograms  ####
+    HScolor = 17
     h[partList[0] + 'TrueMass'] = TH1D(partList[0] + 'TrueMass','; Invariant mass (GeV/c^{2}) ; No. of Particles',100,0.99,1.01)                            # true mass
     h[partList[0] + 'TrueMass'].SetLineColor(1)
-    h[partList[0] + 'TrueMass'].SetFillColor(1)
-    h[partList[0] + 'RecoMass'] = TH1D(partList[0] + 'RecoMass','; Invariant mass (GeV/c^{2}) ; No. of Particles',100,0.15,0.25) #0.97,1.03                         # reco mass
+    h[partList[0] + 'TrueMass'].SetFillColor(HScolor)
+    h[partList[0] + 'RecoMass'] = TH1D(partList[0] + 'RecoMass','; Invariant mass (GeV/c^{2}) ; No. of Particles',100,0.15,0.25) # 0.15,0.25 0.97,1.03                         # reco mass
     h[partList[0] + 'RecoMass'].SetLineColor(1)
-    h[partList[0] + 'RecoMass'].SetFillColor(17)
-    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','; Momentum (GeV/c) ; No. of Particles',100,0.,180.)                     # true momentum 
+    h[partList[0] + 'RecoMass'].SetFillColor(HScolor)
+    h[partList[0] + 'TrueMom'] = TH1D(partList[0] + 'TrueMom','; Momentum (GeV/c) ; No. of Particles',99,0.,180.)                     # true momentum 
     h[partList[0] + 'TrueMom'].SetLineColor(2)
     #h[partList[0] + 'TrueMom'].SetFillColor(17)
     h[partList[0] + 'RecoMom'] = TH1D(partList[0] + 'RecoMom','; Momentum (GeV/c) ; No. of Particles',100,0.,180.)                                 # reco momentum
     h[partList[0] + 'RecoMom'].SetLineColor(1)
-    h[partList[0] + 'RecoMom'].SetFillColor(17)
-    h[partList[0] + 'DeltaMom'] = TH1D(partList[0] + 'DeltaMom','; Momentum Difference (GeV/c) ; No. of Particles',100,-3.,3)               # true-reco momentum difference
+    h[partList[0] + 'RecoMom'].SetFillColor(HScolor)
+    h[partList[0] + 'DeltaMom'] = TH1D(partList[0] + 'DeltaMom','; Momentum Difference (GeV/c) ; No. of Particles',250,0,3)               # true-reco momentum difference
     h[partList[0] + 'DeltaMom'].SetLineColor(1)
-    h[partList[0] + 'DeltaMom'].SetFillColor(17)
+    h[partList[0] + 'DeltaMom'].SetFillColor(HScolor)
     h[partList[0] + 'Beta'] = TH1D(partList[0] + '#beta','; #beta value; No. of Particles',100,0.994,1)
     h[partList[0] + 'Beta'].SetLineColor(1)
-    h[partList[0] + 'Beta'].SetFillColor(17)
+    h[partList[0] + 'Beta'].SetFillColor(HScolor)
     h[partList[0] + 'Gamma'] = TH1D(partList[0] + '#gamma','; #gamma value;  No. of Particles',100,0,200)
     h[partList[0] + 'Gamma'].SetLineColor(1)
-    h[partList[0] + 'Gamma'].SetFillColor(17)
+    h[partList[0] + 'Gamma'].SetFillColor(HScolor)
     h[partList[0] + 'Theta'] = TH1D(partList[0] + '#theta','; #theta / (mrad); No. of Particles',100,0,50)
     h[partList[0] + 'Theta'].SetLineColor(1)
-    h[partList[0] + 'Theta'].SetFillColor(17)
+    h[partList[0] + 'Theta'].SetFillColor(HScolor)
 
     veto_Hists()
 
@@ -366,28 +370,34 @@ def makeVetPlots():
     # Veto Histograms (same for all)
     ut.bookCanvas(h,key='Vetos',title='Veto Results',nx=600,ny=600,cx=1,cy=1)
     cv = h['Vetos'].cd(1)
+    h['IP_target'].SetStats(False)
     h['IP_target'].Draw()
     h['Vetos'].Print('IP.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(2)
+    h['ecalE'].SetStats(False)
     h['ecalE'].Draw()
     h['ecalE'].GetYaxis().SetTitleOffset(1.2)
     h['Vetos'].Print('Ecal.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(3)
+    h['doca'].SetStats(False)
     h['doca'].Draw()
     h['Vetos'].Print('Doca.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(4)
+    h['nmeas'].SetStats(False)
     h['nmeas'].Draw()
     h['nmeas'].GetYaxis().SetTitleOffset(1.2)
     h['Vetos'].Print('ndf.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(5)
+    h['Chi2'].SetStats(False)
     h['Chi2'].Draw()
     h['Vetos'].Print('Chi2.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['Vetos'].cd(6)
+    h['recovertex'].SetStats(False)
     h['recovertex'].Draw()
     h['Vetos'].Print('VertCoord.png')
     #h['Vetos'].Print('Vetos.png')
@@ -400,6 +410,8 @@ def makePlots2(partList):
     h[key + '_TV']=TCanvas(key + '_TV',title,600,600)
     h[key + '_TV'].Divide(1,1)
     cv = h[key + '_TV'].cd(1)
+    h[partList[1] + 'StrawTime'].SetStats(False)
+    h[partList[2] + 'StrawTime'].SetStats(False)
     h['StrawTime'].Add(h[partList[1] + 'StrawTime'])
     h['StrawTime'].Add(h[partList[2] + 'StrawTime'])
     if not partList[3]==None:
@@ -408,6 +420,8 @@ def makePlots2(partList):
     h[key + '_TV'].Print('StrawTime.png')
 
     cv = h[key + '_TV'].cd(2)
+    h[partList[1] + 'EcalTime'].SetStats(False)
+    h[partList[2] + 'EcalTime'].SetStats(False)
     h['EcalTime'].Add(h[partList[1] + 'EcalTime'])
     h['EcalTime'].Add(h[partList[2] + 'EcalTime'])
     if not partList[3]==None:
@@ -417,6 +431,8 @@ def makePlots2(partList):
     
 
     cv = h[key + '_TV'].cd(3)
+    h[partList[1] + 'DirDeltaTime'].SetStats(False)
+    h[partList[2] + 'DirDeltaTime'].SetStats(False)
     h['DirDeltaTime'].Add(h[partList[2] + 'DirDeltaTime'])
     h['DirDeltaTime'].Add(h[partList[1] + 'DirDeltaTime'])
     if not partList[3]==None:
@@ -426,6 +442,8 @@ def makePlots2(partList):
     h[key + '_TV'].Print('DirDeltaTime.png')
 
     cv = h[key + '_TV'].cd(1)
+    h[partList[1] + 'DirDeltaTimeSmeared'].SetStats(False)
+    h[partList[2] + 'DirDeltaTimeSmeared'].SetStats(False)
     h['DirDeltaTimeSmeared'].Add(h[partList[2] + 'DirDeltaTimeSmeared'])
     h['DirDeltaTimeSmeared'].Add(h[partList[1] + 'DirDeltaTimeSmeared'])
     if not partList[3]==None:
@@ -435,6 +453,8 @@ def makePlots2(partList):
     h[key + '_TV'].Print('DirDeltaTimeSmeared.png')
 
     cv = h[key + '_TV'].cd(4)
+    h[partList[1] + 'FlightLen'].SetStats(False)
+    h[partList[2] + 'FlightLen'].SetStats(False)
     h['FlightLen'].Add(h[partList[2] + 'FlightLen'])
     h['FlightLen'].Add(h[partList[1] + 'FlightLen'])
     if not partList[3]==None:
@@ -444,6 +464,8 @@ def makePlots2(partList):
     h[key + '_TV'].Print('FlightLen.png')
 
     cv = h[key + '_TV'].cd(5)
+    h[partList[1] + 'Speed'].SetStats(False)
+    h[partList[2] + 'Speed'].SetStats(False)
     h['Speed'].Add(h[partList[2] + 'Speed'])
     h['Speed'].Add(h[partList[1] + 'Speed'])
     if not partList[3]==None:
@@ -453,6 +475,8 @@ def makePlots2(partList):
     h[key + '_TV'].Print('Speed.png')
         
     cv = h[key + '_TV'].cd(6)
+    h[partList[1] + 'SpeedSmeared'].SetStats(False)
+    h[partList[2] + 'SpeedSmeared'].SetStats(False)
     h['SpeedSmeared'].Add(h[partList[2] + 'SpeedSmeared'])
     h['SpeedSmeared'].Add(h[partList[1] + 'SpeedSmeared'])
     if not partList[3]==None:
@@ -468,6 +492,8 @@ def makePlots2(partList):
     h[key + '_MOM']=TCanvas(key + '_MOM',title,600,600)
     h[key + '_MOM'].Divide(1,1)
     cv = h[key + '_MOM'].cd(1)
+    h[partList[1] + 'StrawMom'].SetStats(False)
+    h[partList[2] + 'StrawMom'].SetStats(False)
     h['StrawMom'].Add(h[partList[2] + 'StrawMom'])
     h['StrawMom'].Add(h[partList[1] + 'StrawMom'])
     if not partList[3]==None:
@@ -477,6 +503,8 @@ def makePlots2(partList):
 
 
     cv = h[key + '_MOM'].cd(2)
+    h[partList[1] + 'EcalMom'].SetStats(False)
+    h[partList[2] + 'EcalMom'].SetStats(False)
     h['EcalMom'].Add(h[partList[2] + 'EcalMom'])
     h['EcalMom'].Add(h[partList[1] + 'EcalMom'])
     if not partList[3]==None:
@@ -485,14 +513,28 @@ def makePlots2(partList):
     h['DAUGHTERS_MOM'].Print('EcalMom.png')
 
     cv = h[key + '_MOM'].cd(3)
+    h[partList[1] + 'RecoMom'].SetStats(False)
+    h[partList[2] + 'RecoMom'].SetStats(False)
     h['RecoMom'].Add(h[partList[2] + 'RecoMom'])
     h['RecoMom'].Add(h[partList[1] + 'RecoMom'])
     if not partList[3]==None:
         h['RecoMom'].Add(h[partList[3] + 'RecoMom'])
     h['RecoMom'].Draw('nostack')
     h['DAUGHTERS_MOM'].Print('RecoMom.png')
+
+    cv = h[key + '_MOM'].cd(3)
+    h[partList[1] + 'TrueMom'].SetStats(False)
+    h[partList[2] + 'TrueMom'].SetStats(False)
+    h['TrueMom'].Add(h[partList[2] + 'TrueMom'])
+    h['TrueMom'].Add(h[partList[1] + 'TrueMom'])
+    if not partList[3]==None:
+        h['TrueMom'].Add(h[partList[3] + 'TrueMom'])
+    h['TrueMom'].Draw('nostack')
+    h['DAUGHTERS_MOM'].Print('TrueMom.png')
     
     cv = h[key + '_MOM'].cd(4)
+    h[partList[1] + 'StrawHits'].SetStats(False)
+    h[partList[2] + 'StrawHits'].SetStats(False)
     h['StrawHits'].Add(h[partList[2] + 'StrawHits'])
     h['StrawHits'].Add(h[partList[1] + 'StrawHits'])
     if not partList[3]==None:
@@ -501,6 +543,8 @@ def makePlots2(partList):
     h['DAUGHTERS_MOM'].Print('StrawHits.png')
     
     cv = h[key + '_MOM'].cd(5)
+    h[partList[1] + 'StrawHitsMom'].SetStats(False)
+    h[partList[2] + 'StrawHitsMom'].SetStats(False)
     h['StrawHitsMom'].Add(h[partList[2] + 'StrawHitsMom'])
     h['StrawHitsMom'].Add(h[partList[1] + 'StrawHitsMom'])
     if not partList[3]==None:
@@ -509,6 +553,8 @@ def makePlots2(partList):
     h['DAUGHTERS_MOM'].Print('StrawHitsMom.png')
 
     cv = h[key + '_MOM'].cd(6)
+    h[partList[1] + 'DeltaMom'].SetStats(False)
+    h[partList[2] + 'DeltaMom'].SetStats(False)
     h['DeltaMom'].Add(h[partList[2] + 'DeltaMom'])
     h['DeltaMom'].Add(h[partList[1] + 'DeltaMom'])
     if not partList[3]==None:
@@ -516,7 +562,23 @@ def makePlots2(partList):
     h['DeltaMom'].Draw('nostack')
     h['DAUGHTERS_MOM'].Print('DeltaMom.png')
 
+    cv = h[key + '_MOM'].cd(6)
+    h[partList[1] + 'DeltaMom2'].SetStats(False)
+    h[partList[2] + 'DeltaMom2'].SetStats(False)
+    h[partList[1] + 'DeltaMom2'].Draw()
+    h[partList[1] + 'DeltaMom2'].GetYaxis().SetTitleOffset(1.3)
+    print('\n Neutralino DeltaMom Gaussian fit:\n')
+    h[partList[1] + 'DeltaMom2'].Fit('expo')
+    h[partList[1] + 'DeltaMom2'].GetFunction('expo').SetLineColor(1)
+    h[partList[2] + 'DeltaMom2'].Draw('same')
+    print('\n Neutralino DeltaMom Gaussian fit:\n')
+    h[partList[2] + 'DeltaMom2'].Fit('expo')
+    h[partList[2] + 'DeltaMom2'].GetFunction('expo').SetLineColor(1)
+    h['DAUGHTERS_MOM'].Print('DeltaMom2.png')
+
     cv = h[key + '_MOM'].cd(7)
+    h[partList[1] + 'RecoMass'].SetStats(False)
+    h[partList[2] + 'RecoMass'].SetStats(False)
     h['RecoMass'].Add(h[partList[2] + 'RecoMass'])
     h['RecoMass'].Add(h[partList[1] + 'RecoMass'])
     #h['RecoMass'].Add(h[partList[2] + 'TrueMass'])
@@ -535,7 +597,8 @@ def makePlots2(partList):
     #if not partList[3]==None:
     #    h[partList[3] + 'SmearedMass'].Fit('landau')
     #    h[partList[3] + 'SmearedMass'].GetFunction('landau').SetLineColor(kBlack)
-
+    h[partList[1] + 'SmearedMass'].SetStats(False)
+    h[partList[2] + 'SmearedMass'].SetStats(False)
     h['SmearedMass'].Add(h[partList[2] + 'SmearedMass'])
     h['SmearedMass'].Add(h[partList[1] + 'SmearedMass'])
     h[partList[2] + 'TrueMass'].GetYaxis().SetRangeUser(0,65)
@@ -668,7 +731,7 @@ def makePlots2(partList):
     graph['partIDProb'].Draw('A pfc plc')#P PLC PFCPLC PFC
     for ckey in graph:
         graph[ckey].GetXaxis().SetTitle( 'Mass (GeV/c^{2})' )
-    graph['partIDProb'].GetYaxis().SetTitle( '#P(particle=(K^{+} or #mu^{-}' + partString + '))' )
+    graph['partIDProb'].GetYaxis().SetTitle( 'P(particle=(K^{+} or #mu^{-}' + partString + '))' )
     graph['partIDProb'].GetYaxis().SetTitleOffset(1.5)
     graph['partIDProb'].GetXaxis().SetRangeUser(0,1.5)
     #gPad.BuildLegend()
@@ -680,30 +743,42 @@ def makePlots2(partList):
     h[key] = TCanvas(key,title,600,600)
     h[key].Divide(1,1)
     cv = h[key].cd(1)
+    h['Neutralino_RecoMass'].SetStats(False)
+    h['Neutralino_TrueMass'].SetStats(False)
     h['Neutralino_RecoMass'].Draw()
-    print('\nNeutralino mass Gaussian fit:\n')
-    fitSingleGauss('Neutralino_RecoMass',0.985,1.015)
+    print('\n Neutralino mass Gaussian fit:\n')
+    fitSingleGauss('Neutralino_RecoMass',0.99,1.01)
     h['Neutralino_TrueMass'].Draw('same')
     h[key].Print(key + 'TrueMass.png')
 
     cv = h[key].cd(2)
+    h['Neutralino_RecoMom'].SetStats(False)
+    h['Neutralino_TrueMom'].SetStats(False)
     h['Neutralino_RecoMom'].Draw()
     h['Neutralino_TrueMom'].Draw('same')
     h[key].Print(key + 'MomCompare.png')
 
     cv = h[key].cd(3)
+    h['Neutralino_DeltaMom'].SetStats(False)
     h['Neutralino_DeltaMom'].Draw()
+    h['Neutralino_DeltaMom'].GetYaxis().SetTitleOffset(1.3)
+    print('\n Neutralino DeltaMom Gaussian fit:\n')
+    h['Neutralino_DeltaMom'].Fit('expo')
+    #fitSingleGauss('Neutralino_DeltaMom',-2,2)
     h[key].Print(key + 'DeltaMom.png')
 
     cv = h[key].cd(4)
+    h['Neutralino_Beta'].SetStats(False)
     h['Neutralino_Beta'].Draw()
-    cv = h[key].cd(5)
     h[key].Print(key + 'Beta.png')
 
+    h['Neutralino_Gamma'].SetStats(False)
     h['Neutralino_Gamma'].Draw()
+
     cv = h[key].cd(6)
     h[key].Print(key + 'Gamma.png')
 
+    h['Neutralino_Theta'].SetStats(False)
     h['Neutralino_Theta'].Draw()
     h[key].Print(key + 'Theta.png')
 
@@ -770,6 +845,7 @@ def makePlots_DarkPhot():
     ut.bookCanvas(h,key='DP',title='Results 1',nx=600,ny=600,cx=1,cy=1)
     cv = h['DP'].cd(1)
     #h['DP_RecoMass'].SetLineColor(1)
+    h['DP_RecoMass'].SetStats(False) 
     h['DP_RecoMass'].Draw()
     h['DP_RecoMass'].GetYaxis().SetTitleOffset(1.3)
     print('\nDark Photon mass Gaussian fit:\n')
@@ -786,9 +862,12 @@ def makePlots_DarkPhot():
     #ROOT.gPad.BuildLegend()
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['DP'].cd(3)
-    #h['DP_DeltaMom'].SetLineColor(1)    
+    #h['DP_DeltaMom'].SetLineColor(1)   
+    h['DP_DeltaMom'].SetStats(False) 
     h['DP_DeltaMom'].Draw()
     h['DP_DeltaMom'].GetYaxis().SetTitleOffset(1.3)
+    print('\n DP DeltaMom Gaussian fit:\n')
+    h['DP_DeltaMom'].Fit('landau')
     h['DP'].Print('DP_DeltaMom.png')
     #----------------------------------------------------------------------------------------------------------------------
     cv = h['DP'].cd(4)
@@ -825,6 +904,19 @@ def makePlots_DarkPhot():
     h['ths3'].Draw('nostack')
     #ROOT.gPad.BuildLegend()
     h['ee'].Print('Electrons.png')
+
+    cv = h['ee'].cd(3)
+    h['e+_DeltaMom2'].SetStats(False)
+    h['e+_DeltaMom2'].Draw()
+    h['e+_DeltaMom2'].GetYaxis().SetTitleOffset(1.3)
+    h['e+_DeltaMom2'].Fit('expo')
+    h['e+_DeltaMom2'].GetFunction('expo').SetLineColor(1)
+    h['e-_DeltaMom2'].Draw('same')
+    h['e-_DeltaMom2'].Fit('expo')
+    h['e-_DeltaMom2'].GetFunction('expo').SetLineColor(1)
+    h['ee'].Print('DP_daughtDelta.png')
+
+
     #======================================================================================================================
     #ut.bookCanvas(h,key='DP_Vetos',title='Results 3',nx=1500,ny=800,cx=3,cy=2)
     #cv = h['DP_Vetos'].cd(1)
@@ -1031,7 +1123,8 @@ def fitSingleGauss(x,ba=None,be=None):
        myGauss.SetParName(1,'Mean')
        myGauss.SetParName(2,'Sigma')
        myGauss.SetParName(3,'bckgr')
-    h[x].Fit(myGauss,'','',ba,be) 
+       #myGauss.SetLineColor(1)
+    h[x].Fit(myGauss,'','',ba,be)
 
 def RedoVertexing(t1,t2):    
      PosDir = {} 
@@ -1118,7 +1211,7 @@ def time_res(partMom,partName,partkey,eventN,succEventM):
         py_array = []
         pz_array = []
         straw_time = 0
-        sigma = 0.01
+        sigma = 0.015
         for k,hits in enumerate(sTree.strawtubesPoint):
             straw_TrackID = hits.GetTrackID()
             if straw_TrackID == partkey:
@@ -1465,6 +1558,10 @@ def finStateMuKa():
                                     mom_diff = p2MotherTrueMom - Neutralino_recoMom
 
                                     part2='K+'
+                                    deltaMuMom = MuTrueMom-muP
+                                    deltaKaMom = part2TrueMom-p2P
+                                    h['Mu_DeltaMom2'].Fill(abs(deltaMuMom))
+                                    h['K+_DeltaMom2'].Fill(abs(deltaKaMom))
                                     h['Mu_' + 'TrueMom'].Fill(MuTrueMom)
                                     h['Mu_' + 'TrueMass'].Fill(MuTrueMass)
                                     h['K+_' + 'TrueMom'].Fill(part2TrueMom)
@@ -1473,7 +1570,7 @@ def finStateMuKa():
                                     h['Neutralino_' + 'TrueMom'].Fill(p2MotherTrueMom)
                                     h['Neutralino_' + 'RecoMass'].Fill(Neutralino_mass)                        
                                     h['Neutralino_' + 'RecoMom'].Fill(Neutralino_recoMom)                            
-                                    h['Neutralino_' + 'DeltaMom'].Fill(mom_diff)
+                                    if abs(mom_diff)<2.5: h['Neutralino_DeltaMom'].Fill(abs(mom_diff))
                                     h['K+_' + 'RecoMom'].Fill(p2P)
                                     h['Mu_' + 'RecoMom'].Fill(muP)
                                     h['K+_' + 'RecoMass'].Fill(p2M)
@@ -1769,7 +1866,7 @@ def finStateMuKa_exc():
                                                                             h['Neutralino_RecoMom'].Fill(RPV_recomom)
                                                                             h['Neutralino_TrueMom'].Fill(RPV_truemom)
                                                                             mom_dif = RPV_truemom-RPV_recomom
-                                                                            h['Neutralino_DeltaMom'].Fill(mom_dif)
+                                                                            if abs(mom_dif)<0.7: h['Neutralino_DeltaMom'].Fill(mom_dif)
 
                                                                             RPV_Zmom = RPV_4Mom.Pz()
                                                                             RPV_Zbeta = 1/ROOT.TMath.Sqrt(1 + ((RPV_recomass/RPV_Zmom)**2))
@@ -1997,18 +2094,23 @@ def finStateDarkPhot():
                                     true_eminusP = true_eminus.GetP()   # true electron momentum
                                     reco_eminusP = eminus_4Mom.P()   # reconstructed electron momentum
                                     reco_eminusmass = eminus_4Mom.M()   # reconstructed electron mass
+
+                                    eplusMomdiff = abs(true_eplusP-reco_eplusP)
+                                    eminusMomdiff = abs(true_eminusP-reco_eminusP)
                                                       
                                     h['DP_RecoMass'].Fill(DP_RecoMass)   # fills histograms
                                     h['DP_TrueMass'].Fill(DP_TrueMass)
                                     h['DP_TrueMom'].Fill(DP_TrueMom)             
                                     h['DP_RecoMom'].Fill(DP_RecoMom)                            
-                                    h['DP_DeltaMom'].Fill(DP_momdiff)
+                                    h['DP_DeltaMom'].Fill(abs(DP_momdiff))
                                     h['e+_RecoMass'].Fill(reco_eplusmass)
                                     h['e-_RecoMass'].Fill(reco_eminusmass)
                                     h['e+_RecoMom'].Fill(reco_eplusP)
                                     h['e-_RecoMom'].Fill(reco_eminusP)
                                     h['e+_TrueMom'].Fill(true_eplusP)
                                     h['e-_TrueMom'].Fill(true_eminusP)
+                                    h['e+_DeltaMom2'].Fill(eplusMomdiff)
+                                    h['e-_DeltaMom2'].Fill(eminusMomdiff)
 
                                     DP_Zmom = DP_4Mom.Pz()
                                     DP_Zbeta = 1/ROOT.TMath.Sqrt(1 + ((DP_RecoMass/DP_Zmom)**2))
