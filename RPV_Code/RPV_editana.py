@@ -31,7 +31,7 @@ import datetime
 RPV_parmtrs = [1.,0.0111,0.0111,1e3,1,True] # [mass(GeV), couplng1,couplng2,sfermionMass(GeV), bool]
 
 #For DP
-DP_parmtrs =[0.2,0.000000001, 'mesons'] #[mass (GeV), epsilon, pMechanismOptions='mesons', 'pbrems']
+DP_parmtrs =[0.2,0.0000017783,'mesons'] #[mass (GeV), epsilon, pMechanismOptions='mesons', 'pbrems']
 #DPprodRate = 4.9356962*10**(-16)
 
 MesonID = 'D+'
