@@ -13,7 +13,7 @@ theCouplings = [31.6228,31.6228,1000.] # ctau=53.3km  TP default for HNL
 
 # Default dark photon parameters
 theDPmass = 0.2*u.GeV
-theDPepsilon = 0.000000001#0.00000008
+theDPepsilon = 0.000000005 #0.00000008
 
 mcEngine     = "TGeant4"
 simEngine    = "Pythia8"  # "Genie" # Ntuple
