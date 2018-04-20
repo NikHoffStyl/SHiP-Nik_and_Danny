@@ -18,10 +18,11 @@ from array import array
 import numpy as np
 import rpvsusy,rpvsusy_test,darkphoton,proton_bremsstrahlung
 from ROOT import TLatex
+from ROOT import kBlack,kBlue,kRed,kGreen,kGray,kMagenta
 shipRoot_conf.configure()
 
 # For RPV
-RPV_parmtrs = [1.,0.0111,0.0111,1e3,1,True]   # [mass (GeV),couplng1,couplng2,sfermionMass(GeV),benchmark,bool]
+RPV_parmtrs = [1.,0.0316228,0.0316228,1e3,1,True]   # [mass (GeV),couplng1,couplng2,sfermionMass(GeV),benchmark,bool]
 # For DP
 DP_parmtrs =[0.2,0.000000005,'meson']   # [mass (GeV),epsilon,pMechanismOptions = 'meson' or 'pbrem']
 
@@ -506,7 +507,7 @@ def time_res(partkey,n):
             rdiff = abs(R - r)
             h['path_diff'].Fill(rdiff)
             
-            sigma = 0.015   # standard deviation for Gaussian
+            sigma = 0.000000000001   # standard deviation for Gaussian
             straw_smear = np.random.normal(loc=straw_time,scale=sigma,size=None)
             ecal_smear = np.random.normal(loc=ecal_time,scale=sigma,size=None)
             tsmear = abs(straw_smear - ecal_smear)   # smeared time of flight
@@ -580,8 +581,8 @@ def createHists(choice):
     if choice == 1:
         # Canvas 1
         h['RPV_recomass'] = ROOT.TH1D('RPV_recomass','Reconstructed Neutralino Mass; Invariant Mass / [GeV/c2]; Count',100,0.96,1.04)
-        h['RPV_recomom'] = ROOT.TH1D('RPV_recomom','Reconstructed Momentum; Momentum / [GeV/c]; Count',100,0,300)
-        h['RPV_truemom'] = ROOT.TH1D('RPV_truemom','Simulated Momentum; Momentum / [GeV/c]; Count',100,0,300)
+        h['RPV_recomom'] = ROOT.TH1D('RPV_recomom','Reconstructed; Momentum / [GeV/c]; Count',100,0,300)
+        h['RPV_truemom'] = ROOT.TH1D('RPV_truemom','Monte Carlo; Momentum / [GeV/c]; Count',100,0,300)
         h['RPV_mom_diff'] = ROOT.TH1D('RPV_mom_diff','Sim./Reco. Neutralino Momentum Difference; Momentum / [GeV/c]; Count',100,0,3)
         h['RPV_beta'] = ROOT.TH1D('RPV_beta','Reconstructed Neutralino #beta in Z-direction; #beta; Count',100,0.994,1)
         h['RPV_gamma'] = ROOT.TH1D('RPV_gamma','Reconstructed Neutralino #gamma in Z-direction; #gamma; Count',100,0,200)
@@ -599,11 +600,11 @@ def createHists(choice):
         # Canvas 3
         h['MuonDir'] = ROOT.TH1D('MuonDir','Smeared Muon Straw-ECAL Time; Time / [ns]; Count',150,37.5,40.)
         h['KaonDir'] = ROOT.TH1D('KaonDir','Smeared Kaon Straw-ECAL Time; Time / [ns]; Count',150,37.5,40.)
-        h['tmass_muon'] = ROOT.TH1D('tmass_muon','Time Deduced Muon Mass; Mass / [GeV/c2]; Count',150,0,3)
-        h['tmass_kaon'] = ROOT.TH1D('tmass_kaon','Time Deduced Kaon Mass; Mass / [GeV/c2]; Count',150,0,3)
-        h['tsmearmass_muon_samebins'] = ROOT.TH1D('tmass_muon_samebins','Time Deduced Muon Mass (#Deltat = 15 ps); Mass / [GeV/c2]; Count',150,0,3)
-        h['tsmearmass_kaon_samebins'] = ROOT.TH1D('tmass_kaon_samebins','Time Deduced Kaon Mass (#Deltat = 15 ps); Mass / [GeV/c2]; Count',150,0,3)
-        h['daughter_masses'] = ROOT.TH1D('daughter_masses','Kaon and muon true masses; Mass / [GeV/c2]; Arbitrary Units',50,0,1)
+        h['tmass_muon'] = ROOT.TH1D('tmass_muon','Muon Mass (#Deltat = 0 ps); Mass / [GeV/c2]; Count',150,0,3)
+        h['tmass_kaon'] = ROOT.TH1D('tmass_kaon','Kaon Mass (#Deltat = 0 ps); Mass / [GeV/c2]; Count',150,0,3)
+        h['tsmearmass_muon_samebins'] = ROOT.TH1D('tmass_muon_samebins','Muon Mass (#Deltat = 0 ps); Mass / [GeV/c2]; Count',150,0,3)
+        h['tsmearmass_kaon_samebins'] = ROOT.TH1D('tmass_kaon_samebins','Kaon Mass (#Deltat = 0 ps); Mass / [GeV/c2]; Count',150,0,3)
+        h['daughter_masses'] = ROOT.TH1D('daughter_masses','True particle masses; Mass / [GeV/c2]; Arbitrary Units',250,0,1)
 
         edgesarray = []
         edgesarray.append(0)
@@ -611,8 +612,8 @@ def createHists(choice):
             edgesarray.append(edgesarray[binNumber] + 0.015)
         for binNumber in range(40,86):
             edgesarray.append(edgesarray[binNumber] + 0.045)
-        h['Muon_SmearedMass'] = ROOT.TH1D('Muon_SmearedMass','Time Deduced Muon Mass',85,array('d',edgesarray))
-        h['Kaon_SmearedMass'] = ROOT.TH1D('Kaon_SmearedMass','Time Deduced Kaon Mass',85,array('d',edgesarray))
+        h['Muon_SmearedMass'] = ROOT.TH1D('Muon_SmearedMass','Muon Mass',85,array('d',edgesarray))
+        h['Kaon_SmearedMass'] = ROOT.TH1D('Kaon_SmearedMass','Kaon Mass',85,array('d',edgesarray))
         h['Kaon_SmearedMass'].SetLineColor(2)
         h['Total_SmearedMass'] = ROOT.TH1D('Total_SmearedMass','Smeared Mass',85,array('d',edgesarray))
 
@@ -674,15 +675,15 @@ def makePlots(choice):
         ut.bookCanvas(h,key='RPV_N',title='Results 1',nx=1500,ny=800,cx=3,cy=2)
         cv = h['RPV_N'].cd(1)
         h['RPV_recomass'].SetLineColor(1)
-        #h['RPV_recomass'].SetStats(False)
+        h['RPV_recomass'].SetStats(False)
         h['RPV_recomass'].Draw()
         print('\nNeutralino mass Gaussian fit:\n')
         fitSingleGauss('RPV_recomass',0.9,1.1)
         #----------------------------------------------------------------------------------------------------------------------
         cv = h['RPV_N'].cd(2)
         h['RPV_truemom'].SetLineColor(2)
-        #h['RPV_truemom'].SetStats(False)
-        #h['RPV_recomom'].SetStats(False)
+        h['RPV_truemom'].SetStats(False)
+        h['RPV_recomom'].SetStats(False)
         h['ths1'] = ROOT.THStack('RPVmom','Simulated & Reconstructed Neutralino Momentum ; Momentum / [GeV/c]; Count')
         h['ths1'].Add(h['RPV_truemom'])
         h['ths1'].Add(h['RPV_recomom'])
@@ -740,28 +741,42 @@ def makePlots(choice):
         ROOT.gPad.BuildLegend()
         h['KaMu'].Print('KaMu.png')
         #======================================================================================================================
-        ut.bookCanvas(h,key='Time_Mass',title='Results 3',nx=1000,ny=1000,cx=2,cy=2)
-        cv = h['Time_Mass'].cd(1)
-        h['MuonDir'].Draw()
+        ut.bookCanvas(h,key='Time_Mass',title='Results 3',nx=600,ny=600,cx=1,cy=1)
+        #cv = h['Time_Mass'].cd(1)
+        #h['MuonDir'].Draw()
         #----------------------------------------------------------------------------------------------------------------------
-        cv = h['Time_Mass'].cd(2)
-        h['KaonDir'].SetLineColor(2)
-        h['KaonDir'].Draw()
+        #cv = h['Time_Mass'].cd(2)
+        #h['KaonDir'].SetLineColor(2)
+        #h['KaonDir'].Draw()
         #----------------------------------------------------------------------------------------------------------------------
-        cv = h['Time_Mass'].cd(3)
-        h['tmass_kaon'].SetLineColor(2)
-        h['daughter_masses'].SetLineColor(1)
-        h['daughter_masses'].SetLineStyle(2)
-        h['daughter_masses'].Draw('same')
-        h['ths5'] = ROOT.THStack('tmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Count')
-        h['ths5'].Add(h['tmass_kaon'])
-        h['ths5'].Add(h['tmass_muon'])
+        #cv = h['Time_Mass'].cd(3)
+        #h['tmass_kaon'].SetLineColor(2)
+        #h['daughter_masses'].SetLineColor(1)
+        #h['daughter_masses'].SetFillColor(1)
+        #h['tmass_kaon'].SetLineWidth(2)
+        #h['tmass_muon'].SetLineWidth(2)
+        #h['tmass_kaon'].Draw()
+        #h['tmass_muon'].Draw('same')
+        #h['daughter_masses'].Draw('same')
+        #h['ths5'] = ROOT.THStack('tmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Count')
+        #h['ths5'].Add(h['tmass_kaon'])
+        #h['ths5'].Add(h['tmass_muon'])
         #h['ths5'].Add(h['daughter_masses'])
-        h['ths5'].Draw('nostack')
-        ROOT.gPad.BuildLegend()
+        #h['ths5'].Draw('nostack')
+        #ROOT.gPad.BuildLegend()
         #----------------------------------------------------------------------------------------------------------------------
-        cv = h['Time_Mass'].cd(4)
+        cv = h['Time_Mass'].cd(1)
         h['tsmearmass_kaon_samebins'].SetLineColor(2)
+        h['tsmearmass_kaon_samebins'].SetLineWidth(2)
+        h['tsmearmass_muon_samebins'].SetLineWidth(2)
+        h['daughter_masses'].SetLineColor(1)
+        h['daughter_masses'].SetFillColor(1)
+        h['tsmearmass_kaon_samebins'].Draw()
+        h['tsmearmass_muon_samebins'].Draw('same')
+        h['daughter_masses'].Draw('same')
+        h['tsmearmass_kaon_samebins'].SetStats(False)
+        h['tsmearmass_muon_samebins'].SetStats(False)
+        h['daughter_masses'].SetStats(False)
         #print('\nLandau fits for mass (time of flight):\n')
         #h['tsmearmass_kaon_samebins'].Fit('landau')
         #h['tsmearmass_kaon_samebins'].GetFunction('landau').SetLineColor(1)
@@ -770,10 +785,10 @@ def makePlots(choice):
         #par0 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(0)
         #par1 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(1)
         #par2 = h['Muon_SmearedMass'].GetFunction('landau').GetParameter(2)
-        h['ths6'] = ROOT.THStack('smeartmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Count')
-        h['ths6'].Add(h['tsmearmass_kaon_samebins'])
-        h['ths6'].Add(h['tsmearmass_muon_samebins'])
-        h['ths6'].Draw('nostack')
+        #h['ths6'] = ROOT.THStack('smeartmass','Time Deduced Kaon & Muon Mass ; Mass / [GeV/c2] ; Count')
+        #h['ths6'].Add(h['tsmearmass_kaon_samebins'])
+        #h['ths6'].Add(h['tsmearmass_muon_samebins'])
+        #h['ths6'].Draw('nostack')
         ROOT.gPad.BuildLegend()
         h['Time_Mass'].Print('Time_Mass.png')
         #======================================================================================================================
@@ -1488,7 +1503,7 @@ def finStateMuKa_exc():
             print('\t|---------------------------------|------------------|-------------------|-------------------------|\n')
 
             rpvsusy_instance = rpvsusy_test.RPVSUSY(RPV_parmtrs[0],[RPV_parmtrs[1],RPV_parmtrs[2]],RPV_parmtrs[3],RPV_parmtrs[4],RPV_parmtrs[5])   # (neutralino mass, [coupling1,coupling2], sfermion mass, benchmark, bool)
-            prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D_s+ -> N mu+')
+            prod_brRatio = rpvsusy_instance.findProdBranchingRatio('D+ -> N mu+')
             decay_brRatio = rpvsusy_instance.findDecayBranchingRatio('N -> K*+ mu-')
             brRatio_K_pipi = 0.692
             brRatio_Kexc_Kshort = 0.5
@@ -1720,8 +1735,7 @@ def finStateDarkPhot():
             brEta_2gamma = 0.3941
             prod_brRatio = 2*(epsilo**2)*((1-((mdp**2)/(mEta**2)))**3)*brEta_2gamma*10**8
             print('Branching ratio of eta -> dp = ' + str(prod_brRatio) + '\n')
-
-        
+    
 loop = True
 while loop:
     print_menu()
