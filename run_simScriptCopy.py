@@ -7,7 +7,7 @@ debug = 0  # 1 print weights and field
            # 2 make overlap check
 # Default HNL parameters
 theMass = 1.0*u.GeV
-theCouplings = [31.6228,31.6228,1000.] # ctau=53.3km  TP default for HNL
+theCouplings = [10.0,10.0,1000.] # ctau=53.3km  TP default for HNL 31.6228,31.6228
 #theCouplings = [0.447e-6, 7.15e-6, 1.88e-6] # ctau=53.3km  TP default for HNL
 #theCouplings = [0.447e-9, 7.15e-9, 1.88e-9] # ctau=53.3km  TP default for HNL
 
@@ -19,7 +19,7 @@ mcEngine     = "TGeant4"
 simEngine    = "Pythia8"  # "Genie" # Ntuple
 nEvents      = 1000
 firstEvent   = 0
-inclusive    = "meson"    # True = all processes if "c" only ccbar -> HNL, if "b" only bbar -> HNL, and for darkphotons: if meson = production through meson decays, pbrem = proton bremstrahlung, to do: QCD prod.
+inclusive    = "c"    # True = all processes if "c" only ccbar -> HNL, if "b" only bbar -> HNL, and for darkphotons: if meson = production through meson decays, pbrem = proton bremstrahlung, to do: QCD prod.
 deepCopy     = False  # False = copy only stable particles to stack, except for HNL events
 MCTracksWithHitsOnly   = False  # copy particles which produced a hit and their history
 MCTracksWithEnergyCutOnly = True # copy particles above a certain kin energy cut
@@ -27,8 +27,8 @@ MCTracksWithHitsOrEnergyCut = False # or of above, factor 2 file size increase c
 
 charmonly    = False  # option to be set with -A to enable only charm decays, charm x-sec measurement  
 HNL          = False
-DarkPhoton   = True
-RPVSUSY      = False
+DarkPhoton   = False
+RPVSUSY      = True
 RPVSUSYbench = 1
 
 eventDisplay = False

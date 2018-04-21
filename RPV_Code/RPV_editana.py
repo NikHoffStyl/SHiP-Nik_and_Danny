@@ -28,7 +28,7 @@ from inspect import currentframe
 import datetime
 
 #For RPV
-RPV_parmtrs = [1.,0.0111,0.0111,1e3,1,True] # [mass(GeV), couplng1,couplng2,sfermionMass(GeV), bool]
+RPV_parmtrs = [1.,10,10,1e3,1,True] # [mass(GeV), couplng1,couplng2,sfermionMass(GeV), bool]
 
 #For DP
 DP_parmtrs =[0.2,0.0000017783,'mesons'] #[mass (GeV), epsilon, pMechanismOptions='mesons', 'pbrems']
