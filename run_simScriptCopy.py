@@ -6,14 +6,19 @@ from ShipGeoConfig import ConfigRegistry
 debug = 0  # 1 print weights and field
            # 2 make overlap check
 # Default HNL parameters
+<<<<<<< HEAD
+theMass = 1.3*u.GeV
+theCouplings = [0.0341,0.0341,1000.] # ctau=53.3km  TP default for HNL
+=======
 theMass = 1.0*u.GeV
 theCouplings = [10.0,10.0,1000.] # ctau=53.3km  TP default for HNL 31.6228,31.6228
+>>>>>>> 888c835726f33f310efad3f9500e893a60fb3b13
 #theCouplings = [0.447e-6, 7.15e-6, 1.88e-6] # ctau=53.3km  TP default for HNL
 #theCouplings = [0.447e-9, 7.15e-9, 1.88e-9] # ctau=53.3km  TP default for HNL
 
 # Default dark photon parameters
 theDPmass = 0.2*u.GeV
-theDPepsilon = 0.0000017783 #0.00000008
+theDPepsilon = 0.00000008
 
 mcEngine     = "TGeant4"
 simEngine    = "Pythia8"  # "Genie" # Ntuple
